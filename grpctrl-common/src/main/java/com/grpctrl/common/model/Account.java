@@ -17,10 +17,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * A representation of a member in a group, where a member has a unique id and possibly some tags describing it. This
- * class is immutable.
+ * A representation of a user account in this system.
  */
-public class Member implements Comparable<Member> {
+public class Account implements Comparable<Account> {
     @Nonnull
     private final String id;
 
@@ -28,41 +27,33 @@ public class Member implements Comparable<Member> {
     private final ImmutableSet<Tag> tags;
 
     /**
-     * Represents a member of a group, with the member having a unique id.
+     * Represents a unique user account.
      *
-     * @param id the unique member identifier
+     * @param id the unique account identifier
      *
      * @throws NullPointerException if the provided id is {@code null}
      * @throws IllegalArgumentException if the provided id is invalid
      */
-    public Member(@Nonnull final String id) {
+    public Account(@Nonnull final String id) {
         this(id, Collections.emptyList());
     }
 
     /**
-     * Represents a member of a group, with the member having a unique id and some associated tags.
+     * Represents a unique user account, with the account having a unique id and associated tags.
      *
-     * @param id the unique member identifier
-     * @param tags the collection of tags associated with the member
+     * @param id the unique user account identifier
+     * @param tags the collection of tags associated with the user account
      *
      * @throws NullPointerException if either of the provided parameters is {@code null}
      * @throws IllegalArgumentException if either of the provided parameters is invalid
      */
-    public Member(@Nonnull final String id, @Nonnull final Collection<Tag> tags) {
+    public Account(@Nonnull final String id, @Nonnull final Collection<Tag> tags) {
         this.id = Validator.validateId(id);
         this.tags = ImmutableSet.copyOf(tags);
     }
 
     /**
-     * @return the member type representing whether this member is a specific individual, or a group of individuals
-     */
-    @Nonnull
-    public MemberType getMemberType() {
-        return MemberType.INDIVIDUAL;
-    }
-
-    /**
-     * @return the unique member identifier
+     * @return the unique account identifier
      */
     @Nonnull
     public String getId() {
@@ -70,7 +61,7 @@ public class Member implements Comparable<Member> {
     }
 
     /**
-     * @return the immutable set of tags assigned to this member
+     * @return the immutable set of tags assigned to this account
      */
     @Nonnull
     public ImmutableSet<Tag> getTags() {
@@ -78,13 +69,12 @@ public class Member implements Comparable<Member> {
     }
 
     @Override
-    public int compareTo(@Nullable final Member other) {
+    public int compareTo(@Nullable final Account other) {
         if (other == null) {
             return 1;
         }
 
         final CompareToBuilder cmp = new CompareToBuilder();
-        cmp.append(getMemberType(), other.getMemberType());
         cmp.append(getId(), other.getId());
         cmp.append(getTags(), other.getTags(), new CollectionComparator<Tag>());
         return cmp.toComparison();
@@ -92,13 +82,12 @@ public class Member implements Comparable<Member> {
 
     @Override
     public boolean equals(@CheckForNull final Object other) {
-        return other instanceof Member && compareTo((Member) other) == 0;
+        return other instanceof Account && compareTo((Account) other) == 0;
     }
 
     @Override
     public int hashCode() {
         final HashCodeBuilder hash = new HashCodeBuilder();
-        hash.append(getMemberType().name()); // Name is used here to make the hashes deterministic and consistent.
         hash.append(getId());
         hash.append(getTags());
         return hash.toHashCode();
@@ -108,23 +97,22 @@ public class Member implements Comparable<Member> {
     @Nonnull
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
-        str.append("memberType", getMemberType());
         str.append("id", getId());
         str.append("tags", getTags());
         return str.build();
     }
 
     /**
-     * Performs validation on member fields.
+     * Performs validation on account fields.
      */
     public static class Validator {
-        /** The maximum size of the member id. */
+        /** The maximum size of the account id. */
         public static final int MAX_ID_LENGTH = 200;
 
         /**
          * Perform validation on the provided {@code id}.
          *
-         * @param id the member id to validate
+         * @param id the account id to validate
          *
          * @return the unmodified id, when valid
          *
@@ -135,7 +123,7 @@ public class Member implements Comparable<Member> {
             Objects.requireNonNull(id);
 
             if (id.length() > MAX_ID_LENGTH) {
-                throw new IllegalArgumentException("Invalid member id, it exceeds the max length: " + MAX_ID_LENGTH);
+                throw new IllegalArgumentException("Invalid account id, it exceeds the max length: " + MAX_ID_LENGTH);
             }
 
             return id;

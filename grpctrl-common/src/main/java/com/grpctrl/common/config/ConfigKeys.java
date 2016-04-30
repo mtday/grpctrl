@@ -26,7 +26,10 @@ public enum ConfigKeys {
     /** The type of the trust store file, typically either JKS or PKCS12. */
     SSL_TRUSTSTORE_TYPE,
     /** The password to use when reading the trust store file. */
-    SSL_TRUSTSTORE_PASSWORD;
+    SSL_TRUSTSTORE_PASSWORD,
+
+    /** The underlying service implementation type. */
+    SERVICE_IMPL;
 
     /**
      * @return the key to use when retrieving the common configuration value from the system configuration file
