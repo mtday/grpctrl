@@ -28,6 +28,21 @@ public enum ConfigKeys {
     /** The password to use when reading the trust store file. */
     SSL_TRUSTSTORE_PASSWORD,
 
+    /** The JDBC DataSource class implementation. */
+    DB_DATASOURCE_CLASS,
+    /** The user name to use when connecting to the database. */
+    DB_USERNAME,
+    /** The password to use when connecting to the database. */
+    DB_PASSWORD,
+    /** The minimum number of database connections to keep idle. */
+    DB_MINIMUM_IDLE,
+    /** The maximum number of connections to keep in the pool. */
+    DB_MAXIMUM_POOL_SIZE,
+    /** The amount of time a connection is allowed to sit idle in the pool. */
+    DB_TIMEOUT_IDLE,
+    /** The amount of time we are willing to wait for an available connection before an exception is thrown. */
+    DB_TIMEOUT_CONNECTION,
+
     /** The underlying service implementation type. */
     SERVICE_IMPL;
 
