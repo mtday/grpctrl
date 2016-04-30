@@ -1,0 +1,7 @@
+
+# Maven build directories
+target
+
+# VI/VIM metadata files
+*.swp
+
