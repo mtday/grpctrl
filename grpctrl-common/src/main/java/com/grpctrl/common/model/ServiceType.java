@@ -7,5 +7,5 @@ public enum ServiceType {
     /** An in-memory implementation used primarily for testing. */
     MEMORY,
     /** A JDBC implementation used for production operations. */
-    DATABASE;
+    DATABASE
 }

@@ -77,13 +77,14 @@ public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSou
         final Config config = getConfigSupplier().get();
 
         final HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setDataSourceClassName(config.getString(ConfigKeys.DB_DATASOURCE_CLASS.getKey()));
+        hikariConfig.setJdbcUrl(config.getString(ConfigKeys.DB_URL.getKey()));
         hikariConfig.setUsername(config.getString(ConfigKeys.DB_USERNAME.getKey()));
         hikariConfig.setPassword(config.getString(ConfigKeys.DB_PASSWORD.getKey()));
         hikariConfig.setMinimumIdle(config.getInt(ConfigKeys.DB_MINIMUM_IDLE.getKey()));
         hikariConfig.setMaximumPoolSize(config.getInt(ConfigKeys.DB_MAXIMUM_POOL_SIZE.getKey()));
         hikariConfig.setIdleTimeout(config.getDuration(ConfigKeys.DB_TIMEOUT_IDLE.getKey()).toMillis());
         hikariConfig.setConnectionTimeout(config.getDuration(ConfigKeys.DB_TIMEOUT_CONNECTION.getKey()).toMillis());
+        hikariConfig.setAutoCommit(false);
 
         final HikariDataSource dataSource = new HikariDataSource(hikariConfig);
 

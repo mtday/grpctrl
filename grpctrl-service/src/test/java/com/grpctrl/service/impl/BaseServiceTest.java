@@ -3,6 +3,7 @@ package com.grpctrl.service.impl;
 import static org.junit.Assert.assertFalse;
 
 import com.grpctrl.common.model.Account;
+import com.grpctrl.common.model.ServiceLevel;
 import com.grpctrl.service.GroupControlService;
 
 import org.junit.Test;
@@ -14,7 +15,7 @@ public abstract class BaseServiceTest {
     public abstract GroupControlService getService();
 
     public Account getAccount() {
-        return new Account("test-account");
+        return new Account("test-account", new ServiceLevel.Builder().build());
     }
 
     @Test

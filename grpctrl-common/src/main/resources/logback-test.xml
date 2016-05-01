@@ -3,7 +3,7 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-6level %-46logger %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-6level %-46logger{46} %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -11,8 +11,9 @@
         <appender-ref ref="STDOUT" />
     </root>
 
-    <logger name="com.grpctrl" level="DEBUG">
-        <appender-ref ref="STDOUT" />
-    </logger>
+    <logger name="com.grpctrl" level="DEBUG" />
+
+    <logger name="com.zaxxer.hikari" level="WARN" />
+    <logger name="org.flywaydb" level="WARN" />
 
 </configuration>

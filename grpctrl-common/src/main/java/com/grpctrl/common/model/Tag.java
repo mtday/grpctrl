@@ -10,29 +10,25 @@ import java.util.Objects;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
+import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * Represents a tag assigned to a group or a member, where a tag represents a label and a value. This class is
  * immutable.
  */
+@Immutable
+@ThreadSafe
 public class Tag implements Comparable<Tag> {
     @Nonnull
     private final String label;
     @Nonnull
     private final String value;
 
-    /**
-     * Represents a tag assigned to a group or a member, where a tag represents a label and a value.
-     *
-     * @param label the user-provided label for this tag
-     * @param value the user-provided value for this tag
-     *
-     * @throws NullPointerException if either of the provided parameters is {@code null}
-     * @throws IllegalArgumentException if either of the provided parameters is invalid
-     */
-    public Tag(@Nonnull final String label, @Nonnull final String value) {
-        this.label = Validator.validateLabel(label);
-        this.value = Validator.validateValue(value);
+    private Tag(@Nonnull final String label, @Nonnull final String value) {
+        // These values have already been validated by the builder.
+        this.label = label;
+        this.value = value;
     }
 
     /**
@@ -133,6 +129,81 @@ public class Tag implements Comparable<Tag> {
             }
 
             return value;
+        }
+    }
+
+    /**
+     * Responsible for building tag objects.
+     */
+    public static class Builder {
+        @Nonnull
+        private String label = "";
+
+        @Nonnull
+        private String value = "";
+
+        /**
+         * Create a tag builder instance with the provided label and value.
+         *
+         * @param label the user-provided label for this tag
+         * @param value the user-provided value for this tag
+         *
+         * @throws NullPointerException if either of the provided parameters is {@code null}
+         * @throws IllegalArgumentException if either of the provided parameters is invalid
+         */
+        public Builder(@Nonnull final String label, @Nonnull final String value) {
+            setLabel(label);
+            setValue(value);
+        }
+
+        /**
+         * Create a tag builder instance using the contents of the provided tag for the initial values.
+         *
+         * @param other the existing tag to duplicate
+         *
+         * @throws NullPointerException if the provided parameter is {@code null}
+         */
+        public Builder(@Nonnull final Tag other) {
+            setLabel(other.getLabel());
+            setValue(other.getValue());
+        }
+
+        /**
+         * @param label the user-provided label for this tag
+         *
+         * @return {@code this} for fluent-style usage
+         *
+         * @throws NullPointerException if provided parameter is {@code null}
+         * @throws IllegalArgumentException if the provided parameter is invalid
+         */
+        @Nonnull
+        public Builder setLabel(@Nonnull final String label) {
+            this.label = Validator.validateLabel(label);
+            return this;
+        }
+
+        /**
+         * @param value the user-provided value for this tag
+         *
+         * @return {@code this} for fluent-style usage
+         *
+         * @throws NullPointerException if provided parameter is {@code null}
+         * @throws IllegalArgumentException if the provided parameter is invalid
+         */
+        @Nonnull
+        public Builder setValue(@Nonnull final String value) {
+            this.value = Validator.validateValue(value);
+            return this;
+        }
+
+        /**
+         * Create the configured tag using the current values in this builder.
+         *
+         * @return the tag represented by the current values in this builder
+         */
+        @Nonnull
+        public Tag build() {
+            return new Tag(this.label, this.value);
         }
     }
 }

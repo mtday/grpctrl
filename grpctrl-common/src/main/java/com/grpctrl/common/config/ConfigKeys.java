@@ -28,8 +28,8 @@ public enum ConfigKeys {
     /** The password to use when reading the trust store file. */
     SSL_TRUSTSTORE_PASSWORD,
 
-    /** The JDBC DataSource class implementation. */
-    DB_DATASOURCE_CLASS,
+    /** The JDBC database connection URL. */
+    DB_URL,
     /** The user name to use when connecting to the database. */
     DB_USERNAME,
     /** The password to use when connecting to the database. */

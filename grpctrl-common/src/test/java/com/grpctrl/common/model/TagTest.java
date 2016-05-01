@@ -10,49 +10,11 @@ import org.junit.Test;
  * Perform testing on the {@link Tag} class.
  */
 public class TagTest {
-    @SuppressWarnings("all")
-    @Test(expected = NullPointerException.class)
-    public void testConstructorWithNullLabel() {
-        new Tag(null, "value");
-    }
-
-    @SuppressWarnings("all")
-    @Test(expected = NullPointerException.class)
-    public void testConstructorWithNullValue() {
-        new Tag("label", null);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testConstructorWithTooLongLabel() {
-        new Tag(StringUtils.leftPad("", Tag.Validator.MAX_LABEL_LENGTH + 1, "L"), "value");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testConstructorWithTooLongValue() {
-        new Tag("label", StringUtils.leftPad("", Tag.Validator.MAX_LABEL_LENGTH + 1, "V"));
-    }
-
-    @Test
-    public void testConstructorWithLongLabel() {
-        final String label = StringUtils.leftPad("", Tag.Validator.MAX_LABEL_LENGTH, "L");
-        final Tag tag = new Tag(label, "value");
-
-        assertEquals(label, tag.getLabel());
-    }
-
-    @Test
-    public void testConstructorWithLongValue() {
-        final String value = StringUtils.leftPad("", Tag.Validator.MAX_LABEL_LENGTH, "V");
-        final Tag tag = new Tag("label", value);
-
-        assertEquals(value, tag.getValue());
-    }
-
     @Test
     public void testCompareTo() {
-        final Tag a = new Tag("label1", "value1");
-        final Tag b = new Tag("label1", "value2");
-        final Tag c = new Tag("label2", "value1");
+        final Tag a = new Tag.Builder("label1", "value1").build();
+        final Tag b = new Tag.Builder("label1", "value2").build();
+        final Tag c = new Tag.Builder("label2", "value1").build();
 
         assertEquals(1, a.compareTo(null));
         assertEquals(0, a.compareTo(a));
@@ -68,9 +30,9 @@ public class TagTest {
 
     @Test
     public void testEquals() {
-        final Tag a = new Tag("label1", "value1");
-        final Tag b = new Tag("label1", "value2");
-        final Tag c = new Tag("label2", "value1");
+        final Tag a = new Tag.Builder("label1", "value1").build();
+        final Tag b = new Tag.Builder("label1", "value2").build();
+        final Tag c = new Tag.Builder("label2", "value1").build();
 
         assertNotEquals(a, null);
         assertEquals(a, a);
@@ -86,9 +48,9 @@ public class TagTest {
 
     @Test
     public void testHashCode() {
-        final Tag a = new Tag("label1", "value1");
-        final Tag b = new Tag("label1", "value2");
-        final Tag c = new Tag("label2", "value1");
+        final Tag a = new Tag.Builder("label1", "value1").build();
+        final Tag b = new Tag.Builder("label1", "value2").build();
+        final Tag c = new Tag.Builder("label2", "value1").build();
 
         assertEquals(1040436762, a.hashCode());
         assertEquals(1040436763, b.hashCode());
@@ -97,7 +59,7 @@ public class TagTest {
 
     @Test
     public void testToString() {
-        final Tag tag = new Tag("label", "value");
+        final Tag tag = new Tag.Builder("label", "value").build();
         assertEquals("Tag[label=label,value=value]", tag.toString());
     }
 
@@ -117,5 +79,50 @@ public class TagTest {
     @Test(expected = NullPointerException.class)
     public void testValidatorWithNullValue() {
         Tag.Validator.validateValue(null);
+    }
+
+    @SuppressWarnings("all")
+    @Test(expected = NullPointerException.class)
+    public void testBuilderWithNullLabel() {
+        new Tag.Builder(null, "value");
+    }
+
+    @SuppressWarnings("all")
+    @Test(expected = NullPointerException.class)
+    public void testBuilderWithNullValue() {
+        new Tag.Builder("label", null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuilderWithTooLongLabel() {
+        new Tag.Builder(StringUtils.leftPad("", Tag.Validator.MAX_LABEL_LENGTH + 1, "L"), "value");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuilderWithTooLongValue() {
+        new Tag.Builder("label", StringUtils.leftPad("", Tag.Validator.MAX_LABEL_LENGTH + 1, "V"));
+    }
+
+    @Test
+    public void testBuilderWithLongLabel() {
+        final String label = StringUtils.leftPad("", Tag.Validator.MAX_LABEL_LENGTH, "L");
+        final Tag tag = new Tag.Builder(label, "value").build();
+
+        assertEquals(label, tag.getLabel());
+    }
+
+    @Test
+    public void testBuilderWithLongValue() {
+        final String value = StringUtils.leftPad("", Tag.Validator.MAX_LABEL_LENGTH, "V");
+        final Tag tag = new Tag.Builder("label", value).build();
+
+        assertEquals(value, tag.getValue());
+    }
+
+    @Test
+    public void testBuilderCopy() {
+        final Tag tag = new Tag.Builder("label", "value").build();
+
+        assertEquals(tag, new Tag.Builder(tag).build());
     }
 }
