@@ -12,8 +12,11 @@ import com.typesafe.config.ConfigValueFactory;
 import org.junit.BeforeClass;
 import org.mockito.Mockito;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.sql.DataSource;
 
 /**
  * Perform testing on the {@link DataSourceGroupControlDao} class using an in-memory HSQLDB database.
@@ -43,5 +46,20 @@ public class DataSourceGroupControlDaoTest extends BaseGroupControlDaoTest {
     @Override
     public GroupControlDao getGroupControlDao() {
         return new DataSourceGroupControlDao(dataSourceSupplier);
+    }
+
+    @Override
+    public GroupControlDao getGroupControlDaoWithDataSourceException() {
+        try {
+            final DataSource mockDataSource = Mockito.mock(DataSource.class);
+            Mockito.when(mockDataSource.getConnection()).thenThrow(new SQLException("Fake"));
+
+            final DataSourceSupplier mockDataSourceSupplier = Mockito.mock(DataSourceSupplier.class);
+            Mockito.when(mockDataSourceSupplier.get()).thenReturn(mockDataSource);
+
+            return new DataSourceGroupControlDao(mockDataSourceSupplier);
+        } catch (final SQLException fake) {
+            throw new RuntimeException("Fake");
+        }
     }
 }

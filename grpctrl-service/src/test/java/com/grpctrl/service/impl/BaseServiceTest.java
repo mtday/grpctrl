@@ -15,7 +15,7 @@ public abstract class BaseServiceTest {
     public abstract GroupControlService getService();
 
     public Account getAccount() {
-        return new Account("test-account", new ServiceLevel.Builder().build());
+        return new Account.Builder("test-account", new ServiceLevel.Builder().build()).build();
     }
 
     @Test

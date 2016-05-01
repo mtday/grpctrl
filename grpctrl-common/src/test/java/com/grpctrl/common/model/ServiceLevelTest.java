@@ -77,4 +77,33 @@ public class ServiceLevelTest {
         // Only here for 100% coverage.
         new ServiceLevel.Validator();
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidatorNegativeMaxGroups() {
+        ServiceLevel.Validator.validateMaxGroups(-1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidatorNegativeMaxTags() {
+        ServiceLevel.Validator.validateMaxTags(-1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidatorNegativeMaxChildren() {
+        ServiceLevel.Validator.validateMaxChildren(-1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidatorNegativeMaxDepth() {
+        ServiceLevel.Validator.validateMaxDepth(-1);
+    }
+
+    @Test
+    public void testBuilderCopy() {
+        final ServiceLevel original =
+                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxChildren(4).setMaxDepth(5).build();
+        final ServiceLevel copy = new ServiceLevel.Builder(original).build();
+
+        assertEquals(original, copy);
+    }
 }

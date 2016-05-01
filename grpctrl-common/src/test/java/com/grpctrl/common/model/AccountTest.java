@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNotEquals;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 /**
  * Perform testing on the {@link Account} class.
@@ -81,8 +80,7 @@ public class AccountTest {
         final Account account = new Account.Builder("id",
                 new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(2).setMaxChildren(3).setMaxDepth(4).build())
                 .build();
-        assertEquals(
-                "Account[id=id,serviceLevel=ServiceLevel[maxGroups=1,maxTags=2,maxChildren=3,maxDepth=4]]",
+        assertEquals("Account[id=id,serviceLevel=ServiceLevel[maxGroups=1,maxTags=2,maxChildren=3,maxDepth=4]]",
                 account.toString());
     }
 
@@ -101,26 +99,35 @@ public class AccountTest {
     @SuppressWarnings("all")
     @Test(expected = NullPointerException.class)
     public void testBuilderWithNullId() {
-        new Account.Builder(null, Mockito.mock(ServiceLevel.class));
+        new Account.Builder(null, new ServiceLevel.Builder().build());
     }
 
     @SuppressWarnings("all")
     @Test(expected = NullPointerException.class)
     public void testBuilderWithNullServiceLevel() {
-        new Account("id", null);
+        new Account.Builder("id", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testBuilderWithTooLongId() {
-        new Account(
-                StringUtils.leftPad("", Account.Validator.MAX_ID_LENGTH + 1, "I"), Mockito.mock(ServiceLevel.class));
+        new Account.Builder(
+                StringUtils.leftPad("", Account.Validator.MAX_ID_LENGTH + 1, "I"), new ServiceLevel.Builder().build())
+                .build();
     }
 
     @Test
     public void testBuilderWithLongId() {
         final String id = StringUtils.leftPad("", Account.Validator.MAX_ID_LENGTH, "I");
-        final Account account = new Account(id, Mockito.mock(ServiceLevel.class));
+        final Account account = new Account.Builder(id, new ServiceLevel.Builder().build()).build();
 
         assertEquals(id, account.getId());
+    }
+
+    @Test
+    public void testBuilderCopy() {
+        final Account original = new Account.Builder("id", new ServiceLevel.Builder().build()).build();
+        final Account copy = new Account.Builder(original).build();
+
+        assertEquals(original, copy);
     }
 }

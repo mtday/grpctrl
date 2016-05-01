@@ -11,10 +11,8 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -171,47 +169,38 @@ public class Group implements Comparable<Group> {
     }
 
     /**
-     * Flatten the provided collection of hierarchical groups into a map with the parent id mapping to the collection
-     * of groups within that parent group.
+     * Flatten the provided collection of hierarchical groups into a flat list of groups added depth-first.
      *
      * @param groups the collection of groups to flatten
      *
-     * @return a map containing all of the provided groups, with the parent id mapped to the child groups for that
-     *     parent
+     * @return a flattened collection of the provided groups
      */
-    public static Map<ParentId, Collection<Group>> flatten(@Nonnull final Collection<Group> groups) {
+    public static Collection<Group> flatten(@Nonnull final Collection<Group> groups) {
         return flatten(null, groups);
     }
 
     /**
-     * Flatten the provided collection of hierarchical groups into a map with the parent id mapping to the collection
-     * of groups within that parent group.
+     * Flatten the provided collection of hierarchical groups into a flat list of groups added depth-first, with the
+     * top-level groups falling into the specified parent group.
      *
      * @param parentId the parent id to assign to the top-level groups in the provided collection
      * @param groups the collection of groups to flatten
      *
-     * @return a map containing all of the provided groups, with the parent id mapped to the child groups for that
-     *     parent
+     * @return a flattened collection of the provided groups
      */
-    public static Map<ParentId, Collection<Group>> flatten(
-            @Nullable final String parentId, @Nonnull final Collection<Group> groups) {
-        final Map<ParentId, Collection<Group>> map = new HashMap<>();
-        flatten(map, new ParentId(parentId), Objects.requireNonNull(groups));
-        return map;
+    public static Collection<Group> flatten(@Nullable final String parentId, @Nonnull final Collection<Group> groups) {
+        final Collection<Group> collection = new LinkedList<>();
+        flatten(collection, parentId, Objects.requireNonNull(groups));
+        return collection;
     }
 
     private static void flatten(
-            @Nonnull final Map<ParentId, Collection<Group>> collection, @Nonnull final ParentId parentId,
+            @Nonnull final Collection<Group> collection, @Nullable final String parentId,
             @Nonnull final Collection<Group> groups) {
-        Collection<Group> coll = collection.get(parentId);
-        if (coll == null) {
-            coll = new LinkedList<>();
-            collection.put(parentId, coll);
+        for (final Group group : groups) {
+            collection.add(new Group.Builder(group).setParentId(parentId).clearChildren().build());
+            flatten(collection, group.getId(), group.getChildren());
         }
-        coll.addAll(groups);
-
-        groups.stream().filter(Group::hasChildren)
-                .forEach(group -> flatten(collection, new ParentId(group.getId()), group.getChildren()));
     }
 
     /**
@@ -272,10 +261,10 @@ public class Group implements Comparable<Group> {
         private String parentId;
 
         @Nonnull
-        private final Set<Tag> tags = new HashSet<>();
+        private final Set<Tag> tags = new LinkedHashSet<>();
 
         @Nonnull
-        private final Set<Group> children = new HashSet<>();
+        private final Set<Group> children = new LinkedHashSet<>();
 
         /**
          * Initialize a builder with the unique group identifier.

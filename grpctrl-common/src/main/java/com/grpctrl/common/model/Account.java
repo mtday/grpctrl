@@ -25,18 +25,10 @@ public class Account implements Comparable<Account> {
     @Nonnull
     private final ServiceLevel serviceLevel;
 
-    /**
-     * Represents a unique service account.
-     *
-     * @param id the unique account identifier
-     * @param serviceLevel the level of service made available for this account
-     *
-     * @throws NullPointerException if either of the provided parameters is {@code null}
-     * @throws IllegalArgumentException if either of the provided parameters is invalid
-     */
-    public Account(@Nonnull final String id, @Nonnull final ServiceLevel serviceLevel) {
-        this.id = Validator.validateId(id);
-        this.serviceLevel = Objects.requireNonNull(serviceLevel);
+    private Account(@Nonnull final String id, @Nonnull final ServiceLevel serviceLevel) {
+        // These have already been validated by the builder.
+        this.id = id;
+        this.serviceLevel = serviceLevel;
     }
 
     /**

@@ -142,37 +142,47 @@ public interface GroupControlDao {
      * Add the specified tags to the group with the provided id.
      *
      * @param account the account that owns the group
+     * @param parentId the unique identifier of the parent group containing the group to be modified, possibly {@code
+     *     null} in which case the top-level group will be modified
      * @param groupId the unique identifier of the group to which the tag will be assigned
      * @param tags the collection of tags to be assigned to the group
      *
      * @throws NullPointerException if any of the parameters are {@code null}
      * @throws DaoException if there is a problem interacting with the database
      */
-    void addTags(@Nonnull Account account, @Nonnull String groupId, @Nonnull Collection<Tag> tags) throws DaoException;
+    void addTags(
+            @Nonnull Account account, @Nullable String parentId, @Nonnull String groupId, @Nonnull Collection<Tag> tags)
+            throws DaoException;
 
     /**
      * Remove the specified tags from the group with the specified id.
      *
      * @param account the account that owns the group
+     * @param parentId the unique identifier of the parent group containing the group to be modified, possibly {@code
+     *     null} in which case the top-level group will be modified
      * @param groupId the unique identifier of the group from which the tag will be removed
      * @param tags the collection tags to be removed from the group
      *
      * @throws NullPointerException if any of the parameters are {@code null}
      * @throws DaoException if there is a problem interacting with the database
      */
-    void removeTags(@Nonnull Account account, @Nonnull String groupId, @Nonnull Collection<Tag> tags)
+    void removeTags(
+            @Nonnull Account account, @Nullable String parentId, @Nonnull String groupId, @Nonnull Collection<Tag> tags)
             throws DaoException;
 
     /**
      * Remove tags with the specified labels from the group with the provided id.
      *
      * @param account the account that owns the group
+     * @param parentId the unique identifier of the parent group containing the group to be modified, possibly {@code
+     *     null} in which case the top-level group will be modified
      * @param groupId the unique identifier of the group from which the tags will be removed
      * @param tagLabels the collection of tag labels to be removed from the group (with corresponding values)
      *
      * @throws NullPointerException if any of the parameters are {@code null}
      * @throws DaoException if there is a problem interacting with the database
      */
-    void removeTagLabels(@Nonnull Account account, @Nonnull String groupId, @Nonnull Collection<String> tagLabels)
-            throws DaoException;
+    void removeTagLabels(
+            @Nonnull Account account, @Nullable String parentId, @Nonnull String groupId,
+            @Nonnull Collection<String> tagLabels) throws DaoException;
 }

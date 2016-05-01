@@ -2,7 +2,6 @@ package com.grpctrl.db.impl;
 
 import com.grpctrl.common.model.Account;
 import com.grpctrl.common.model.Group;
-import com.grpctrl.common.model.ParentId;
 import com.grpctrl.common.model.ServiceLevel;
 import com.grpctrl.common.model.Tag;
 import com.grpctrl.db.DataSourceSupplier;
@@ -189,9 +188,9 @@ public class DataSourceGroupControlDao implements GroupControlDao {
     private Collection<Group> getTopLevelGroups(@Nonnull final Account account) throws DaoException {
         Objects.requireNonNull(account);
 
-        List<Group> groups = new LinkedList<>();
+        final List<Group> groups = new LinkedList<>();
 
-        final String SQL = "SELECT group_id FROM groups WHERE account_id = ? AND parent_id IS NULL";
+        final String SQL = "SELECT group_id FROM groups WHERE account_id = ? AND parent_id = ''";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
@@ -235,7 +234,7 @@ public class DataSourceGroupControlDao implements GroupControlDao {
             return map;
         }
 
-        final String SQL = "SELECT group_id, parent_id FROM groups WHERE account_id = ? AND parent_id = ANY (?)";
+        final String SQL = "SELECT parent_id, group_id FROM groups WHERE account_id = ? AND parent_id = ANY (?)";
 
         // groupCounter is used to make sure we don't cross over the service level max groups configuration.
         int groupCounter = availableGroups;
@@ -249,8 +248,8 @@ public class DataSourceGroupControlDao implements GroupControlDao {
 
             try (final ResultSet rs = ps.executeQuery()) {
                 while (rs.next() && groupCounter > 0) {
-                    final String groupId = rs.getString("group_id");
                     final String parentId = rs.getString("parent_id");
+                    final String groupId = rs.getString("group_id");
 
                     Collection<String> groupIds = pairs.get(groupId);
                     if (groupIds == null) {
@@ -317,30 +316,22 @@ public class DataSourceGroupControlDao implements GroupControlDao {
         final int INSERT_BATCH_SIZE = 1000;
         final String SQL = "INSERT INTO groups (account_id, parent_id, group_id) VALUES (?, ?, ?)";
 
-        final Map<ParentId, Collection<Group>> flattened = Group.flatten(parentId, groups);
+        final Collection<Group> flattened = Group.flatten(parentId, groups);
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(SQL)) {
             int batches = 0;
             ps.setString(1, account.getId());
-            for (final Map.Entry<ParentId, Collection<Group>> entry : flattened.entrySet()) {
-                final Optional<String> optionalParentId = entry.getKey().getId();
-                if (optionalParentId.isPresent()) {
-                    ps.setString(2, optionalParentId.get());
-                } else {
-                    ps.setNull(2, Types.VARCHAR);
-                }
+            for (final Group group : flattened) {
+                ps.setString(2, group.getParentId().orElse(""));
+                ps.setString(3, group.getId());
+                ps.addBatch();
+                batches++;
 
-                for (final Group group : entry.getValue()) {
-                    ps.setString(3, group.getId());
-                    ps.addBatch();
-                    batches++;
-
-                    if (batches > INSERT_BATCH_SIZE) {
-                        ps.executeBatch();
-                        batches = 0;
-                    }
+                if (batches > INSERT_BATCH_SIZE) {
+                    ps.executeBatch();
+                    batches = 0;
                 }
             }
             if (batches > 0) {
@@ -380,11 +371,7 @@ public class DataSourceGroupControlDao implements GroupControlDao {
              final PreparedStatement ps = conn.prepareStatement(SQL)) {
             int batches = 0;
             ps.setString(1, account.getId());
-            if (parentId != null) {
-                ps.setString(2, parentId);
-            } else {
-                ps.setNull(2, Types.VARCHAR);
-            }
+            ps.setString(2, Optional.ofNullable(parentId).orElse(""));
             for (final String groupId : groupIds) {
                 ps.setString(3, groupId);
                 ps.addBatch();
@@ -443,48 +430,34 @@ public class DataSourceGroupControlDao implements GroupControlDao {
         return map;
     }
 
-    @Override
-    public void addTags(
-            @Nonnull final Account account, @Nonnull final String groupId, @Nonnull final Collection<Tag> tags)
-            throws DaoException {
-        final int INSERT_BATCH_SIZE = 1000;
-        final String SQL = "INSERT INTO tags (account_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?)";
-
-        try {
-            processTags(SQL, INSERT_BATCH_SIZE, account, groupId, tags);
-        } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to add tags", sqlException);
-        }
-    }
-
     private void addTags(
-            @Nonnull final Connection conn, @Nonnull final Account account,
-            @Nonnull final Map<ParentId, Collection<Group>> groups) throws DaoException {
-        if (groups.isEmpty()) {
+            @Nonnull final Connection conn, @Nonnull final Account account, @Nonnull final Collection<Group> flattened)
+            throws DaoException {
+        if (flattened.isEmpty()) {
             // Quick exit when no work to do.
             return;
         }
 
         final int INSERT_BATCH_SIZE = 1000;
-        final String SQL = "INSERT INTO tags (account_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?)";
+        final String SQL =
+                "INSERT INTO tags (account_id, parent_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?, ?)";
 
         try (final PreparedStatement ps = conn.prepareStatement(SQL)) {
             int batches = 0;
             ps.setString(1, account.getId());
-            for (final Map.Entry<ParentId, Collection<Group>> entry : groups.entrySet()) {
-                for (final Group group : entry.getValue()) {
-                    ps.setString(2, group.getId());
+            for (final Group group : flattened) {
+                ps.setString(2, group.getParentId().orElse(""));
+                ps.setString(3, group.getId());
 
-                    for (final Tag tag : group.getTags()) {
-                        ps.setString(3, tag.getLabel());
-                        ps.setString(4, tag.getValue());
-                        ps.addBatch();
-                        batches++;
+                for (final Tag tag : group.getTags()) {
+                    ps.setString(4, tag.getLabel());
+                    ps.setString(5, tag.getValue());
+                    ps.addBatch();
+                    batches++;
 
-                        if (batches > INSERT_BATCH_SIZE) {
-                            batches = 0;
-                            ps.executeBatch();
-                        }
+                    if (batches > INSERT_BATCH_SIZE) {
+                        batches = 0;
+                        ps.executeBatch();
                     }
                 }
             }
@@ -498,14 +471,31 @@ public class DataSourceGroupControlDao implements GroupControlDao {
     }
 
     @Override
-    public void removeTags(
-            @Nonnull final Account account, @Nonnull final String groupId, @Nonnull final Collection<Tag> tags)
-            throws DaoException {
-        final int DELETE_BATCH_SIZE = 1000;
-        final String SQL = "DELETE FROM tags WHERE account_id = ? AND group_id = ? AND tag_label = ? AND tag_value = ?";
+    public void addTags(
+            @Nonnull final Account account, @Nullable final String parentId, @Nonnull final String groupId,
+            @Nonnull final Collection<Tag> tags) throws DaoException {
+        final int INSERT_BATCH_SIZE = 1000;
+        final String SQL =
+                "INSERT INTO tags (account_id, parent_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?, ?)";
 
         try {
-            processTags(SQL, DELETE_BATCH_SIZE, account, groupId, tags);
+            processTags(SQL, INSERT_BATCH_SIZE, account, parentId, groupId, tags);
+        } catch (final SQLException sqlException) {
+            throw new DaoException("Failed to add tags", sqlException);
+        }
+    }
+
+    @Override
+    public void removeTags(
+            @Nonnull final Account account, @Nullable final String parentId, @Nonnull final String groupId,
+            @Nonnull final Collection<Tag> tags) throws DaoException {
+        final int DELETE_BATCH_SIZE = 1000;
+        final String SQL =
+                "DELETE FROM tags WHERE account_id = ? AND parent_id = ? AND group_id = ? AND tag_label = ? AND "
+                        + "tag_value = ?";
+
+        try {
+            processTags(SQL, DELETE_BATCH_SIZE, account, parentId, groupId, tags);
         } catch (final SQLException sqlException) {
             throw new DaoException("Failed to remove tags", sqlException);
         }
@@ -513,7 +503,8 @@ public class DataSourceGroupControlDao implements GroupControlDao {
 
     private void processTags(
             @Nonnull final String sql, final int batchSize, @Nonnull final Account account,
-            @Nonnull final String groupId, @Nonnull final Collection<Tag> tags) throws SQLException {
+            @Nullable final String parentId, @Nonnull final String groupId, @Nonnull final Collection<Tag> tags)
+            throws SQLException {
         Objects.requireNonNull(account);
         Objects.requireNonNull(groupId);
         Objects.requireNonNull(tags);
@@ -528,10 +519,11 @@ public class DataSourceGroupControlDao implements GroupControlDao {
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             int batches = 0;
             ps.setString(1, account.getId());
-            ps.setString(2, groupId);
+            ps.setString(2, Optional.ofNullable(parentId).orElse(""));
+            ps.setString(3, groupId);
             for (final Tag tag : tags) {
-                ps.setString(3, tag.getLabel());
-                ps.setString(4, tag.getValue());
+                ps.setString(4, tag.getLabel());
+                ps.setString(5, tag.getValue());
                 ps.addBatch();
                 batches++;
 
@@ -549,8 +541,8 @@ public class DataSourceGroupControlDao implements GroupControlDao {
 
     @Override
     public void removeTagLabels(
-            @Nonnull final Account account, @Nonnull final String groupId, @Nonnull final Collection<String> tagLabels)
-            throws DaoException {
+            @Nonnull final Account account, @Nullable final String parentId, @Nonnull final String groupId,
+            @Nonnull final Collection<String> tagLabels) throws DaoException {
         Objects.requireNonNull(account);
         Objects.requireNonNull(groupId);
         Objects.requireNonNull(tagLabels);
@@ -561,16 +553,17 @@ public class DataSourceGroupControlDao implements GroupControlDao {
         }
 
         final int DELETE_BATCH_SIZE = 1000;
-        final String SQL = "DELETE FROM tags WHERE account_id = ? AND group_id = ? AND tag_label = ?";
+        final String SQL = "DELETE FROM tags WHERE account_id = ? AND parent_id = ? AND group_id = ? AND tag_label = ?";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(SQL)) {
             int batches = 0;
             ps.setString(1, account.getId());
-            ps.setString(2, groupId);
+            ps.setString(2, Optional.ofNullable(parentId).orElse(""));
+            ps.setString(3, groupId);
             for (final String tagLabel : tagLabels) {
-                ps.setString(3, tagLabel);
+                ps.setString(4, tagLabel);
                 ps.addBatch();
                 batches++;
 
