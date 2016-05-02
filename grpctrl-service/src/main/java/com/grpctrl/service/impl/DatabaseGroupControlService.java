@@ -14,7 +14,7 @@ import javax.annotation.Nonnull;
  */
 public class DatabaseGroupControlService implements GroupControlService {
     @Override
-    public boolean exists(@Nonnull final Account account, @Nonnull final String id) {
+    public boolean exists(@Nonnull final Account account, @Nonnull final Long id) {
         Objects.requireNonNull(account);
         Objects.requireNonNull(id);
 
@@ -31,7 +31,7 @@ public class DatabaseGroupControlService implements GroupControlService {
     }
 
     @Override
-    public void remove(@Nonnull final Account account, @Nonnull final String id) {
+    public void remove(@Nonnull final Account account, @Nonnull final Long id) {
         Objects.requireNonNull(account);
         Objects.requireNonNull(id);
 

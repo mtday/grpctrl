@@ -19,21 +19,25 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 /**
- * Perform testing on the {@link DataSourceGroupControlDao} class using an in-memory HSQLDB database.
+ * Perform testing on the {@link PostgresGroupControlDao} class. This is an integration test because it expects a
+ * live PostgreSQL server to be up and running.
  */
-public class DataSourceGroupControlDaoTest extends BaseGroupControlDaoTest {
+public class PostgresGroupControlDaoIT extends BaseGroupControlDaoTest {
     private static DataSourceSupplier dataSourceSupplier;
 
     @BeforeClass
     public static void setup() {
         final Map<String, ConfigValue> map = new HashMap<>();
-        map.put(ConfigKeys.DB_URL.getKey(), ConfigValueFactory.fromAnyRef("jdbc:hsqldb:mem:grpctrl"));
-        map.put(ConfigKeys.DB_USERNAME.getKey(), ConfigValueFactory.fromAnyRef("SA"));
-        map.put(ConfigKeys.DB_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef(""));
+        map.put(ConfigKeys.DB_URL.getKey(), ConfigValueFactory.fromAnyRef("jdbc:postgresql://localhost:5432/grpctrl"));
+        map.put(ConfigKeys.DB_USERNAME.getKey(), ConfigValueFactory.fromAnyRef("grpctrl"));
+        map.put(ConfigKeys.DB_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("password"));
         map.put(ConfigKeys.DB_MINIMUM_IDLE.getKey(), ConfigValueFactory.fromAnyRef(10));
         map.put(ConfigKeys.DB_MAXIMUM_POOL_SIZE.getKey(), ConfigValueFactory.fromAnyRef(10));
         map.put(ConfigKeys.DB_TIMEOUT_IDLE.getKey(), ConfigValueFactory.fromAnyRef("10 minutes"));
         map.put(ConfigKeys.DB_TIMEOUT_CONNECTION.getKey(), ConfigValueFactory.fromAnyRef("10 seconds"));
+        map.put(ConfigKeys.DB_TIMEOUT_CONNECTION.getKey(), ConfigValueFactory.fromAnyRef("10 seconds"));
+        map.put(ConfigKeys.DB_CLEAN.getKey(), ConfigValueFactory.fromAnyRef("true"));
+        map.put(ConfigKeys.DB_MIGRATE.getKey(), ConfigValueFactory.fromAnyRef("true"));
 
         final Config config = ConfigFactory.parseMap(map);
 
@@ -45,7 +49,7 @@ public class DataSourceGroupControlDaoTest extends BaseGroupControlDaoTest {
 
     @Override
     public GroupControlDao getGroupControlDao() {
-        return new DataSourceGroupControlDao(dataSourceSupplier);
+        return new PostgresGroupControlDao(dataSourceSupplier);
     }
 
     @Override
@@ -57,7 +61,7 @@ public class DataSourceGroupControlDaoTest extends BaseGroupControlDaoTest {
             final DataSourceSupplier mockDataSourceSupplier = Mockito.mock(DataSourceSupplier.class);
             Mockito.when(mockDataSourceSupplier.get()).thenReturn(mockDataSource);
 
-            return new DataSourceGroupControlDao(mockDataSourceSupplier);
+            return new PostgresGroupControlDao(mockDataSourceSupplier);
         } catch (final SQLException fake) {
             throw new RuntimeException("Fake");
         }

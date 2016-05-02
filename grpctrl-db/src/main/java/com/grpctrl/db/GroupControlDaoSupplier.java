@@ -1,6 +1,6 @@
 package com.grpctrl.db;
 
-import com.grpctrl.db.impl.DataSourceGroupControlDao;
+import com.grpctrl.db.impl.PostgresGroupControlDao;
 
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -68,7 +68,7 @@ public class GroupControlDaoSupplier implements Supplier<GroupControlDao>, Facto
 
     @Nonnull
     private GroupControlDao create() {
-        return new DataSourceGroupControlDao(getDataSourceSupplier());
+        return new PostgresGroupControlDao(getDataSourceSupplier());
     }
 
     /**

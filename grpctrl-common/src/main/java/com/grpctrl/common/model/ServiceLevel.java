@@ -24,14 +24,12 @@ import javax.annotation.concurrent.ThreadSafe;
 public class ServiceLevel implements Comparable<ServiceLevel> {
     private final int maxGroups;
     private final int maxTags;
-    private final int maxChildren;
     private final int maxDepth;
 
-    private ServiceLevel(final int maxGroups, final int maxTags, final int maxChildren, final int maxDepth) {
+    private ServiceLevel(final int maxGroups, final int maxTags, final int maxDepth) {
         // These values have already been validated via the builder.
         this.maxGroups = maxGroups;
         this.maxTags = maxTags;
-        this.maxChildren = maxChildren;
         this.maxDepth = maxDepth;
     }
 
@@ -50,13 +48,6 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
     }
 
     /**
-     * @return the maximum number of members a given group can contain
-     */
-    public int getMaxChildren() {
-        return this.maxChildren;
-    }
-
-    /**
      * @return the maximum depth of groups within groups the account supports
      */
     public int getMaxDepth() {
@@ -72,7 +63,6 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
         final CompareToBuilder cmp = new CompareToBuilder();
         cmp.append(getMaxGroups(), other.getMaxGroups());
         cmp.append(getMaxTags(), other.getMaxTags());
-        cmp.append(getMaxChildren(), other.getMaxChildren());
         cmp.append(getMaxDepth(), other.getMaxDepth());
         return cmp.toComparison();
     }
@@ -87,7 +77,6 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
         final HashCodeBuilder hash = new HashCodeBuilder();
         hash.append(getMaxGroups());
         hash.append(getMaxTags());
-        hash.append(getMaxChildren());
         hash.append(getMaxDepth());
         return hash.toHashCode();
     }
@@ -98,7 +87,6 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("maxGroups", getMaxGroups());
         str.append("maxTags", getMaxTags());
-        str.append("maxChildren", getMaxChildren());
         str.append("maxDepth", getMaxDepth());
         return str.build();
     }
@@ -138,22 +126,6 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
         }
 
         /**
-         * Perform validation on the provided {@code maxChildren}.
-         *
-         * @param maxChildren the maximum number of members a group can contain
-         *
-         * @return the unmodified value, when valid
-         *
-         * @throws IllegalArgumentException if the provided value is invalid
-         */
-        public static int validateMaxChildren(final int maxChildren) {
-            Preconditions.checkArgument(maxChildren > 0,
-                    "The maximum number of members a group can contain must be positive");
-
-            return maxChildren;
-        }
-
-        /**
          * Perform validation on the provided {@code maxDepth}.
          *
          * @param maxDepth the maximum depth of groups within groups the account supports
@@ -175,7 +147,6 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
     public static class Builder {
         private int maxGroups = 100;
         private int maxTags = 10;
-        private int maxChildren = 10;
         private int maxDepth = 3;
 
         /**
@@ -194,7 +165,6 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
 
             setMaxGroups(other.getMaxGroups());
             setMaxTags(other.getMaxTags());
-            setMaxChildren(other.getMaxChildren());
             setMaxDepth(other.getMaxDepth());
         }
 
@@ -225,19 +195,6 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
         }
 
         /**
-         * @param maxChildren the new value indicating the maximum number of members a group can contain
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws IllegalArgumentException if the provided value is invalid
-         */
-        @Nonnull
-        public Builder setMaxChildren(final int maxChildren) {
-            this.maxChildren = Validator.validateMaxChildren(maxChildren);
-            return this;
-        }
-
-        /**
          * @param maxDepth the new value indicating the maximum depth of groups within groups the account supports
          *
          * @return {@code this} for fluent-style usage
@@ -260,10 +217,9 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
             // Make sure all of the values have been configured.
             Validator.validateMaxGroups(this.maxGroups);
             Validator.validateMaxTags(this.maxTags);
-            Validator.validateMaxChildren(this.maxChildren);
             Validator.validateMaxDepth(this.maxDepth);
 
-            return new ServiceLevel(this.maxGroups, this.maxTags, this.maxChildren, this.maxDepth);
+            return new ServiceLevel(this.maxGroups, this.maxTags, this.maxDepth);
         }
     }
 }

@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -25,17 +26,20 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 
 /**
- * A representation of a group with a unique id and possibly some tags describing it, along with some members. This
- * class is immutable.
+ * A representation of a group with a name and possibly some tags describing it, along with some children as members.
+ * This class is immutable.
  */
 @Immutable
 @ThreadSafe
 public class Group implements Comparable<Group> {
-    @Nonnull
-    private final String id;
+    @Nullable
+    private final Long id;
 
     @Nullable
-    private final String parentId;
+    private final Long parentId;
+
+    @Nonnull
+    private final String name;
 
     @Nonnull
     private final ImmutableSet<Tag> tags;
@@ -44,11 +48,12 @@ public class Group implements Comparable<Group> {
     private final ImmutableSet<Group> children;
 
     private Group(
-            @Nonnull final String id, @Nullable final String parentId, @Nonnull final ImmutableSet<Tag> tags,
-            @Nonnull final ImmutableSet<Group> children) {
+            @Nullable final Long id, @Nullable final Long parentId, @Nonnull final String name,
+            @Nonnull final ImmutableSet<Tag> tags, @Nonnull final ImmutableSet<Group> children) {
         // These values have already been validated via the builder.
         this.id = id;
         this.parentId = parentId;
+        this.name = name;
         this.tags = tags;
         this.children = children;
     }
@@ -57,15 +62,22 @@ public class Group implements Comparable<Group> {
      * @return the unique group identifier
      */
     @Nonnull
-    public String getId() {
-        return this.id;
+    public Optional<Long> getId() {
+        return Optional.ofNullable(this.id);
+    }
+
+    /**
+     * @return whether this group has a unique identifier assigned
+     */
+    public boolean hasId() {
+        return getId().isPresent();
     }
 
     /**
      * @return the unique identifier of the group in which this group resides, if available
      */
     @Nonnull
-    public Optional<String> getParentId() {
+    public Optional<Long> getParentId() {
         return Optional.ofNullable(this.parentId);
     }
 
@@ -74,6 +86,14 @@ public class Group implements Comparable<Group> {
      */
     public boolean hasParentId() {
         return getParentId().isPresent();
+    }
+
+    /**
+     * @return the name of this group
+     */
+    @Nonnull
+    public String getName() {
+        return this.name;
     }
 
     /**
@@ -112,9 +132,12 @@ public class Group implements Comparable<Group> {
             return 1;
         }
 
+        final OptionalComparator<Long> optionalComparator = new OptionalComparator<>();
+
         final CompareToBuilder cmp = new CompareToBuilder();
-        cmp.append(getId(), other.getId());
-        cmp.append(getParentId(), other.getParentId(), new OptionalComparator<String>());
+        cmp.append(getName(), other.getName());
+        cmp.append(getId(), other.getId(), optionalComparator);
+        cmp.append(getParentId(), other.getParentId(), optionalComparator);
         cmp.append(getTags(), other.getTags(), new CollectionComparator<Tag>());
         cmp.append(getChildren(), other.getChildren(), new CollectionComparator<Group>());
         return cmp.toComparison();
@@ -130,6 +153,7 @@ public class Group implements Comparable<Group> {
         final HashCodeBuilder hash = new HashCodeBuilder();
         hash.append(getId());
         hash.append(getParentId());
+        hash.append(getName());
         hash.append(getTags());
         hash.append(getChildren());
         return hash.toHashCode();
@@ -141,26 +165,27 @@ public class Group implements Comparable<Group> {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("id", getId());
         str.append("parentId", getParentId());
+        str.append("name", getName());
         str.append("tags", getTags());
         str.append("children", getChildren());
         return str.build();
     }
 
     /**
-     * Determine whether the specified id matches the id of the current group, or exists within the current group as
-     * one of the children.
+     * Determine whether the specified name matches the name of the current group, or exists within the current group as
+     * a name of one of the children.
      *
-     * @param id the unique group identifier to check for existence within this group
+     * @param name the group name to check for existence within this group
      *
-     * @return whether the specified id was found
+     * @return whether the specified name was found
      */
-    public boolean contains(@Nonnull final String id) {
-        if (getId().equals(id)) {
+    public boolean containsName(@Nonnull final String name) {
+        if (getName().equals(Objects.requireNonNull(name))) {
             return true;
         }
 
         for (final Group child : getChildren()) {
-            if (child.contains(id)) {
+            if (child.containsName(name)) {
                 return true;
             }
         }
@@ -169,82 +194,30 @@ public class Group implements Comparable<Group> {
     }
 
     /**
-     * Flatten the provided collection of hierarchical groups into a flat list of groups added depth-first.
-     *
-     * @param groups the collection of groups to flatten
-     *
-     * @return a flattened collection of the provided groups
-     */
-    public static Collection<Group> flatten(@Nonnull final Collection<Group> groups) {
-        return flatten(null, groups);
-    }
-
-    /**
-     * Flatten the provided collection of hierarchical groups into a flat list of groups added depth-first, with the
-     * top-level groups falling into the specified parent group.
-     *
-     * @param parentId the parent id to assign to the top-level groups in the provided collection
-     * @param groups the collection of groups to flatten
-     *
-     * @return a flattened collection of the provided groups
-     */
-    public static Collection<Group> flatten(@Nullable final String parentId, @Nonnull final Collection<Group> groups) {
-        final Collection<Group> collection = new LinkedList<>();
-        flatten(collection, parentId, Objects.requireNonNull(groups));
-        return collection;
-    }
-
-    private static void flatten(
-            @Nonnull final Collection<Group> collection, @Nullable final String parentId,
-            @Nonnull final Collection<Group> groups) {
-        for (final Group group : groups) {
-            collection.add(new Group.Builder(group).setParentId(parentId).clearChildren().build());
-            flatten(collection, group.getId(), group.getChildren());
-        }
-    }
-
-    /**
      * Performs validation on group fields.
      */
     public static class Validator {
-        /** The maximum size of the group id. */
-        public static final int MAX_ID_LENGTH = 200;
+        /** The maximum size of the group name. */
+        public static final int MAX_NAME_LENGTH = 200;
 
         /**
-         * Perform validation on the provided {@code id}.
+         * Perform validation on the provided {@code name}.
          *
-         * @param id the group id to validate
+         * @param name the group name to validate
          *
-         * @return the unmodified id, when valid
+         * @return the unmodified name, when valid
          *
-         * @throws NullPointerException if the provided id is {@code null}
-         * @throws IllegalArgumentException if the provided id is invalid
+         * @throws NullPointerException if the provided name is {@code null}
+         * @throws IllegalArgumentException if the provided name is invalid
          */
-        public static String validateId(@Nonnull final String id) {
-            Objects.requireNonNull(id);
+        public static String validateName(@Nonnull final String name) {
+            Objects.requireNonNull(name);
 
-            if (id.length() > MAX_ID_LENGTH) {
-                throw new IllegalArgumentException("Invalid id, it exceeds the max length: " + MAX_ID_LENGTH);
+            if (name.length() > MAX_NAME_LENGTH) {
+                throw new IllegalArgumentException("Invalid name, it exceeds the max length: " + MAX_NAME_LENGTH);
             }
 
-            return id;
-        }
-
-        /**
-         * Perform validation on the provided {@code parentId}.
-         *
-         * @param parentId the group parent id to validate, possibly {@code null}
-         *
-         * @return the unmodified parent id, when valid
-         *
-         * @throws IllegalArgumentException if the provided parent id is invalid
-         */
-        public static String validateParentId(@Nullable final String parentId) {
-            if (parentId != null && parentId.length() > MAX_ID_LENGTH) {
-                throw new IllegalArgumentException("Invalid parent id, it exceeds the max length: " + MAX_ID_LENGTH);
-            }
-
-            return parentId;
+            return name;
         }
     }
 
@@ -254,11 +227,14 @@ public class Group implements Comparable<Group> {
      */
     @NotThreadSafe
     public static class Builder {
-        @Nonnull
-        private String id = "";
+        @Nullable
+        private Long id;
 
         @Nullable
-        private String parentId;
+        private Long parentId;
+
+        @Nonnull
+        private String name = "";
 
         @Nonnull
         private final Set<Tag> tags = new LinkedHashSet<>();
@@ -266,16 +242,19 @@ public class Group implements Comparable<Group> {
         @Nonnull
         private final Set<Group> children = new LinkedHashSet<>();
 
+        @Nonnull
+        private final List<Builder> childBuilders = new LinkedList<>();
+
         /**
-         * Initialize a builder with the unique group identifier.
+         * Initialize a builder with the specified descriptive name.
          *
-         * @param id the unique id of the group to be created
+         * @param name the descriptive name of the group to be created
          *
          * @throws NullPointerException if the provided parameter is {@code null}
          * @throws IllegalArgumentException if the provided parameter is invalid
          */
-        public Builder(@Nonnull final String id) {
-            setId(id);
+        public Builder(@Nonnull final String name) {
+            setName(name);
         }
 
         /**
@@ -288,8 +267,9 @@ public class Group implements Comparable<Group> {
         public Builder(@Nonnull final Group other) {
             Objects.requireNonNull(other);
 
-            setId(other.getId());
+            setId(other.getId().orElse(null));
             setParentId(other.getParentId().orElse(null));
+            setName(other.getName());
             addTags(other.getTags());
             addChildren(other.getChildren());
         }
@@ -300,11 +280,21 @@ public class Group implements Comparable<Group> {
          * @return {@code this} for fluent-style usage
          *
          * @throws NullPointerException if the parameter is {@code null}
-         * @throws IllegalArgumentException if the parameter is invalid
          */
         @Nonnull
-        public Builder setId(@Nonnull final String id) {
-            this.id = Validator.validateId(id);
+        public Builder setId(@Nullable final Long id) {
+            this.id = id;
+            return this;
+        }
+
+        /**
+         * Removes the id value from this group.
+         *
+         * @return {@code this} for fluent-style usage
+         */
+        @Nonnull
+        public Builder clearId() {
+            this.id = null;
             return this;
         }
 
@@ -314,11 +304,10 @@ public class Group implements Comparable<Group> {
          * @return {@code this} for fluent-style usage
          *
          * @throws NullPointerException if the parameter is {@code null}
-         * @throws IllegalArgumentException if the parameter is invalid
          */
         @Nonnull
-        public Builder setParentId(@Nullable final String parentId) {
-            this.parentId = Validator.validateParentId(parentId);
+        public Builder setParentId(@Nullable final Long parentId) {
+            this.parentId = parentId;
             return this;
         }
 
@@ -330,6 +319,20 @@ public class Group implements Comparable<Group> {
         @Nonnull
         public Builder clearParentId() {
             this.parentId = null;
+            return this;
+        }
+
+        /**
+         * @param name the new descriptive name of the group to be created
+         *
+         * @return {@code this} for fluent-style usage
+         *
+         * @throws NullPointerException if the parameter is {@code null}
+         * @throws IllegalArgumentException if the parameter is invalid
+         */
+        @Nonnull
+        public Builder setName(@Nonnull final String name) {
+            this.name = Validator.validateName(name);
             return this;
         }
 
@@ -426,7 +429,7 @@ public class Group implements Comparable<Group> {
          * @throws NullPointerException if the parameter is {@code null}
          */
         @Nonnull
-        public Builder addChild(@Nullable final Group group) {
+        public Builder addChild(@Nonnull final Group group) {
             return addChildren(group);
         }
 
@@ -504,14 +507,57 @@ public class Group implements Comparable<Group> {
         }
 
         /**
+         * @param builder the new child group builder to include as a member of the created group
+         *
+         * @return {@code this} for fluent-style usage
+         *
+         * @throws NullPointerException if the parameter is {@code null}
+         */
+        @Nonnull
+        public Builder addChildBuilder(@Nonnull final Builder builder) {
+            return addChildBuilders(builder);
+        }
+
+        /**
+         * @param builders the new child group builders to include as members of the created group
+         *
+         * @return {@code this} for fluent-style usage
+         *
+         * @throws NullPointerException if the parameter is {@code null}
+         */
+        @Nonnull
+        public Builder addChildBuilders(@Nonnull final Builder... builders) {
+            return addChildBuilders(Arrays.asList(Objects.requireNonNull(builders)));
+        }
+
+        /**
+         * @param builders the new child group builders to include as members of the created group
+         *
+         * @return {@code this} for fluent-style usage
+         *
+         * @throws NullPointerException if the parameter is {@code null}
+         */
+        @Nonnull
+        public Builder addChildBuilders(@Nonnull final Collection<Builder> builders) {
+            this.childBuilders.addAll(Objects.requireNonNull(builders));
+            return this;
+        }
+
+        /**
          * Using the current values in this builder, create and return a new group.
          *
          * @return the group object represented by this builder
          */
         @Nonnull
         public Group build() {
-            return new Group(
-                    this.id, this.parentId, ImmutableSet.copyOf(this.tags), ImmutableSet.copyOf(this.children));
+            // Turn any child builders into real children.
+            if (!this.childBuilders.isEmpty()) {
+                this.childBuilders.stream().map(Builder::build).forEach(this.children::add);
+                this.childBuilders.clear();
+            }
+
+            return new Group(this.id, this.parentId, this.name, ImmutableSet.copyOf(this.tags),
+                    ImmutableSet.copyOf(this.children));
         }
     }
 }

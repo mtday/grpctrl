@@ -12,11 +12,11 @@ public class ServiceLevelTest {
     @Test
     public void testCompareTo() {
         final ServiceLevel a =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxChildren(1).setMaxDepth(1).build();
+                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(1).build();
         final ServiceLevel b =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxChildren(1).setMaxDepth(2).build();
+                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(2).build();
         final ServiceLevel c =
-                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxChildren(4).setMaxDepth(5).build();
+                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxDepth(4).build();
 
         assertEquals(1, a.compareTo(null));
         assertEquals(0, a.compareTo(a));
@@ -33,11 +33,11 @@ public class ServiceLevelTest {
     @Test
     public void testEquals() {
         final ServiceLevel a =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxChildren(1).setMaxDepth(1).build();
+                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(1).build();
         final ServiceLevel b =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxChildren(1).setMaxDepth(2).build();
+                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(2).build();
         final ServiceLevel c =
-                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxChildren(4).setMaxDepth(5).build();
+                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxDepth(4).build();
 
         assertNotEquals(a, null);
         assertEquals(a, a);
@@ -54,22 +54,22 @@ public class ServiceLevelTest {
     @Test
     public void testHashCode() {
         final ServiceLevel a =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxChildren(1).setMaxDepth(1).build();
+                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(1).build();
         final ServiceLevel b =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxChildren(1).setMaxDepth(2).build();
+                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(2).build();
         final ServiceLevel c =
-                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxChildren(4).setMaxDepth(5).build();
+                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxDepth(4).build();
 
-        assertEquals(31912797, a.hashCode());
-        assertEquals(31912798, b.hashCode());
-        assertEquals(31966303, c.hashCode());
+        assertEquals(862508, a.hashCode());
+        assertEquals(862509, b.hashCode());
+        assertEquals(863954, c.hashCode());
     }
 
     @Test
     public void testToString() {
         final ServiceLevel serviceLevel =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(2).setMaxChildren(3).setMaxDepth(4).build();
-        assertEquals("ServiceLevel[maxGroups=1,maxTags=2,maxChildren=3,maxDepth=4]", serviceLevel.toString());
+                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(2).setMaxDepth(3).build();
+        assertEquals("ServiceLevel[maxGroups=1,maxTags=2,maxDepth=3]", serviceLevel.toString());
     }
 
     @Test
@@ -89,11 +89,6 @@ public class ServiceLevelTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testValidatorNegativeMaxChildren() {
-        ServiceLevel.Validator.validateMaxChildren(-1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void testValidatorNegativeMaxDepth() {
         ServiceLevel.Validator.validateMaxDepth(-1);
     }
@@ -101,7 +96,7 @@ public class ServiceLevelTest {
     @Test
     public void testBuilderCopy() {
         final ServiceLevel original =
-                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxChildren(4).setMaxDepth(5).build();
+                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxDepth(4).build();
         final ServiceLevel copy = new ServiceLevel.Builder(original).build();
 
         assertEquals(original, copy);

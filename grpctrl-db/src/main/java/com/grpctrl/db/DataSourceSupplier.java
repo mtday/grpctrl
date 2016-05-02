@@ -42,6 +42,7 @@ public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSou
         this.configSupplier = Objects.requireNonNull(configSupplier);
     }
 
+    @Nonnull
     private ConfigSupplier getConfigSupplier() {
         return this.configSupplier;
     }
@@ -88,10 +89,15 @@ public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSou
 
         final HikariDataSource dataSource = new HikariDataSource(hikariConfig);
 
-        // Also perform the necessary migrations.
         final Flyway flyway = new Flyway();
         flyway.setDataSource(dataSource);
-        flyway.migrate();
+
+        if (config.getBoolean(ConfigKeys.DB_CLEAN.getKey())) {
+            flyway.clean();
+        }
+        if (config.getBoolean(ConfigKeys.DB_MIGRATE.getKey())) {
+            flyway.migrate();
+        }
 
         return dataSource;
     }

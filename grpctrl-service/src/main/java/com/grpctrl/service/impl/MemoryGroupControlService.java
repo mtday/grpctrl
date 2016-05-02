@@ -8,6 +8,7 @@ import com.grpctrl.service.error.GroupExistsException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Nonnull;
 
@@ -16,7 +17,9 @@ import javax.annotation.Nonnull;
  */
 public class MemoryGroupControlService implements GroupControlService {
     @Nonnull
-    private final ConcurrentHashMap<Account, ConcurrentHashMap<String, Group>> accounts;
+    private final ConcurrentHashMap<Account, ConcurrentHashMap<Long, Group>> accounts;
+
+    private final AtomicLong groupIdCounter = new AtomicLong(0L);
 
     /**
      * Default constructor.
@@ -25,17 +28,20 @@ public class MemoryGroupControlService implements GroupControlService {
         this.accounts = new ConcurrentHashMap<>();
     }
 
-    private ConcurrentHashMap<Account, ConcurrentHashMap<String, Group>> getAccounts() {
+    @Nonnull
+    private ConcurrentHashMap<Account, ConcurrentHashMap<Long, Group>> getAccounts() {
         return this.accounts;
     }
 
-    private ConcurrentHashMap<String, Group> getAndCreateGroupMap(@Nonnull final Account account) {
-        final ConcurrentHashMap<String, Group> newmap = new ConcurrentHashMap<>();
-        final ConcurrentHashMap<String, Group> oldmap = getAccounts().putIfAbsent(account, newmap);
+    @Nonnull
+    private ConcurrentHashMap<Long, Group> getAndCreateGroupMap(@Nonnull final Account account) {
+        final ConcurrentHashMap<Long, Group> newmap = new ConcurrentHashMap<>();
+        final ConcurrentHashMap<Long, Group> oldmap = getAccounts().putIfAbsent(account, newmap);
         return (oldmap == null) ? newmap : oldmap;
     }
 
-    private Optional<ConcurrentHashMap<String, Group>> getGroupMap(
+    @Nonnull
+    private Optional<ConcurrentHashMap<Long, Group>> getGroupMap(
             @Nonnull final Account account, final boolean create) {
         if (create) {
             return Optional.of(getAndCreateGroupMap(account));
@@ -44,8 +50,9 @@ public class MemoryGroupControlService implements GroupControlService {
         }
     }
 
-    private Optional<Group> getGroup(@Nonnull final Account account, @Nonnull final String id) {
-        final Optional<ConcurrentHashMap<String, Group>> groupMap = getGroupMap(account, false);
+    @Nonnull
+    private Optional<Group> getGroup(@Nonnull final Account account, @Nonnull final Long id) {
+        final Optional<ConcurrentHashMap<Long, Group>> groupMap = getGroupMap(account, false);
         if (groupMap.isPresent()) {
             return Optional.ofNullable(groupMap.get().get(id));
         }
@@ -53,7 +60,7 @@ public class MemoryGroupControlService implements GroupControlService {
     }
 
     @Override
-    public boolean exists(@Nonnull final Account account, @Nonnull final String id) {
+    public boolean exists(@Nonnull final Account account, @Nonnull final Long id) {
         return getGroup(Objects.requireNonNull(account), Objects.requireNonNull(id)).isPresent();
     }
 
@@ -62,18 +69,22 @@ public class MemoryGroupControlService implements GroupControlService {
         Objects.requireNonNull(account);
         Objects.requireNonNull(group);
 
-        final ConcurrentHashMap<String, Group> groupMap = getAndCreateGroupMap(account);
-        if (groupMap.putIfAbsent(group.getId(), group) != null) {
-            throw new GroupExistsException("A group with id " + group.getId() + " already exists");
+        final long groupId = this.groupIdCounter.incrementAndGet();
+        // TODO: Need to update children with ids also.
+        final Group withId = new Group.Builder(group).setId(groupId).build();
+
+        final ConcurrentHashMap<Long, Group> groupMap = getAndCreateGroupMap(account);
+        if (groupMap.putIfAbsent(groupId, withId) != null) {
+            throw new GroupExistsException("A group with id " + groupId + " already exists");
         }
     }
 
     @Override
-    public void remove(@Nonnull final Account account, @Nonnull final String id) {
+    public void remove(@Nonnull final Account account, @Nonnull final Long id) {
         Objects.requireNonNull(account);
         Objects.requireNonNull(id);
 
-        final Optional<ConcurrentHashMap<String, Group>> groupMap = getGroupMap(account, false);
+        final Optional<ConcurrentHashMap<Long, Group>> groupMap = getGroupMap(account, false);
         if (groupMap.isPresent()) {
             groupMap.get().remove(id);
         }

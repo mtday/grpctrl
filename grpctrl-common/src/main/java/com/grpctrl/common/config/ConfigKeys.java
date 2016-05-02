@@ -42,6 +42,10 @@ public enum ConfigKeys {
     DB_TIMEOUT_IDLE,
     /** The amount of time we are willing to wait for an available connection before an exception is thrown. */
     DB_TIMEOUT_CONNECTION,
+    /** Whether the database schema should be dropped during initialization (for testing). */
+    DB_CLEAN,
+    /** Whether the migration sql scripts should be applied to the database. */
+    DB_MIGRATE,
 
     /** The underlying service implementation type. */
     SERVICE_IMPL;

@@ -20,6 +20,6 @@ public abstract class BaseServiceTest {
 
     @Test
     public void testExistsDoesNotExist() {
-        assertFalse(getService().exists(getAccount(), "test-exists-does-not-exist"));
+        assertFalse(getService().exists(getAccount(), 1L));
     }
 }

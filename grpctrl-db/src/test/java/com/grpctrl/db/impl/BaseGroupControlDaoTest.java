@@ -2,6 +2,7 @@ package com.grpctrl.db.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.grpctrl.common.model.Account;
@@ -43,19 +44,26 @@ public abstract class BaseGroupControlDaoTest {
         final Account account =
                 new Account.Builder("account-management-test", new ServiceLevel.Builder().build()).build();
 
-        dao.addAccount(account);
+        final Account added = dao.addAccount(account);
 
-        final Optional<Account> missing = dao.getAccount("does-not-exist");
-        final Optional<Account> retrieved = dao.getAccount(account.getId());
+        assertNotNull(added);
+        assertTrue(added.getId().isPresent());
+
+        final Optional<Account> missing = dao.getAccount(1111L);
+        final Optional<Account> retrieved = dao.getAccount(added.getId().orElse(null));
 
         assertFalse(missing.isPresent());
 
         assertTrue(retrieved.isPresent());
-        assertEquals(account, retrieved.get());
+        assertEquals(added, retrieved.get());
 
-        dao.removeAccount(account.getId());
+        final boolean removed = dao.removeAccount(added.getId().orElse(null));
+        assertTrue(removed);
 
-        final Optional<Account> gone = dao.getAccount(account.getId());
+        final boolean notRemoved = dao.removeAccount(1111L);
+        assertFalse(notRemoved);
+
+        final Optional<Account> gone = dao.getAccount(added.getId().orElse(null));
         assertFalse(gone.isPresent());
     }
 
@@ -63,7 +71,7 @@ public abstract class BaseGroupControlDaoTest {
     public void testGetAccountException() throws DaoException {
         final GroupControlDao dao = getGroupControlDaoWithDataSourceException();
 
-        dao.getAccount("get-account-exception");
+        dao.getAccount(1111L);
     }
 
     @Test(expected = DaoException.class)
@@ -80,17 +88,15 @@ public abstract class BaseGroupControlDaoTest {
     public void testRemoveAccountException() throws DaoException {
         final GroupControlDao dao = getGroupControlDaoWithDataSourceException();
 
-        dao.removeAccount("remove-account-exception");
+        dao.removeAccount(1111L);
     }
 
     @Test
     public void testGroupManagement() throws DaoException {
         final GroupControlDao dao = getGroupControlDao();
 
-        final Account account =
-                new Account.Builder("group-management-test", new ServiceLevel.Builder().build()).build();
-
-        dao.addAccount(account);
+        final Account account = dao.addAccount(
+                new Account.Builder("group-management-test", new ServiceLevel.Builder().build()).build());
 
         final Group gm = new Group.Builder("m").addTag(tag("m")).build();
         final Group g111 = new Group.Builder("111").addTag(tag("111")).addChild(gm).build();
