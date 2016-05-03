@@ -71,7 +71,7 @@ public class AccountTest {
 
         assertEquals(-423599945, a.hashCode());
         assertEquals(-423599906, b.hashCode());
-        assertEquals(-423450352, c.hashCode());
+        assertEquals(-423413722, c.hashCode());
     }
 
     @Test

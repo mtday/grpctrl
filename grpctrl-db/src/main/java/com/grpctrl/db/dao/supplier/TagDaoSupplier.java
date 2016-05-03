@@ -1,6 +1,8 @@
-package com.grpctrl.db;
+package com.grpctrl.db.dao.supplier;
 
-import com.grpctrl.db.impl.PostgresGroupControlDao;
+import com.grpctrl.db.DataSourceSupplier;
+import com.grpctrl.db.dao.TagDao;
+import com.grpctrl.db.dao.impl.PostgresTagDao;
 
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -16,30 +18,32 @@ import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
 /**
- * Provides singleton access to a {@link GroupControlDao} used to communicate with the configured JDBC database.
+ * Provides singleton access to a {@link TagDao} used to communicate with the configured JDBC database for tag
+ * information.
  */
 @Provider
-public class GroupControlDaoSupplier
-        implements Supplier<GroupControlDao>, Factory<GroupControlDao>, ContextResolver<GroupControlDao> {
+public class TagDaoSupplier implements Supplier<TagDao>, Factory<TagDao>, ContextResolver<TagDao> {
     @Nonnull
     private final DataSourceSupplier dataSourceSupplier;
 
     @Nullable
-    private volatile GroupControlDao singleton;
+    private volatile TagDao singleton;
 
     /**
      * Create the supplier with the necessary dependencies.
      *
      * @param dataSourceSupplier the {@link DataSourceSupplier} responsible for providing access to a configured
-     * data source used to communicate with the JDBC database
+     *     data source used to communicate with the JDBC database
      *
      * @throws NullPointerException if the provided parameter is {@code null}
      */
     @Inject
-    public GroupControlDaoSupplier(@Nonnull final DataSourceSupplier dataSourceSupplier) {
+    public TagDaoSupplier(
+            @Nonnull final DataSourceSupplier dataSourceSupplier) {
         this.dataSourceSupplier = Objects.requireNonNull(dataSourceSupplier);
     }
 
+    @Nonnull
     private DataSourceSupplier getDataSourceSupplier() {
         return this.dataSourceSupplier;
     }
@@ -47,10 +51,10 @@ public class GroupControlDaoSupplier
     @Override
     @Nonnull
     @SuppressWarnings("all")
-    public GroupControlDao get() {
+    public TagDao get() {
         // Use double-check locking (with volatile singleton).
         if (this.singleton == null) {
-            synchronized (GroupControlDaoSupplier.class) {
+            synchronized (TagDaoSupplier.class) {
                 if (this.singleton == null) {
                     this.singleton = create();
                 }
@@ -61,24 +65,24 @@ public class GroupControlDaoSupplier
 
     @Override
     @Nonnull
-    public GroupControlDao getContext(@Nonnull final Class<?> type) {
+    public TagDao getContext(@Nonnull final Class<?> type) {
         return get();
     }
 
     @Override
     @Nonnull
-    public GroupControlDao provide() {
+    public TagDao provide() {
         return get();
     }
 
     @Override
-    public void dispose(@Nonnull final GroupControlDao tagDao) {
+    public void dispose(@Nonnull final TagDao tagDao) {
         // No need to do anything here.
     }
 
     @Nonnull
-    private GroupControlDao create() {
-        return new PostgresGroupControlDao(getDataSourceSupplier());
+    private TagDao create() {
+        return new PostgresTagDao(getDataSourceSupplier());
     }
 
     /**
@@ -87,8 +91,8 @@ public class GroupControlDaoSupplier
     public static class Binder extends AbstractBinder {
         @Override
         protected void configure() {
-            bind(GroupControlDaoSupplier.class).to(GroupControlDaoSupplier.class).in(Singleton.class);
-            bindFactory(GroupControlDaoSupplier.class).to(GroupControlDao.class).in(Singleton.class);
+            bind(TagDaoSupplier.class).to(TagDaoSupplier.class).in(Singleton.class);
+            bindFactory(TagDaoSupplier.class).to(TagDao.class).in(Singleton.class);
         }
     }
 }

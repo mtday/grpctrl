@@ -1,9 +1,10 @@
-package com.grpctrl.db;
+package com.grpctrl.db.dao.supplier;
 
 import static org.junit.Assert.assertNotNull;
 
 import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.supplier.ConfigSupplier;
+import com.grpctrl.db.DataSourceSupplier;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
@@ -18,10 +19,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Perform testing on the {@link GroupControlDaoSupplier}.
+ * Perform testing on the {@link AccountDaoSupplier}.
  */
-public class GroupControlDaoSupplierTest {
-    private static GroupControlDaoSupplier supplier;
+public class AccountDaoSupplierTest {
+    private static AccountDaoSupplier supplier;
 
     @BeforeClass
     public static void beforeClass() {
@@ -33,7 +34,7 @@ public class GroupControlDaoSupplierTest {
         map.put(ConfigKeys.DB_MAXIMUM_POOL_SIZE.getKey(), ConfigValueFactory.fromAnyRef(10));
         map.put(ConfigKeys.DB_TIMEOUT_IDLE.getKey(), ConfigValueFactory.fromAnyRef("10 minutes"));
         map.put(ConfigKeys.DB_TIMEOUT_CONNECTION.getKey(), ConfigValueFactory.fromAnyRef("10 seconds"));
-        map.put(ConfigKeys.DB_CLEAN.getKey(), ConfigValueFactory.fromAnyRef("false"));
+        map.put(ConfigKeys.DB_CLEAN.getKey(), ConfigValueFactory.fromAnyRef("true"));
         map.put(ConfigKeys.DB_MIGRATE.getKey(), ConfigValueFactory.fromAnyRef("false"));
 
         final Config config = ConfigFactory.parseMap(map);
@@ -41,7 +42,8 @@ public class GroupControlDaoSupplierTest {
         final ConfigSupplier configSupplier = Mockito.mock(ConfigSupplier.class);
         Mockito.when(configSupplier.get()).thenReturn(config);
 
-        supplier = new GroupControlDaoSupplier(new DataSourceSupplier(configSupplier));
+        final ServiceLevelDaoSupplier serviceLevelDaoSupplier = new ServiceLevelDaoSupplier();
+        supplier = new AccountDaoSupplier(new DataSourceSupplier(configSupplier), serviceLevelDaoSupplier);
     }
 
     @Test
@@ -68,6 +70,6 @@ public class GroupControlDaoSupplierTest {
     @Test
     public void testBinder() {
         // Nothing to really test here.
-        new GroupControlDaoSupplier.Binder().bind(Mockito.mock(DynamicConfiguration.class));
+        new AccountDaoSupplier.Binder().bind(Mockito.mock(DynamicConfiguration.class));
     }
 }

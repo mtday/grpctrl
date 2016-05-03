@@ -17,7 +17,7 @@ import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * A representation of the service level allowed for an account, specifying things like the maximum number of groups
- * the account can create, the maximum number of tags per group, etc. This class is immutable.
+ * the account can create, the maximum number of tags the account can add, etc. This class is immutable.
  */
 @Immutable
 @ThreadSafe
@@ -41,7 +41,7 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
     }
 
     /**
-     * @return the maximum number of tags the account can possess, per group
+     * @return the maximum number of tags the account can possess
      */
     public int getMaxTags() {
         return this.maxTags;
@@ -113,14 +113,14 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
         /**
          * Perform validation on the provided {@code maxTags}.
          *
-         * @param maxTags the maximum number of tags the account is allowed to possess, per group
+         * @param maxTags the maximum number of tags the account is allowed to possess
          *
          * @return the unmodified value, when valid
          *
          * @throws IllegalArgumentException if the provided value is invalid
          */
         public static int validateMaxTags(final int maxTags) {
-            Preconditions.checkArgument(maxTags > 0, "The maximum number of tags per group must be positive");
+            Preconditions.checkArgument(maxTags > 0, "The maximum number of tags must be positive");
 
             return maxTags;
         }
@@ -146,7 +146,7 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
      */
     public static class Builder {
         private int maxGroups = 100;
-        private int maxTags = 10;
+        private int maxTags = 1000;
         private int maxDepth = 3;
 
         /**
@@ -182,7 +182,7 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
         }
 
         /**
-         * @param maxTags the new value indicating the maximum number of tags the account can possess, per group
+         * @param maxTags the new value indicating the maximum number of tags the account can possess
          *
          * @return {@code this} for fluent-style usage
          *

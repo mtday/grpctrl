@@ -12,8 +12,6 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -26,8 +24,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.annotation.concurrent.ThreadSafe;
 
 /**
- * A representation of a group with a name and possibly some tags describing it, along with some children as members.
- * This class is immutable.
+ * A representation of a group with a name and possibly some tags describing it. This class is immutable.
  */
 @Immutable
 @ThreadSafe
@@ -44,18 +41,14 @@ public class Group implements Comparable<Group> {
     @Nonnull
     private final ImmutableSet<Tag> tags;
 
-    @Nonnull
-    private final ImmutableSet<Group> children;
-
     private Group(
             @Nullable final Long id, @Nullable final Long parentId, @Nonnull final String name,
-            @Nonnull final ImmutableSet<Tag> tags, @Nonnull final ImmutableSet<Group> children) {
+            @Nonnull final ImmutableSet<Tag> tags) {
         // These values have already been validated via the builder.
         this.id = id;
         this.parentId = parentId;
         this.name = name;
         this.tags = tags;
-        this.children = children;
     }
 
     /**
@@ -111,21 +104,6 @@ public class Group implements Comparable<Group> {
         return !getTags().isEmpty();
     }
 
-    /**
-     * @return the immutable set of children contained within this group
-     */
-    @Nonnull
-    public ImmutableSet<Group> getChildren() {
-        return this.children;
-    }
-
-    /**
-     * @return whether this group has any assigned children
-     */
-    public boolean hasChildren() {
-        return !getChildren().isEmpty();
-    }
-
     @Override
     public int compareTo(@Nullable final Group other) {
         if (other == null) {
@@ -139,7 +117,6 @@ public class Group implements Comparable<Group> {
         cmp.append(getId(), other.getId(), optionalComparator);
         cmp.append(getParentId(), other.getParentId(), optionalComparator);
         cmp.append(getTags(), other.getTags(), new CollectionComparator<Tag>());
-        cmp.append(getChildren(), other.getChildren(), new CollectionComparator<Group>());
         return cmp.toComparison();
     }
 
@@ -155,7 +132,6 @@ public class Group implements Comparable<Group> {
         hash.append(getParentId());
         hash.append(getName());
         hash.append(getTags());
-        hash.append(getChildren());
         return hash.toHashCode();
     }
 
@@ -167,30 +143,7 @@ public class Group implements Comparable<Group> {
         str.append("parentId", getParentId());
         str.append("name", getName());
         str.append("tags", getTags());
-        str.append("children", getChildren());
         return str.build();
-    }
-
-    /**
-     * Determine whether the specified name matches the name of the current group, or exists within the current group as
-     * a name of one of the children.
-     *
-     * @param name the group name to check for existence within this group
-     *
-     * @return whether the specified name was found
-     */
-    public boolean containsName(@Nonnull final String name) {
-        if (getName().equals(Objects.requireNonNull(name))) {
-            return true;
-        }
-
-        for (final Group child : getChildren()) {
-            if (child.containsName(name)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -239,12 +192,6 @@ public class Group implements Comparable<Group> {
         @Nonnull
         private final Set<Tag> tags = new LinkedHashSet<>();
 
-        @Nonnull
-        private final Set<Group> children = new LinkedHashSet<>();
-
-        @Nonnull
-        private final List<Builder> childBuilders = new LinkedList<>();
-
         /**
          * Initialize a builder with the specified descriptive name.
          *
@@ -271,7 +218,6 @@ public class Group implements Comparable<Group> {
             setParentId(other.getParentId().orElse(null));
             setName(other.getName());
             addTags(other.getTags());
-            addChildren(other.getChildren());
         }
 
         /**
@@ -422,142 +368,13 @@ public class Group implements Comparable<Group> {
         }
 
         /**
-         * @param group the new child group to include as a member of the created group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder addChild(@Nonnull final Group group) {
-            return addChildren(group);
-        }
-
-        /**
-         * @param children the new children groups to include as members of the created group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder addChildren(@Nonnull final Group... children) {
-            return addChildren(Arrays.asList(Objects.requireNonNull(children)));
-        }
-
-        /**
-         * @param children the new children groups to include as members of the created group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder addChildren(@Nonnull final Collection<Group> children) {
-            this.children.addAll(Objects.requireNonNull(children));
-            return this;
-        }
-
-        /**
-         * @param group the child group to be removed as a member from this group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder removeChild(@Nonnull final Group group) {
-            return removeChildren(group);
-        }
-
-        /**
-         * @param children the children groups to be removed as a member from this group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder removeChildren(@Nonnull final Group... children) {
-            return removeChildren(Arrays.asList(Objects.requireNonNull(children)));
-        }
-
-        /**
-         * @param children the children groups to be removed as a member from this group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder removeChildren(@Nonnull final Collection<Group> children) {
-            this.children.removeAll(Objects.requireNonNull(children));
-            return this;
-        }
-
-        /**
-         * Removes all children as members from this group.
-         *
-         * @return {@code this} for fluent-style usage
-         */
-        @Nonnull
-        public Builder clearChildren() {
-            this.children.clear();
-            return this;
-        }
-
-        /**
-         * @param builder the new child group builder to include as a member of the created group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder addChildBuilder(@Nonnull final Builder builder) {
-            return addChildBuilders(builder);
-        }
-
-        /**
-         * @param builders the new child group builders to include as members of the created group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder addChildBuilders(@Nonnull final Builder... builders) {
-            return addChildBuilders(Arrays.asList(Objects.requireNonNull(builders)));
-        }
-
-        /**
-         * @param builders the new child group builders to include as members of the created group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder addChildBuilders(@Nonnull final Collection<Builder> builders) {
-            this.childBuilders.addAll(Objects.requireNonNull(builders));
-            return this;
-        }
-
-        /**
          * Using the current values in this builder, create and return a new group.
          *
          * @return the group object represented by this builder
          */
         @Nonnull
         public Group build() {
-            // Turn any child builders into real children.
-            if (!this.childBuilders.isEmpty()) {
-                this.childBuilders.stream().map(Builder::build).forEach(this.children::add);
-                this.childBuilders.clear();
-            }
-
-            return new Group(this.id, this.parentId, this.name, ImmutableSet.copyOf(this.tags),
-                    ImmutableSet.copyOf(this.children));
+            return new Group(this.id, this.parentId, this.name, ImmutableSet.copyOf(this.tags));
         }
     }
 }

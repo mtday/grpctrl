@@ -1,9 +1,10 @@
-package com.grpctrl.db.impl;
+package com.grpctrl.db.dao.impl;
 
 import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.db.DataSourceSupplier;
-import com.grpctrl.db.GroupControlDao;
+import com.grpctrl.db.dao.AccountDao;
+import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
@@ -19,10 +20,10 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 /**
- * Perform testing on the {@link PostgresGroupControlDao} class. This is an integration test because it expects a
+ * Perform testing on the {@link PostgresGroupDao} class. This is an integration test because it expects a
  * live PostgreSQL server to be up and running.
  */
-public class PostgresGroupControlDaoIT extends BaseGroupControlDaoTest {
+public class PostgresAccountDaoIT extends BaseAccountDaoTest {
     private static DataSourceSupplier dataSourceSupplier;
 
     @BeforeClass
@@ -48,12 +49,12 @@ public class PostgresGroupControlDaoIT extends BaseGroupControlDaoTest {
     }
 
     @Override
-    public GroupControlDao getGroupControlDao() {
-        return new PostgresGroupControlDao(dataSourceSupplier);
+    public AccountDao getAccountDao() {
+        return new PostgresAccountDao(dataSourceSupplier, new ServiceLevelDaoSupplier());
     }
 
     @Override
-    public GroupControlDao getGroupControlDaoWithDataSourceException() {
+    public AccountDao getAccountDaoWithDataSourceException() {
         try {
             final DataSource mockDataSource = Mockito.mock(DataSource.class);
             Mockito.when(mockDataSource.getConnection()).thenThrow(new SQLException("Fake"));
@@ -61,7 +62,7 @@ public class PostgresGroupControlDaoIT extends BaseGroupControlDaoTest {
             final DataSourceSupplier mockDataSourceSupplier = Mockito.mock(DataSourceSupplier.class);
             Mockito.when(mockDataSourceSupplier.get()).thenReturn(mockDataSource);
 
-            return new PostgresGroupControlDao(mockDataSourceSupplier);
+            return new PostgresAccountDao(mockDataSourceSupplier, new ServiceLevelDaoSupplier());
         } catch (final SQLException fake) {
             throw new RuntimeException("Fake");
         }

@@ -1,40 +1,34 @@
 package com.grpctrl.rest.resource.v1.account;
 
-import com.grpctrl.common.model.Account;
-import com.grpctrl.db.GroupControlDao;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.grpctrl.db.dao.AccountDao;
 import com.grpctrl.db.error.DaoException;
-
-import java.util.Objects;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 
 /**
  * Retrieve the account information for the provided unique account identifier.
  */
 @Path("/v1/account/{accountId}")
 @Produces(MediaType.APPLICATION_JSON)
-public class AccountGet {
-    @Nonnull
-    private final GroupControlDao groupControlDao;
-
+public class AccountGet extends BaseAccountResource {
     /**
-     * @param groupControlDao the {@link GroupControlDao} used to perform the account operation
+     * @param objectMapper the {@link ObjectMapper} responsible for generating JSON data
+     * @param accountDao the {@link AccountDao} used to perform the account operation
      */
     @Inject
-    public AccountGet(@Nonnull final GroupControlDao groupControlDao) {
-        this.groupControlDao = Objects.requireNonNull(groupControlDao);
-    }
-
-    @Nonnull
-    private GroupControlDao getGroupControlDao() {
-        return this.groupControlDao;
+    public AccountGet(@Nonnull final ObjectMapper objectMapper, @Nonnull final AccountDao accountDao) {
+        super(objectMapper, accountDao);
     }
 
     /**
@@ -42,13 +36,21 @@ public class AccountGet {
      *
      * @param accountId the unique identifier of the account to retrieve
      *
-     * @return the requested account, if available
-     *
-     * @throws DaoException if there is a problem communicating with the data store.
+     * @return the response containing the requested account, if available
      */
     @GET
     @Nullable
-    public Account get(@Nonnull @PathParam("accountId") final Long accountId) throws DaoException {
-        return getGroupControlDao().getAccount(accountId).orElse(null);
+    public Response get(@Nonnull @PathParam("accountId") final Long accountId) {
+        // TODO: Only admins should be able to retrieve accounts.
+
+        final StreamingOutput streamingOutput = new AccountStreamer(getObjectMapper(), consumer -> {
+            try {
+                getAccountDao().get(consumer, accountId);
+            } catch (final DaoException daoException) {
+                throw new InternalServerErrorException("Failed to add account to backing store", daoException);
+            }
+        });
+
+        return Response.ok().entity(streamingOutput).type(MediaType.APPLICATION_JSON).build();
     }
 }

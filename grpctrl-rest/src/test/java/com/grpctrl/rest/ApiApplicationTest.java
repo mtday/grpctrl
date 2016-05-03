@@ -32,7 +32,10 @@ public class ApiApplicationTest {
         assertEquals("com.grpctrl.crypto.store.KeyStoreSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.crypto.store.TrustStoreSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.db.DataSourceSupplier$Binder", objIter.next());
-        assertEquals("com.grpctrl.db.GroupControlDaoSupplier$Binder", objIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.AccountDaoSupplier$Binder", objIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.GroupDaoSupplier$Binder", objIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier$Binder", objIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.TagDaoSupplier$Binder", objIter.next());
         assertFalse(objIter.hasNext());
 
         final List<String> names =
@@ -49,7 +52,10 @@ public class ApiApplicationTest {
         assertEquals("com.grpctrl.crypto.store.KeyStoreSupplier", nameIter.next());
         assertEquals("com.grpctrl.crypto.store.TrustStoreSupplier", nameIter.next());
         assertEquals("com.grpctrl.db.DataSourceSupplier", nameIter.next());
-        assertEquals("com.grpctrl.db.GroupControlDaoSupplier", nameIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.AccountDaoSupplier", nameIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.GroupDaoSupplier", nameIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier", nameIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.TagDaoSupplier", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountAdd", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountGet", nameIter.next());
         assertFalse(nameIter.hasNext());

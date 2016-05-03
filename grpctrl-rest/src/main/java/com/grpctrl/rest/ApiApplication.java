@@ -10,7 +10,10 @@ import com.grpctrl.crypto.ssl.SslContextSupplier;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
 import com.grpctrl.crypto.store.TrustStoreSupplier;
 import com.grpctrl.db.DataSourceSupplier;
-import com.grpctrl.db.GroupControlDaoSupplier;
+import com.grpctrl.db.dao.supplier.AccountDaoSupplier;
+import com.grpctrl.db.dao.supplier.GroupDaoSupplier;
+import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
+import com.grpctrl.db.dao.supplier.TagDaoSupplier;
 import com.grpctrl.rest.resource.v1.account.AccountAdd;
 import com.grpctrl.rest.resource.v1.account.AccountGet;
 
@@ -38,7 +41,10 @@ public class ApiApplication extends ResourceConfig {
         register(new MetricRegistrySupplier.Binder());
         register(new HealthCheckRegistrySupplier.Binder());
         register(new DataSourceSupplier.Binder());
-        register(new GroupControlDaoSupplier.Binder());
+        register(new AccountDaoSupplier.Binder());
+        register(new GroupDaoSupplier.Binder());
+        register(new ServiceLevelDaoSupplier.Binder());
+        register(new TagDaoSupplier.Binder());
 
         // This is to register the ContextResolver for these classes so Jersey uses them by default also. For example,
         // without the ObjectMapperSupplier, jersey would use it's own ObjectMapper to serialize responses to JSON,
@@ -54,7 +60,10 @@ public class ApiApplication extends ResourceConfig {
         register(MetricRegistrySupplier.class);
         register(HealthCheckRegistrySupplier.class);
         register(DataSourceSupplier.class);
-        register(GroupControlDaoSupplier.class);
+        register(AccountDaoSupplier.class);
+        register(GroupDaoSupplier.class);
+        register(ServiceLevelDaoSupplier.class);
+        register(TagDaoSupplier.class);
 
         // Resource classes.
         register(AccountAdd.class);

@@ -41,30 +41,15 @@ public class GroupTest {
     }
 
     @Test
-    public void testHasChildren() {
-        final Group a = new Group.Builder("id1").build();
-        final Group b =
-                new Group.Builder("id1").addChildren(new Group.Builder("g1").build(), new Group.Builder("g2").build())
-                        .build();
-
-        assertFalse(a.hasChildren());
-        assertTrue(b.hasChildren());
-    }
-
-    @Test
     public void testCompareTo() {
         final Group a = new Group.Builder("name1").build();
         final Group b = new Group.Builder("name1").setId(1L).build();
         final Group c = new Group.Builder("name1")
                 .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t1", "v2").build()).build();
         final Group d = new Group.Builder("name1")
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t1", "v2").build())
-                .addChild(new Group.Builder("g1").build())
-                .addChildBuilder(new Group.Builder("g2")).build();
+                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
         final Group e = new Group.Builder("name2").setId(1L).setParentId(2L)
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build())
-                .addChildBuilders(new Group.Builder("g1"),
-                        new Group.Builder("g2").addTag(new Tag.Builder("t1", "v1").build())).build();
+                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
 
         assertEquals(1, a.compareTo(null));
         assertEquals(0, a.compareTo(a));
@@ -101,13 +86,9 @@ public class GroupTest {
         final Group c = new Group.Builder("name1")
                 .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t1", "v2").build()).build();
         final Group d = new Group.Builder("name1")
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t1", "v2").build())
-                .addChild(new Group.Builder("g1").build())
-                .addChildBuilder(new Group.Builder("g2")).build();
+                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
         final Group e = new Group.Builder("name2").setId(1L).setParentId(2L)
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build())
-                .addChildBuilders(new Group.Builder("g1"),
-                        new Group.Builder("g2").addTag(new Tag.Builder("t1", "v1").build())).build();
+                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
 
         assertNotEquals(a, null);
         assertEquals(a, a);
@@ -144,57 +125,23 @@ public class GroupTest {
         final Group c = new Group.Builder("name1")
                 .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t1", "v2").build()).build();
         final Group d = new Group.Builder("name1")
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t1", "v2").build())
-                .addChild(new Group.Builder("g1").build())
-                .addChildBuilder(new Group.Builder("g2")).build();
+                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
         final Group e = new Group.Builder("name2").setId(1L).setParentId(2L)
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build())
-                .addChildBuilders(new Group.Builder("g1"),
-                        new Group.Builder("g2").addTag(new Tag.Builder("t1", "v1").build())).build();
+                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
 
-        assertEquals(-1673222341, a.hashCode());
-        assertEquals(-1671348180, b.hashCode());
-        assertEquals(-1661245774, c.hashCode());
-        assertEquals(705326729, d.hashCode());
-        assertEquals(713293199, e.hashCode());
+        assertEquals(-393462817, a.hashCode());
+        assertEquals(-393412164, b.hashCode());
+        assertEquals(-393139126, c.hashCode());
+        assertEquals(-393139089, d.hashCode());
+        assertEquals(-393085661, e.hashCode());
     }
 
     @Test
     public void testToString() {
         final Group group = new Group.Builder("name").setId(1L).setParentId(2L)
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build())
-                .addChildren(new Group.Builder("g1").build(),
-                        new Group.Builder("g2").addTag(new Tag.Builder("t1", "v1").build()).build()).build();
+                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
         assertEquals("Group[id=Optional[1],parentId=Optional[2],name=name,tags=[Tag[label=t1,value=v1], Tag[label=t2,"
-                + "value=v2]],children=[Group[id=Optional.empty,parentId=Optional.empty,name=g1,tags=[],"
-                + "children=[]], Group[id=Optional.empty,parentId=Optional.empty,name=g2,tags=[Tag[label=t1,"
-                + "value=v1]],children=[]]]]", group.toString());
-    }
-
-    @Test
-    public void testContainsName() {
-        final Group gm = new Group.Builder("m").build();
-        final Group g111 = new Group.Builder("111").addChild(gm).build();
-        final Group g112 = new Group.Builder("112").addChild(gm).build();
-        final Group g11 = new Group.Builder("11").addChildren(g111, g112, gm).build();
-        final Group g121 = new Group.Builder("121").build();
-        final Group g122 = new Group.Builder("122").build();
-        final Group g12 = new Group.Builder("12").addChildren(g121, g122, gm).build();
-        final Group g1 = new Group.Builder("1").addChildren(g11, g12, gm).build();
-        final Group g2 = new Group.Builder("2").build();
-        final Group g = new Group.Builder("").addChildren(g1, g2).build();
-
-        assertTrue(g.containsName(gm.getName()));
-        assertTrue(g.containsName(g111.getName()));
-        assertTrue(g.containsName(g112.getName()));
-        assertTrue(g.containsName(g11.getName()));
-        assertTrue(g.containsName(g121.getName()));
-        assertTrue(g.containsName(g122.getName()));
-        assertTrue(g.containsName(g12.getName()));
-        assertTrue(g.containsName(g1.getName()));
-        assertTrue(g.containsName(g2.getName()));
-        assertTrue(g.containsName(g.getName()));
-        assertFalse(g.containsName("x"));
+                + "value=v2]]]", group.toString());
     }
 
     @Test
@@ -225,9 +172,7 @@ public class GroupTest {
     @Test
     public void testBuilderCopy() {
         final Group group = new Group.Builder("g").setId(1L).setParentId(2L)
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build())
-                .addChildren(new Group.Builder("g1").build(),
-                        new Group.Builder("g2").addTag(new Tag.Builder("t1", "v1").build()).build()).build();
+                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
 
         assertEquals(group, new Group.Builder(group).build());
     }
@@ -276,37 +221,5 @@ public class GroupTest {
         assertEquals(1, group.getTags().size());
         assertTrue(group.getTags().contains(tag1));
         assertTrue(group.getTags().contains(tag2));
-    }
-
-    @Test
-    public void testBuilderRemoveChild() {
-        final Group grp1 = new Group.Builder("1").build();
-        final Group grp2 = new Group.Builder("2").build();
-        final Group group = new Group.Builder("id").addChildren(grp1, grp2).removeChild(grp1).build();
-
-        assertTrue(group.hasChildren());
-        assertEquals(1, group.getChildren().size());
-        assertTrue(group.getChildren().contains(grp2));
-    }
-
-    @Test
-    public void testBuilderClearChildren() {
-        final Group grp1 = new Group.Builder("1").build();
-        final Group grp2 = new Group.Builder("2").build();
-        final Group group = new Group.Builder("id").addChildren(grp1, grp2).clearChildren().build();
-
-        assertFalse(group.hasChildren());
-    }
-
-    @Test
-    public void testBuilderDedupesChildren() {
-        final Group grp1 = new Group.Builder("G").build();
-        final Group grp2 = new Group.Builder("G").build();
-        final Group group = new Group.Builder("id").addChildren(grp1, grp2).build();
-
-        assertTrue(group.hasChildren());
-        assertEquals(1, group.getChildren().size());
-        assertTrue(group.getChildren().contains(grp1));
-        assertTrue(group.getChildren().contains(grp2));
     }
 }

@@ -39,6 +39,7 @@ CREATE TABLE groups (
     group_name       VARCHAR(200)  NOT NULL,
 
     CONSTRAINT groups_pk PRIMARY KEY (group_id),
+    CONSTRAINT groups_uniq_name UNIQUE (parent_id, group_name),
     CONSTRAINT groups_fk_parent FOREIGN KEY (parent_id) REFERENCES groups (group_id) ON DELETE CASCADE,
     CONSTRAINT groups_fk_accounts FOREIGN KEY (account_id) REFERENCES accounts (account_id) ON DELETE CASCADE
 );

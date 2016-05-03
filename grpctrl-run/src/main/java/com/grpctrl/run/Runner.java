@@ -12,11 +12,16 @@ import com.typesafe.config.ConfigFactory;
 
 import io.undertow.Handlers;
 import io.undertow.Undertow;
+import io.undertow.predicate.Predicates;
 import io.undertow.server.handlers.PathHandler;
+import io.undertow.server.handlers.encoding.ContentEncodingRepository;
+import io.undertow.server.handlers.encoding.EncodingHandler;
+import io.undertow.server.handlers.encoding.GzipEncodingProvider;
 import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.DeploymentManager;
 import io.undertow.servlet.api.ListenerInfo;
+import io.undertow.servlet.api.ServletInfo;
 
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
@@ -57,19 +62,24 @@ public class Runner {
      * @throws ServletException if there is a problem running the application server
      */
     public void run() throws ServletException {
+        final ServletInfo api =
+                Servlets.servlet(ApiApplication.class.getSimpleName(), ServletContainer.class).setLoadOnStartup(1)
+                        .addMapping("/api/*").addInitParam("javax.ws.rs.Application", ApiApplication.class.getName());
+
         final DeploymentInfo deploymentInfo =
                 Servlets.deployment().setClassLoader(Runner.class.getClassLoader()).setContextPath(ROOT)
                         .setDeploymentName(ApiApplication.class.getSimpleName())
-                        .addListener(new ListenerInfo(ContextListener.class)).addServlets(
-                        Servlets.servlet(ApiApplication.class.getSimpleName(), ServletContainer.class)
-                                .setLoadOnStartup(1).addMapping("/api/*")
-                                .addInitParam("javax.ws.rs.Application", ApiApplication.class.getName()));
+                        .addListener(new ListenerInfo(ContextListener.class)).addServlets(api);
 
         final DeploymentManager deploymentManager = Servlets.defaultContainer().addDeployment(deploymentInfo);
         deploymentManager.deploy();
 
         final PathHandler pathHandler =
                 Handlers.path(Handlers.redirect(ROOT)).addPrefixPath(ROOT, deploymentManager.start());
+
+        final EncodingHandler encodingHandler = new EncodingHandler(new ContentEncodingRepository()
+                .addEncodingHandler("gzip", new GzipEncodingProvider(), 50, Predicates.parse("max-content-size(5)")))
+                .setNext(pathHandler);
 
         final String apiHost = getConfig().getString(ConfigKeys.SYSTEM_API_HOST.getKey());
         final int apiPort = getConfig().getInt(ConfigKeys.SYSTEM_API_PORT.getKey());
@@ -80,10 +90,11 @@ public class Runner {
             final TrustStoreSupplier trustStoreSupplier = new TrustStoreSupplier(getConfig(), pbeSupplier);
             final SSLContext sslContext =
                     new SslContextSupplier(getConfig(), keyStoreSupplier, trustStoreSupplier, pbeSupplier).get();
-            Undertow.builder().addHttpsListener(apiPort, apiHost, sslContext).setHandler(pathHandler).build().start();
+            Undertow.builder().addHttpsListener(apiPort, apiHost, sslContext).setHandler(encodingHandler).build()
+                    .start();
         } else {
             // Running in insecure non-HTTPS mode.
-            Undertow.builder().addHttpListener(apiPort, apiHost).setHandler(pathHandler).build().start();
+            Undertow.builder().addHttpListener(apiPort, apiHost).setHandler(encodingHandler).build().start();
         }
 
         LOG.info("Server started on {}:{}", apiHost, apiPort);
