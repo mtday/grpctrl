@@ -3,7 +3,7 @@ package com.grpctrl.db;
 import static org.junit.Assert.assertNotNull;
 
 import com.grpctrl.common.config.ConfigKeys;
-import com.grpctrl.common.config.ConfigSupplier;
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
@@ -47,6 +47,11 @@ public class DataSourceSupplierTest {
     @Test
     public void testGet() {
         assertNotNull(supplier.get());
+    }
+
+    @Test
+    public void testGetContext() {
+        assertNotNull(supplier.getContext(getClass()));
     }
 
     @Test

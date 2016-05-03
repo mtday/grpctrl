@@ -54,6 +54,19 @@ public interface GroupControlDao {
     boolean removeAccount(@Nonnull Long accountId) throws DaoException;
 
     /**
+     * Check to see if the group with the specified name exists in the data store.
+     *
+     * @param account the account to check for the existence of the group
+     * @param groupName the name of the group to check for existence
+     *
+     * @return whether any groups exist with the specified name
+     *
+     * @throws NullPointerException if any of the parameters are {@code null}
+     * @throws DaoException if there is a problem interacting with the database
+     */
+    boolean groupExists(@Nonnull Account account, @Nonnull String groupName) throws DaoException;
+
+    /**
      * Retrieve the group with the specified id, but without looking for its child groups (tags will be
      * included, however).
      *
@@ -95,6 +108,21 @@ public interface GroupControlDao {
      */
     @Nonnull
     Collection<Group> getRecursiveGroups(@Nonnull Account account) throws DaoException;
+
+    /**
+     * Retrieve the groups with the specified name, but without looking for its child groups (tags will be
+     * included, however).
+     *
+     * @param account the account for which groups will be retrieved
+     * @param groupName the name of the groups to be retrieved
+     *
+     * @return the group with the specified id (including its tags, but not its children), if available
+     *
+     * @throws NullPointerException if any of the parameters are {@code null}
+     * @throws DaoException if there is a problem interacting with the database
+     */
+    @Nonnull
+    Collection<Group> getGroupsByName(@Nonnull Account account, @Nonnull String groupName) throws DaoException;
 
     /**
      * Add the specified groups to the backing store.

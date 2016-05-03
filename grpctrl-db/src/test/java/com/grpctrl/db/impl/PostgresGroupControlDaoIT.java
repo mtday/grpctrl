@@ -1,7 +1,7 @@
 package com.grpctrl.db.impl;
 
 import com.grpctrl.common.config.ConfigKeys;
-import com.grpctrl.common.config.ConfigSupplier;
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.GroupControlDao;
 import com.typesafe.config.Config;

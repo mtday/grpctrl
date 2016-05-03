@@ -12,11 +12,15 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Provider;
 
 /**
  * Provides singleton access to a {@link GroupControlDao} used to communicate with the configured JDBC database.
  */
-public class GroupControlDaoSupplier implements Supplier<GroupControlDao>, Factory<GroupControlDao> {
+@Provider
+public class GroupControlDaoSupplier
+        implements Supplier<GroupControlDao>, Factory<GroupControlDao>, ContextResolver<GroupControlDao> {
     @Nonnull
     private final DataSourceSupplier dataSourceSupplier;
 
@@ -53,6 +57,12 @@ public class GroupControlDaoSupplier implements Supplier<GroupControlDao>, Facto
             }
         }
         return this.singleton;
+    }
+
+    @Override
+    @Nonnull
+    public GroupControlDao getContext(@Nonnull final Class<?> type) {
+        return get();
     }
 
     @Override

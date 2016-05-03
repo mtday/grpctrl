@@ -150,6 +150,31 @@ public class PostgresGroupControlDao implements GroupControlDao {
         return removed > 0;
     }
 
+    @Override
+    public boolean groupExists(@Nonnull final Account account, @Nonnull final String groupName) throws DaoException {
+        Objects.requireNonNull(account);
+        Objects.requireNonNull(groupName);
+
+        final String SQL = "SELECT COUNT(*) FROM groups WHERE account_id = ? AND group_name = ?";
+
+        final DataSource dataSource = getDataSourceSupplier().get();
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(SQL)) {
+            ps.setLong(1, account.getId().orElse(null));
+            ps.setString(2, groupName);
+
+            try (final ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+
+            return false;
+        } catch (final SQLException sqlException) {
+            throw new DaoException("Failed to check group existence by name", sqlException);
+        }
+    }
+
     @Nonnull
     @Override
     public Optional<Group> getGroup(@Nonnull final Account account, @Nonnull final Long groupId) throws DaoException {
@@ -294,6 +319,50 @@ public class PostgresGroupControlDao implements GroupControlDao {
 
                 map.put(id, bld);
             }
+        }
+    }
+
+    @Override
+    @Nonnull
+    public Collection<Group> getGroupsByName(@Nonnull final Account account, @Nonnull final String groupName)
+            throws DaoException {
+        Objects.requireNonNull(account);
+        Objects.requireNonNull(groupName);
+
+        final String SQL = "SELECT parent_id, group_id FROM groups WHERE account_id = ? AND group_name = ?";
+
+        final DataSource dataSource = getDataSourceSupplier().get();
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(SQL)) {
+            ps.setLong(1, account.getId().orElse(null));
+            ps.setString(2, groupName);
+
+            final Map<Long, Group.Builder> matches = new HashMap<>();
+
+            try (final ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    final Group.Builder bld = new Group.Builder(groupName);
+
+                    final long groupId = rs.getLong("group_id");
+                    bld.setId(groupId);
+
+                    final Long parentId = rs.getLong("parent_id");
+                    if (!rs.wasNull()) {
+                        bld.setParentId(parentId);
+                    }
+
+                    matches.put(groupId, bld);
+                }
+            }
+
+            final Map<Long, Collection<Tag>> tags = getTags(conn, account, matches.keySet());
+            for (final Map.Entry<Long, Collection<Tag>> entry : tags.entrySet()) {
+                matches.get(entry.getKey()).addTags(entry.getValue());
+            }
+
+            return matches.values().stream().map(Group.Builder::build).collect(Collectors.toList());
+        } catch (final SQLException sqlException) {
+            throw new DaoException("Failed to retrieve group by id", sqlException);
         }
     }
 

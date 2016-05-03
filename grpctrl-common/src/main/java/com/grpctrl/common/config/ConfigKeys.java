@@ -13,20 +13,31 @@ public enum ConfigKeys {
     /** The current running version of the system. */
     SYSTEM_VERSION,
 
+    /** The host on which the system API should run (and bind to on start-up). */
+    SYSTEM_API_HOST,
+    /** The port on which the system API should run. */
+    SYSTEM_API_PORT,
+    /** The host on which the system administration web app should run (and bind to on start-up). */
+    SYSTEM_WEB_HOST,
+    /** The port on which the system administration web app should run. */
+    SYSTEM_WEB_PORT,
+
+    /** The environment variable defining the shared secret value to use for password-based encryption. */
+    CRYPTO_SHARED_SECRET_VARIABLE,
     /** Whether the web server is running with SSL enabled. */
-    SSL_ENABLED,
+    CRYPTO_SSL_ENABLED,
     /** The key store file used in the SSL configuration. */
-    SSL_KEYSTORE_FILE,
+    CRYPTO_SSL_KEYSTORE_FILE,
     /** The type of the key store file, typically either JKS or PKCS12. */
-    SSL_KEYSTORE_TYPE,
+    CRYPTO_SSL_KEYSTORE_TYPE,
     /** The password to use when reading the key store file. */
-    SSL_KEYSTORE_PASSWORD,
+    CRYPTO_SSL_KEYSTORE_PASSWORD,
     /** The trust store file used in the SSL configuration. */
-    SSL_TRUSTSTORE_FILE,
+    CRYPTO_SSL_TRUSTSTORE_FILE,
     /** The type of the trust store file, typically either JKS or PKCS12. */
-    SSL_TRUSTSTORE_TYPE,
+    CRYPTO_SSL_TRUSTSTORE_TYPE,
     /** The password to use when reading the trust store file. */
-    SSL_TRUSTSTORE_PASSWORD,
+    CRYPTO_SSL_TRUSTSTORE_PASSWORD,
 
     /** The JDBC database connection URL. */
     DB_URL,
@@ -45,10 +56,7 @@ public enum ConfigKeys {
     /** Whether the database schema should be dropped during initialization (for testing). */
     DB_CLEAN,
     /** Whether the migration sql scripts should be applied to the database. */
-    DB_MIGRATE,
-
-    /** The underlying service implementation type. */
-    SERVICE_IMPL;
+    DB_MIGRATE;
 
     /**
      * @return the key to use when retrieving the common configuration value from the system configuration file

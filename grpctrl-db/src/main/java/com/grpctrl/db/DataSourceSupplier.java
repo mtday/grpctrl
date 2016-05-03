@@ -1,7 +1,7 @@
 package com.grpctrl.db;
 
 import com.grpctrl.common.config.ConfigKeys;
-import com.grpctrl.common.config.ConfigSupplier;
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.typesafe.config.Config;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -18,11 +18,14 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.sql.DataSource;
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Provider;
 
 /**
  * Provides singleton access to a {@link DataSource} used to communicate with the configured JDBC database.
  */
-public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSource> {
+@Provider
+public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSource>, ContextResolver<DataSource> {
     @Nonnull
     private final ConfigSupplier configSupplier;
 
@@ -60,6 +63,12 @@ public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSou
             }
         }
         return this.singleton;
+    }
+
+    @Override
+    @Nonnull
+    public DataSource getContext(@Nonnull final Class<?> type) {
+        return get();
     }
 
     @Override
