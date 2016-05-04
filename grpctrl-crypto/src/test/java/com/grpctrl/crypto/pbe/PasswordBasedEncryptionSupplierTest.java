@@ -4,6 +4,7 @@ import static com.typesafe.config.ConfigValueFactory.fromAnyRef;
 import static org.junit.Assert.assertNotNull;
 
 import com.grpctrl.common.config.ConfigKeys;
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.EncryptionException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
@@ -24,16 +25,15 @@ public class PasswordBasedEncryptionSupplierTest {
 
     @BeforeClass
     public static void beforeClass() {
-        // Invoke both constructors.
-        supplier = new com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier();
-        supplier = new com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier(ConfigFactory.load());
+        supplier = new com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier(new ConfigSupplier());
     }
 
     @Test(expected = EncryptionException.class)
     public void testNoSharedSecret() {
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(ConfigKeys.CRYPTO_SHARED_SECRET_VARIABLE.getKey(), fromAnyRef("DOES_NOT_EXIST"));
-        new com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier(ConfigFactory.parseMap(map)).get();
+        final ConfigSupplier configSupplier = new ConfigSupplier(ConfigFactory.parseMap(map));
+        new com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier(configSupplier).get();
     }
 
     @Test

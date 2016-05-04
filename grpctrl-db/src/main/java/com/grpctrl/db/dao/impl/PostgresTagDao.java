@@ -58,9 +58,9 @@ public class PostgresTagDao implements TagDao {
         Objects.requireNonNull(conn);
         Objects.requireNonNull(account);
 
-        final String SQL = "SELECT COUNT(*) FROM tags WHERE account_id = ?";
+        final String sql = "SELECT COUNT(*) FROM tags WHERE account_id = ?";
 
-        try (final PreparedStatement ps = conn.prepareStatement(SQL)) {
+        try (final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
             try (final ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -238,7 +238,7 @@ public class PostgresTagDao implements TagDao {
             return;
         }
 
-        final String SQL =
+        final String sql =
                 "SELECT group_id, tag_label, tag_value FROM tags WHERE account_id = ? AND group_id = ANY (?) ORDER BY"
                         + " group_id LIMIT ?";
 
@@ -246,7 +246,7 @@ public class PostgresTagDao implements TagDao {
                 groups.stream().map(Group::getId).filter(Optional::isPresent).map(Optional::get)
                         .collect(Collectors.toList());
 
-        try (final PreparedStatement ps = conn.prepareStatement(SQL)) {
+        try (final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
             ps.setArray(2, conn.createArrayOf("bigint", groupIds.toArray()));
             ps.setInt(3, account.getServiceLevel().getMaxTags());
@@ -278,12 +278,12 @@ public class PostgresTagDao implements TagDao {
 
         int added = 0;
 
-        final int INSERT_BATCH_SIZE = 1000;
-        final String SQL = "INSERT INTO tags (account_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?)";
+        final int batchSize = 1000;
+        final String sql = "INSERT INTO tags (account_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?)";
 
         final int available = account.getServiceLevel().getMaxTags() - count(conn, account);
 
-        try (final PreparedStatement ps = conn.prepareStatement(SQL)) {
+        try (final PreparedStatement ps = conn.prepareStatement(sql)) {
             int batches = 0;
             ps.setLong(1, account.getId().orElse(null));
             for (final Group group : groups) {
@@ -295,7 +295,7 @@ public class PostgresTagDao implements TagDao {
                     ps.addBatch();
                     batches++;
 
-                    if (batches > INSERT_BATCH_SIZE) {
+                    if (batches >= batchSize) {
                         batches = 0;
                         added += IntStream.of(ps.executeBatch()).sum();
                         if (available - added < 0) {
@@ -328,10 +328,10 @@ public class PostgresTagDao implements TagDao {
     public int add(
             @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Collection<Tag> tags)
             throws DaoException {
-        final String SQL = "INSERT INTO tags (account_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?)";
+        final String sql = "INSERT INTO tags (account_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?)";
 
         try {
-            return processTags(SQL, 1000, account, groupId, tags);
+            return processTags(sql, 1000, account, groupId, tags);
         } catch (final SQLException sqlException) {
             throw new DaoException("Failed to add tags", sqlException);
         }
@@ -341,10 +341,10 @@ public class PostgresTagDao implements TagDao {
     public int remove(
             @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Collection<Tag> tags)
             throws DaoException {
-        final String SQL = "DELETE FROM tags WHERE account_id = ? AND group_id = ? AND tag_label = ? AND tag_value = ?";
+        final String sql = "DELETE FROM tags WHERE account_id = ? AND group_id = ? AND tag_label = ? AND tag_value = ?";
 
         try {
-            return processTags(SQL, 1000, account, groupId, tags);
+            return processTags(sql, 1000, account, groupId, tags);
         } catch (final SQLException sqlException) {
             throw new DaoException("Failed to remove tags", sqlException);
         }
@@ -404,12 +404,12 @@ public class PostgresTagDao implements TagDao {
         }
 
         int removed = 0;
-        final int DELETE_BATCH_SIZE = 1000;
-        final String SQL = "DELETE FROM tags WHERE account_id = ? AND group_id = ? AND tag_label = ?";
+        final int batchSize = 1000;
+        final String sql = "DELETE FROM tags WHERE account_id = ? AND group_id = ? AND tag_label = ?";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(SQL)) {
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
             int batches = 0;
             ps.setLong(1, account.getId().orElse(null));
             ps.setLong(2, groupId);
@@ -418,7 +418,7 @@ public class PostgresTagDao implements TagDao {
                 ps.addBatch();
                 batches++;
 
-                if (batches > DELETE_BATCH_SIZE) {
+                if (batches >= batchSize) {
                     batches = 0;
                     removed += IntStream.of(ps.executeBatch()).sum();
                 }

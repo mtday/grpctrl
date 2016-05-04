@@ -1,5 +1,7 @@
 package com.grpctrl.common.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -24,6 +26,14 @@ public class Tag implements Comparable<Tag> {
     private final String label;
     @Nonnull
     private final String value;
+
+    @SuppressWarnings("all")
+    @SuppressFBWarnings(value = "NP_STORE_INTO_NONNULL_FIELD", justification = "required by Jackson")
+    private Tag() {
+        // Required for Jackson deserialization.
+        this.label = null;
+        this.value = null;
+    }
 
     private Tag(@Nonnull final String label, @Nonnull final String value) {
         // These values have already been validated by the builder.

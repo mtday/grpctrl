@@ -6,6 +6,7 @@ import com.typesafe.config.ConfigFactory;
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
@@ -21,6 +22,19 @@ import javax.ws.rs.ext.Provider;
 public class ConfigSupplier implements Supplier<Config>, Factory<Config>, ContextResolver<Config> {
     @Nullable
     private volatile Config singleton;
+
+    /**
+     * Default constructor.
+     */
+    public ConfigSupplier() {
+    }
+
+    /**
+     * @param config the static system configuration properties to supply
+     */
+    public ConfigSupplier(@Nonnull final Config config) {
+        this.singleton = Objects.requireNonNull(config);
+    }
 
     @Override
     @Nonnull

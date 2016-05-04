@@ -1,6 +1,7 @@
 package com.grpctrl.run;
 
 import com.grpctrl.common.config.ConfigKeys;
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.crypto.ssl.SslContextSupplier;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
@@ -42,18 +43,18 @@ public class Runner {
     private static final String ROOT = "/";
 
     @Nonnull
-    private final Config config;
+    private final ConfigSupplier configSupplier;
 
     /**
-     * @param config the system configuration properties
+     * @param configSupplier the supplier of system configuration properties
      */
-    public Runner(@Nonnull final Config config) {
-        this.config = Objects.requireNonNull(config);
+    public Runner(@Nonnull final ConfigSupplier configSupplier) {
+        this.configSupplier = Objects.requireNonNull(configSupplier);
     }
 
     @Nonnull
-    private Config getConfig() {
-        return this.config;
+    private ConfigSupplier getConfigSupplier() {
+        return this.configSupplier;
     }
 
     /**
@@ -81,15 +82,18 @@ public class Runner {
                 .addEncodingHandler("gzip", new GzipEncodingProvider(), 50, Predicates.parse("max-content-size(5)")))
                 .setNext(pathHandler);
 
-        final String apiHost = getConfig().getString(ConfigKeys.SYSTEM_API_HOST.getKey());
-        final int apiPort = getConfig().getInt(ConfigKeys.SYSTEM_API_PORT.getKey());
+        final Config config = getConfigSupplier().get();
+        final String apiHost = config.getString(ConfigKeys.SYSTEM_API_HOST.getKey());
+        final int apiPort = config.getInt(ConfigKeys.SYSTEM_API_PORT.getKey());
 
-        if (getConfig().getBoolean(ConfigKeys.CRYPTO_SSL_ENABLED.getKey())) {
-            final PasswordBasedEncryptionSupplier pbeSupplier = new PasswordBasedEncryptionSupplier(getConfig());
-            final KeyStoreSupplier keyStoreSupplier = new KeyStoreSupplier(getConfig(), pbeSupplier);
-            final TrustStoreSupplier trustStoreSupplier = new TrustStoreSupplier(getConfig(), pbeSupplier);
+        if (config.getBoolean(ConfigKeys.CRYPTO_SSL_ENABLED.getKey())) {
+            final PasswordBasedEncryptionSupplier pbeSupplier =
+                    new PasswordBasedEncryptionSupplier(getConfigSupplier());
+            final KeyStoreSupplier keyStoreSupplier = new KeyStoreSupplier(getConfigSupplier(), pbeSupplier);
+            final TrustStoreSupplier trustStoreSupplier = new TrustStoreSupplier(getConfigSupplier(), pbeSupplier);
             final SSLContext sslContext =
-                    new SslContextSupplier(getConfig(), keyStoreSupplier, trustStoreSupplier, pbeSupplier).get();
+                    new SslContextSupplier(getConfigSupplier(), keyStoreSupplier, trustStoreSupplier, pbeSupplier)
+                            .get();
             Undertow.builder().addHttpsListener(apiPort, apiHost, sslContext).setHandler(encodingHandler).build()
                     .start();
         } else {
@@ -107,6 +111,6 @@ public class Runner {
      * @throws Exception if there is a problem launching the service
      */
     public static void main(final String... args) throws Exception {
-        new Runner(ConfigFactory.load()).run();
+        new Runner(new ConfigSupplier(ConfigFactory.load().withFallback(ConfigFactory.systemEnvironment()))).run();
     }
 }

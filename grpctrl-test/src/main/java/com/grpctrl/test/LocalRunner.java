@@ -2,8 +2,9 @@ package com.grpctrl.test;
 
 import static com.typesafe.config.ConfigValueFactory.fromAnyRef;
 
-import com.grpctrl.run.Runner;
 import com.grpctrl.common.config.ConfigKeys;
+import com.grpctrl.common.supplier.ConfigSupplier;
+import com.grpctrl.run.Runner;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
@@ -24,7 +25,7 @@ import javax.servlet.ServletException;
 public class LocalRunner {
     private static final Logger LOG = LoggerFactory.getLogger(LocalRunner.class);
 
-    private Config getConfig() {
+    public Config getConfig() {
         final ClassLoader classLoader = LocalRunner.class.getClassLoader();
         final Optional<URL> keystore = Optional.ofNullable(classLoader.getResource("keystore.jks"));
         final Optional<URL> truststore = Optional.ofNullable(classLoader.getResource("truststore.jks"));
@@ -51,7 +52,7 @@ public class LocalRunner {
     }
 
     private void run() throws ServletException {
-        new Runner(getConfig()).run();
+        new Runner(new ConfigSupplier(getConfig())).run();
     }
 
     /**

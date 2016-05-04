@@ -2,11 +2,11 @@ package com.grpctrl.crypto.ske;
 
 import com.google.common.base.Charsets;
 import com.grpctrl.common.config.ConfigKeys;
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.EncryptionException;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
-import com.typesafe.config.Config;
 
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -33,7 +33,7 @@ public class SymmetricKeyEncryptionSupplier
         implements Supplier<SymmetricKeyEncryption>, Factory<SymmetricKeyEncryption>,
         ContextResolver<SymmetricKeyEncryption> {
     @Nonnull
-    private final Config config;
+    private final ConfigSupplier configSupplier;
 
     @Nonnull
     private final KeyStoreSupplier keyStoreSupplier;
@@ -45,15 +45,15 @@ public class SymmetricKeyEncryptionSupplier
     private volatile SymmetricKeyEncryption singleton = null;
 
     /**
-     * @param config provides access to the static system configuration properties
+     * @param configSupplier provides access to the static system configuration properties
      * @param keyStoreSupplier provides access to the system key store
      * @param passwordBasedEncryptionSupplier provides support for password-based encryption and decryption
      */
     @Inject
     public SymmetricKeyEncryptionSupplier(
-            @Nonnull final Config config, @Nonnull final KeyStoreSupplier keyStoreSupplier,
+            @Nonnull final ConfigSupplier configSupplier, @Nonnull final KeyStoreSupplier keyStoreSupplier,
             @Nonnull final PasswordBasedEncryptionSupplier passwordBasedEncryptionSupplier) {
-        this.config = Objects.requireNonNull(config);
+        this.configSupplier = Objects.requireNonNull(configSupplier);
         this.keyStoreSupplier = Objects.requireNonNull(keyStoreSupplier);
         this.passwordBasedEncryptionSupplier = Objects.requireNonNull(passwordBasedEncryptionSupplier);
     }
@@ -62,8 +62,8 @@ public class SymmetricKeyEncryptionSupplier
      * @return the static system configuration properties
      */
     @Nonnull
-    protected Config getConfig() {
-        return this.config;
+    protected ConfigSupplier getConfigSupplier() {
+        return this.configSupplier;
     }
 
     /**
@@ -123,7 +123,8 @@ public class SymmetricKeyEncryptionSupplier
         try {
             final KeyStore keyStore = getKeyStoreSupplier().get();
             final String alias = keyStore.aliases().nextElement();
-            final String encryptedPassword = getConfig().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_PASSWORD.getKey());
+            final String encryptedPassword =
+                    getConfigSupplier().get().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_PASSWORD.getKey());
             final char[] decryptedPassword =
                     getPasswordBasedEncryptionSupplier().get().decryptProperty(encryptedPassword, Charsets.UTF_8)
                             .toCharArray();

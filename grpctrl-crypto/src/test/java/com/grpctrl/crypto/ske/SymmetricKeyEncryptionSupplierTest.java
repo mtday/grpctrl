@@ -4,6 +4,7 @@ import static com.typesafe.config.ConfigValueFactory.fromAnyRef;
 import static org.junit.Assert.assertNotNull;
 
 import com.grpctrl.common.config.ConfigKeys;
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
 import com.typesafe.config.Config;
@@ -44,9 +45,11 @@ public class SymmetricKeyEncryptionSupplierTest {
         map.put(ConfigKeys.CRYPTO_SSL_TRUSTSTORE_FILE.getKey(), fromAnyRef(truststore.get().getFile()));
 
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
+        final ConfigSupplier configSupplier = new ConfigSupplier(config);
 
-        final PasswordBasedEncryptionSupplier pbeSupplier = new PasswordBasedEncryptionSupplier(config);
-        supplier = new SymmetricKeyEncryptionSupplier(config, new KeyStoreSupplier(config, pbeSupplier), pbeSupplier);
+        final PasswordBasedEncryptionSupplier pbeSupplier = new PasswordBasedEncryptionSupplier(configSupplier);
+        supplier = new SymmetricKeyEncryptionSupplier(configSupplier, new KeyStoreSupplier(configSupplier, pbeSupplier),
+                pbeSupplier);
     }
 
     @Test

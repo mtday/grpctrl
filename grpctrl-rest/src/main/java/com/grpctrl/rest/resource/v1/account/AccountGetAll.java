@@ -1,17 +1,14 @@
 package com.grpctrl.rest.resource.v1.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grpctrl.common.model.Account;
 import com.grpctrl.db.dao.AccountDao;
 import com.grpctrl.db.error.DaoException;
 
-import java.util.Collection;
-
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
@@ -19,37 +16,35 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
 /**
- * Add an account to the backing data store.
+ * Retrieve all of the accounts in the system.
  */
 @Path("/v1/account/")
 @Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
-public class AccountAdd extends BaseAccountResource {
+public class AccountGetAll extends BaseAccountResource {
     /**
-     * @param objectMapper the {@link ObjectMapper} used to generate JSON data
+     * @param objectMapper the {@link ObjectMapper} responsible for generating JSON data
      * @param accountDao the {@link AccountDao} used to perform the account operation
      */
     @Inject
-    public AccountAdd(@Nonnull final ObjectMapper objectMapper, @Nonnull final AccountDao accountDao) {
+    public AccountGetAll(@Nonnull final ObjectMapper objectMapper, @Nonnull final AccountDao accountDao) {
         super(objectMapper, accountDao);
     }
 
     /**
-     * Save the provided account into the backing data store.
+     * Retrieve all accounts from the backing data store.
      *
-     * @param accounts the new account objects to be added to the backing data store
-     *
-     * @return the response containing the updated account, including new unique identifiers
+     * @return the response containing all the accounts
      */
-    @POST
-    public Response add(@Nonnull final Collection<Account> accounts) {
-        // TODO: Only admins should be able to add accounts.
+    @GET
+    @Nullable
+    public Response getAll() {
+        // TODO: Only admins should be able to retrieve accounts.
 
         final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapper(), consumer -> {
             try {
-                getAccountDao().add(consumer, accounts);
+                getAccountDao().getAll(consumer);
             } catch (final DaoException daoException) {
-                throw new InternalServerErrorException("Failed to add accounts to backing store", daoException);
+                throw new InternalServerErrorException("Failed to add account to backing store", daoException);
             }
         });
 

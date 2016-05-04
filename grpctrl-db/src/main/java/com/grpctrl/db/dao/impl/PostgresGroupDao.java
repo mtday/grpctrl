@@ -62,9 +62,9 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(conn);
         Objects.requireNonNull(account);
 
-        final String SQL = "SELECT COUNT(*) FROM groups WHERE account_id = ?";
+        final String sql = "SELECT COUNT(*) FROM groups WHERE account_id = ?";
 
-        try (final PreparedStatement ps = conn.prepareStatement(SQL)) {
+        try (final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
             try (final ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -82,11 +82,11 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(account);
         Objects.requireNonNull(groupName);
 
-        final String SQL = "SELECT COUNT(*) FROM groups WHERE account_id = ? AND group_name = ?";
+        final String sql = "SELECT COUNT(*) FROM groups WHERE account_id = ? AND group_name = ?";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(SQL)) {
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
             ps.setString(2, groupName);
 
@@ -109,12 +109,12 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(consumer);
         Objects.requireNonNull(account);
 
-        final int BATCH_SIZE = 1000;
-        final String SQL = "SELECT group_id, group_name FROM groups WHERE account_id = ? AND parent_id IS NULL";
+        final int batchSize = 1000;
+        final String sql = "SELECT group_id, group_name FROM groups WHERE account_id = ? AND parent_id IS NULL";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(SQL)) {
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
 
             final Collection<Group> batch = new LinkedList<>();
@@ -130,7 +130,7 @@ public class PostgresGroupDao implements GroupDao {
                     }
 
                     batch.add(bld.build());
-                    if (batch.size() >= BATCH_SIZE) {
+                    if (batch.size() >= batchSize) {
                         getTagDao().get(consumer, conn, account, batch);
                         batch.clear();
                     }
@@ -152,11 +152,11 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(account);
         Objects.requireNonNull(groupId);
 
-        final String SQL = "SELECT parent_id, group_name FROM groups WHERE account_id = ? AND group_id = ?";
+        final String sql = "SELECT parent_id, group_name FROM groups WHERE account_id = ? AND group_id = ?";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(SQL)) {
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
             ps.setLong(2, groupId);
 
@@ -187,11 +187,11 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(groupName);
 
         final int batchSize = 1000;
-        final String SQL = "SELECT parent_id, group_id FROM groups WHERE account_id = ? AND group_name = ?";
+        final String sql = "SELECT parent_id, group_id FROM groups WHERE account_id = ? AND group_name = ?";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(SQL)) {
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
             ps.setString(2, groupName);
 
@@ -230,11 +230,11 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(account);
 
         final int batchSize = 1000;
-        final String SQL = "SELECT group_id, group_name FROM groups WHERE account_id = ? AND parent_id IS NULL";
+        final String sql = "SELECT group_id, group_name FROM groups WHERE account_id = ? AND parent_id IS NULL";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(SQL)) {
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
 
             final Collection<Group> batch = new LinkedList<>();
@@ -266,11 +266,11 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(parentId);
 
         final int batchSize = 1000;
-        final String SQL = "SELECT group_id, group_name FROM groups WHERE account_id = ? AND parent_id = ?";
+        final String sql = "SELECT group_id, group_name FROM groups WHERE account_id = ? AND parent_id = ?";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(SQL)) {
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
             ps.setLong(2, parentId);
 
@@ -304,12 +304,12 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(parentName);
 
         final int batchSize = 1000;
-        final String SQL = "SELECT parent_id, group_id, group_name FROM groups WHERE account_id = ? AND parent_id IN "
+        final String sql = "SELECT parent_id, group_id, group_name FROM groups WHERE account_id = ? AND parent_id IN "
                 + "(SELECT group_id FROM groups where account_id = ? AND group_name = ?)";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(SQL)) {
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
             ps.setLong(2, account.getId().orElse(null));
             ps.setString(3, parentName);
@@ -368,10 +368,10 @@ public class PostgresGroupDao implements GroupDao {
             return;
         }
 
-        final int INSERT_BATCH_SIZE = 1000;
-        final String SQL = "INSERT INTO groups (account_id, parent_id, group_name) VALUES (?, ?, ?)";
+        final int batchSize = 1000;
+        final String sql = "INSERT INTO groups (account_id, parent_id, group_name) VALUES (?, ?, ?)";
 
-        try (final PreparedStatement ps = conn.prepareStatement(SQL, Statement.RETURN_GENERATED_KEYS)) {
+        try (final PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             final Collection<Group.Builder> batch = new LinkedList<>();
 
             ps.setLong(1, account.getId().orElse(null));
@@ -385,7 +385,7 @@ public class PostgresGroupDao implements GroupDao {
                 ps.addBatch();
                 batch.add(new Group.Builder(group).setParentId(parentId));
 
-                if (batch.size() >= INSERT_BATCH_SIZE) {
+                if (batch.size() >= batchSize) {
                     consumeBatch(consumer, conn, ps, account, batch);
                 }
             }
@@ -426,12 +426,12 @@ public class PostgresGroupDao implements GroupDao {
 
         int removed = 0;
 
-        final int DELETE_BATCH_SIZE = 1000;
-        final String SQL = "DELETE FROM groups WHERE account_id = ? AND group_id = ?";
+        final int batchSize = 1000;
+        final String sql = "DELETE FROM groups WHERE account_id = ? AND group_id = ?";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(SQL)) {
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
             int batches = 0;
             ps.setLong(1, account.getId().orElse(null));
             for (final Long groupId : groupIds) {
@@ -439,7 +439,7 @@ public class PostgresGroupDao implements GroupDao {
                 ps.addBatch();
                 batches++;
 
-                if (batches > DELETE_BATCH_SIZE) {
+                if (batches >= batchSize) {
                     batches = 0;
                     removed += IntStream.of(ps.executeBatch()).sum();
                 }

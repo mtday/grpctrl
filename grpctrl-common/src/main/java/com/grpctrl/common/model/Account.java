@@ -2,6 +2,8 @@ package com.grpctrl.common.model;
 
 import com.grpctrl.common.util.OptionalComparator;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -30,6 +32,15 @@ public class Account implements Comparable<Account> {
 
     @Nonnull
     private final ServiceLevel serviceLevel;
+
+    @SuppressWarnings("all")
+    @SuppressFBWarnings(value = "NP_STORE_INTO_NONNULL_FIELD", justification = "required by Jackson")
+    private Account() {
+        // Required for Jackson deserialization.
+        this.id = null;
+        this.name = null;
+        this.serviceLevel = null;
+    }
 
     private Account(@Nullable final Long id, @Nonnull final String name, @Nonnull final ServiceLevel serviceLevel) {
         // These have already been validated by the builder.

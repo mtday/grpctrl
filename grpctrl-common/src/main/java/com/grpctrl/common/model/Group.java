@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableSet;
 import com.grpctrl.common.util.CollectionComparator;
 import com.grpctrl.common.util.OptionalComparator;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -40,6 +42,16 @@ public class Group implements Comparable<Group> {
 
     @Nonnull
     private final ImmutableSet<Tag> tags;
+
+    @SuppressWarnings("all")
+    @SuppressFBWarnings(value = "NP_STORE_INTO_NONNULL_FIELD", justification = "required by Jackson")
+    private Group() {
+        // Required for Jackson deserialization.
+        this.id = null;
+        this.parentId = null;
+        this.name = null;
+        this.tags = null;
+    }
 
     private Group(
             @Nullable final Long id, @Nullable final Long parentId, @Nonnull final String name,

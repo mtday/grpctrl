@@ -1,10 +1,10 @@
 package com.grpctrl.crypto.pbe;
 
 import com.grpctrl.common.config.ConfigKeys;
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.EncryptionException;
 import com.grpctrl.crypto.pbe.impl.AESPasswordBasedEncryption;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -27,32 +27,25 @@ public class PasswordBasedEncryptionSupplier
         implements Supplier<PasswordBasedEncryption>, Factory<PasswordBasedEncryption>,
         ContextResolver<PasswordBasedEncryption> {
     @Nonnull
-    private final Config config;
+    private final ConfigSupplier configSupplier;
 
     @Nullable
     private volatile PasswordBasedEncryption singleton = null;
 
     /**
-     * Default constructor required for dependency injection.
-     */
-    public PasswordBasedEncryptionSupplier() {
-        this(ConfigFactory.load());
-    }
-
-    /**
-     * @param config provides access to the static system configuration properties
+     * @param configSupplier provides access to the static system configuration properties
      */
     @Inject
-    public PasswordBasedEncryptionSupplier(@Nonnull final Config config) {
-        this.config = Objects.requireNonNull(config);
+    public PasswordBasedEncryptionSupplier(@Nonnull final ConfigSupplier configSupplier) {
+        this.configSupplier = Objects.requireNonNull(configSupplier);
     }
 
     /**
      * @return the static system configuration properties
      */
     @Nonnull
-    protected Config getConfig() {
-        return this.config;
+    protected ConfigSupplier getConfigSupplier() {
+        return this.configSupplier;
     }
 
     @Override
@@ -93,9 +86,10 @@ public class PasswordBasedEncryptionSupplier
      */
     @Nonnull
     private String getSharedSecret() throws EncryptionException {
-        final String sharedSecretVar = getConfig().getString(ConfigKeys.CRYPTO_SHARED_SECRET_VARIABLE.getKey());
-        if (getConfig().hasPath(sharedSecretVar)) {
-            return getConfig().getString(sharedSecretVar);
+        final Config config = getConfigSupplier().get();
+        final String sharedSecretVar = config.getString(ConfigKeys.CRYPTO_SHARED_SECRET_VARIABLE.getKey());
+        if (config.hasPath(sharedSecretVar)) {
+            return config.getString(sharedSecretVar);
         }
         throw new EncryptionException("Failed to retrieve shared secret from variable " + sharedSecretVar);
     }

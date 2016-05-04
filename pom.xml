@@ -22,6 +22,7 @@
 
     <modules>
         <module>grpctrl-build-tools</module>
+        <module>grpctrl-client</module>
         <module>grpctrl-common</module>
         <module>grpctrl-crypto</module>
         <module>grpctrl-db</module>
@@ -150,7 +151,6 @@
                         <phase>validate</phase>
                         <goals>
                             <goal>check</goal>
-                            <goal>cpd-check</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -351,6 +351,11 @@
             <!-- Project modules -->
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>grpctrl-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>grpctrl-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -485,6 +490,13 @@
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-core</artifactId>
                 <version>4.0</version>
+            </dependency>
+
+            <!-- OkHttp used as a REST client library -->
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>3.0.1</version>
             </dependency>
 
             <!-- Metrics and health checking utilities -->

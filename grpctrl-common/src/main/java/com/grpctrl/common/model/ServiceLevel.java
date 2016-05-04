@@ -2,6 +2,8 @@ package com.grpctrl.common.model;
 
 import com.google.common.base.Preconditions;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -25,6 +27,15 @@ public class ServiceLevel implements Comparable<ServiceLevel> {
     private final int maxGroups;
     private final int maxTags;
     private final int maxDepth;
+
+    @SuppressWarnings("all")
+    @SuppressFBWarnings(value = "NP_STORE_INTO_NONNULL_FIELD", justification = "required by Jackson")
+    private ServiceLevel() {
+        // Required for Jackson deserialization.
+        this.maxGroups = 0;
+        this.maxTags = 0;
+        this.maxDepth = 0;
+    }
 
     private ServiceLevel(final int maxGroups, final int maxTags, final int maxDepth) {
         // These values have already been validated via the builder.

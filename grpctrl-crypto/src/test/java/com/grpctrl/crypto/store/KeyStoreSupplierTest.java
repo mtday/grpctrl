@@ -4,6 +4,7 @@ import static com.typesafe.config.ConfigValueFactory.fromAnyRef;
 import static org.junit.Assert.assertNotNull;
 
 import com.grpctrl.common.config.ConfigKeys;
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -37,8 +38,9 @@ public class KeyStoreSupplierTest {
         map.put(ConfigKeys.CRYPTO_SSL_KEYSTORE_FILE.getKey(), fromAnyRef(keystore.get().getFile()));
 
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
+        final ConfigSupplier configSupplier = new ConfigSupplier(config);
 
-        supplier = new KeyStoreSupplier(config, new PasswordBasedEncryptionSupplier(config));
+        supplier = new KeyStoreSupplier(configSupplier, new PasswordBasedEncryptionSupplier(configSupplier));
     }
 
     @Test

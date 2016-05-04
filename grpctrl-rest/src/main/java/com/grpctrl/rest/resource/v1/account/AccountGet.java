@@ -43,7 +43,7 @@ public class AccountGet extends BaseAccountResource {
     public Response get(@Nonnull @PathParam("accountId") final Long accountId) {
         // TODO: Only admins should be able to retrieve accounts.
 
-        final StreamingOutput streamingOutput = new AccountStreamer(getObjectMapper(), consumer -> {
+        final StreamingOutput streamingOutput = new SingleAccountStreamer(getObjectMapper(), consumer -> {
             try {
                 getAccountDao().get(consumer, accountId);
             } catch (final DaoException daoException) {

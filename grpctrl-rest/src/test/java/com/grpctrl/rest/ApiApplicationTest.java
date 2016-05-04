@@ -58,6 +58,7 @@ public class ApiApplicationTest {
         assertEquals("com.grpctrl.db.dao.supplier.TagDaoSupplier", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountAdd", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountGet", nameIter.next());
+        assertEquals("com.grpctrl.rest.resource.v1.account.AccountGetAll", nameIter.next());
         assertFalse(nameIter.hasNext());
     }
 }

@@ -15,6 +15,10 @@
         <!-- Project modules -->
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>grpctrl-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>grpctrl-run</artifactId>
         </dependency>
     </dependencies>

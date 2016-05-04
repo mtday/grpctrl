@@ -17,7 +17,7 @@ import javax.ws.rs.core.StreamingOutput;
 /**
  * Responsible for streaming account objects as JSON.
  */
-public class AccountStreamer implements StreamingOutput {
+public class MultipleAccountStreamer implements StreamingOutput {
     @Nonnull
     private final ObjectMapper objectMapper;
     @Nonnull
@@ -27,7 +27,7 @@ public class AccountStreamer implements StreamingOutput {
      * @param objectMapper responsible for generating JSON data
      * @param consumer the consumer responsible for pushing account objects through this class
      */
-    public AccountStreamer(
+    public MultipleAccountStreamer(
             @Nonnull final ObjectMapper objectMapper, @Nonnull final Consumer<Consumer<Account>> consumer) {
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.consumer = Objects.requireNonNull(consumer);

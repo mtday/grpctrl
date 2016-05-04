@@ -2,11 +2,11 @@ package com.grpctrl.crypto.ssl;
 
 import com.google.common.base.Charsets;
 import com.grpctrl.common.config.ConfigKeys;
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.EncryptionException;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
 import com.grpctrl.crypto.store.TrustStoreSupplier;
-import com.typesafe.config.Config;
 
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -32,7 +32,7 @@ import javax.ws.rs.ext.Provider;
 @Provider
 public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLContext>, ContextResolver<SSLContext> {
     @Nonnull
-    private final Config config;
+    private final ConfigSupplier configSupplier;
 
     @Nonnull
     private final KeyStoreSupplier keyStoreSupplier;
@@ -47,28 +47,28 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
     private volatile SSLContext singleton = null;
 
     /**
-     * @param config provides access to the static system configuration properties
+     * @param configSupplier provides access to the static system configuration properties
      * @param keyStoreSupplier provides access to the system key store
      * @param trustStoreSupplier provides access to the system trust store
      * @param passwordBasedEncryptionSupplier provides support for password-based encryption and decryption
      */
     @Inject
     public SslContextSupplier(
-            @Nonnull final Config config, @Nonnull final KeyStoreSupplier keyStoreSupplier,
+            @Nonnull final ConfigSupplier configSupplier, @Nonnull final KeyStoreSupplier keyStoreSupplier,
             @Nonnull final TrustStoreSupplier trustStoreSupplier,
             @Nonnull final PasswordBasedEncryptionSupplier passwordBasedEncryptionSupplier) {
-        this.config = Objects.requireNonNull(config);
+        this.configSupplier = Objects.requireNonNull(configSupplier);
         this.keyStoreSupplier = Objects.requireNonNull(keyStoreSupplier);
         this.trustStoreSupplier = Objects.requireNonNull(trustStoreSupplier);
         this.passwordBasedEncryptionSupplier = Objects.requireNonNull(passwordBasedEncryptionSupplier);
     }
 
     /**
-     * @return the static system configuration properties
+     * @return the provider of the static system configuration properties
      */
     @Nonnull
-    protected Config getConfig() {
-        return this.config;
+    protected ConfigSupplier getConfigSupplier() {
+        return this.configSupplier;
     }
 
     /**
@@ -130,14 +130,15 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
     @Nonnull
     private SSLContext create() {
         try {
-            if (!getConfig().getBoolean(ConfigKeys.CRYPTO_SSL_ENABLED.getKey())) {
+            if (!getConfigSupplier().get().getBoolean(ConfigKeys.CRYPTO_SSL_ENABLED.getKey())) {
                 return SSLContext.getDefault();
             }
 
             final KeyStore keyStore = getKeyStoreSupplier().get();
             final KeyStore trustStore = getTrustStoreSupplier().get();
 
-            final String encryptedPassword = getConfig().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_PASSWORD.getKey());
+            final String encryptedPassword =
+                    getConfigSupplier().get().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_PASSWORD.getKey());
             final char[] decryptedPassword =
                     getPasswordBasedEncryptionSupplier().get().decryptProperty(encryptedPassword, Charsets.UTF_8)
                             .toCharArray();

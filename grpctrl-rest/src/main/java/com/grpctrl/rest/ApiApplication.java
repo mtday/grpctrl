@@ -16,6 +16,7 @@ import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
 import com.grpctrl.db.dao.supplier.TagDaoSupplier;
 import com.grpctrl.rest.resource.v1.account.AccountAdd;
 import com.grpctrl.rest.resource.v1.account.AccountGet;
+import com.grpctrl.rest.resource.v1.account.AccountGetAll;
 
 import org.glassfish.jersey.server.ResourceConfig;
 
@@ -68,5 +69,6 @@ public class ApiApplication extends ResourceConfig {
         // Resource classes.
         register(AccountAdd.class);
         register(AccountGet.class);
+        register(AccountGetAll.class);
     }
 }

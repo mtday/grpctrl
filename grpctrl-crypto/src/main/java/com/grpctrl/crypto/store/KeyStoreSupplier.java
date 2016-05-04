@@ -2,8 +2,8 @@ package com.grpctrl.crypto.store;
 
 import com.google.common.base.Charsets;
 import com.grpctrl.common.config.ConfigKeys;
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
-import com.typesafe.config.Config;
 
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
@@ -20,32 +20,33 @@ import javax.ws.rs.ext.Provider;
 @Provider
 public class KeyStoreSupplier extends StoreSupplier {
     /**
-     * @param config provides access to the static system configuration properties
+     * @param configSupplier provides access to the static system configuration properties
      * @param passwordBasedEncryptionSupplier provides support for password-based encryption and decryption
      */
     @Inject
     public KeyStoreSupplier(
-            @Nonnull final Config config,
+            @Nonnull final ConfigSupplier configSupplier,
             @Nonnull final PasswordBasedEncryptionSupplier passwordBasedEncryptionSupplier) {
-        super(config, passwordBasedEncryptionSupplier);
+        super(configSupplier, passwordBasedEncryptionSupplier);
     }
 
     @Override
     @Nonnull
     public String getFile() {
-        return getConfig().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_FILE.getKey());
+        return getConfigSupplier().get().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_FILE.getKey());
     }
 
     @Override
     @Nonnull
     public String getType() {
-        return getConfig().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_TYPE.getKey());
+        return getConfigSupplier().get().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_TYPE.getKey());
     }
 
     @Override
     @Nonnull
     public char[] getPassword() {
-        final String encryptedPassword = getConfig().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_PASSWORD.getKey());
+        final String encryptedPassword =
+                getConfigSupplier().get().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_PASSWORD.getKey());
         return getPasswordBasedEncryptionSupplier().get().decryptProperty(encryptedPassword, Charsets.UTF_8)
                 .toCharArray();
     }

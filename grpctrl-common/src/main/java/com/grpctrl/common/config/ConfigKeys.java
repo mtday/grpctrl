@@ -56,7 +56,16 @@ public enum ConfigKeys {
     /** Whether the database schema should be dropped during initialization (for testing). */
     DB_CLEAN,
     /** Whether the migration sql scripts should be applied to the database. */
-    DB_MIGRATE;
+    DB_MIGRATE,
+
+    /** The timeout to wait for the remote server to connect. */
+    CLIENT_TIMEOUT_CONNECT,
+    /** The timeout to wait for the remote server to respond to a read. */
+    CLIENT_TIMEOUT_READ,
+    /** The timeout to wait for the remote server to respond to a write. */
+    CLIENT_TIMEOUT_WRITE,
+    /** Whether the client should attempt to retry on failure. */
+    CLIENT_FAILURE_RETRY;
 
     /**
      * @return the key to use when retrieving the common configuration value from the system configuration file

@@ -1,8 +1,8 @@
 package com.grpctrl.crypto.store;
 
+import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.EncryptionException;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
-import com.typesafe.config.Config;
 
 import org.glassfish.hk2.api.Factory;
 
@@ -26,7 +26,7 @@ import javax.ws.rs.ext.ContextResolver;
  */
 abstract class StoreSupplier implements Supplier<KeyStore>, Factory<KeyStore>, ContextResolver<KeyStore> {
     @Nonnull
-    private final Config config;
+    private final ConfigSupplier configSupplier;
 
     @Nonnull
     private final PasswordBasedEncryptionSupplier passwordBasedEncryptionSupplier;
@@ -35,23 +35,23 @@ abstract class StoreSupplier implements Supplier<KeyStore>, Factory<KeyStore>, C
     private volatile KeyStore singleton;
 
     /**
-     * @param config provides access to the static system configuration properties
+     * @param configSupplier provides access to the static system configuration properties
      * @param passwordBasedEncryptionSupplier provides support for password-based encryption and decryption
      */
     @Inject
     public StoreSupplier(
-            @Nonnull final Config config,
+            @Nonnull final ConfigSupplier configSupplier,
             @Nonnull final PasswordBasedEncryptionSupplier passwordBasedEncryptionSupplier) {
-        this.config = Objects.requireNonNull(config);
+        this.configSupplier = Objects.requireNonNull(configSupplier);
         this.passwordBasedEncryptionSupplier = Objects.requireNonNull(passwordBasedEncryptionSupplier);
     }
 
     /**
-     * @return the static system configuration properties
+     * @return the supplier of the static system configuration properties
      */
     @Nonnull
-    protected Config getConfig() {
-        return this.config;
+    protected ConfigSupplier getConfigSupplier() {
+        return this.configSupplier;
     }
 
     /**
