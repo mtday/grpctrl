@@ -224,10 +224,6 @@
                     <!-- Specified as part of the jacoco code coverage plugin -->
                     <argLine>${surefireArgLine}</argLine>
                     <skipTests>${skip.unit.tests}</skipTests>
-                    <excludes>
-                        <!-- Skip integration tests during unit testing -->
-                        <exclude>**/*IT.java</exclude>
-                    </excludes>
                 </configuration>
             </plugin>
 
@@ -398,6 +394,11 @@
             </dependency>
 
             <!-- Glassfish Jersey used for REST end-points -->
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-common</artifactId>
+                <version>2.22.2</version>
+            </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-server</artifactId>

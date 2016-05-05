@@ -7,14 +7,13 @@ import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.AccountDao;
 import com.grpctrl.db.dao.ServiceLevelDao;
 import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
-import com.grpctrl.db.error.DaoException;
+import com.grpctrl.db.error.ErrorTransformer;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -57,13 +56,8 @@ public class PostgresAccountDao implements AccountDao {
     }
 
     @Override
-    public void get(@Nonnull final Consumer<Account> consumer, @Nonnull final Long... accountIds) throws DaoException {
-        get(consumer, Arrays.asList(Objects.requireNonNull(accountIds)));
-    }
-
-    @Override
-    public void get(@Nonnull final Consumer<Account> consumer, @Nonnull final Collection<Long> accountIds)
-            throws DaoException {
+    public void get(@Nonnull final Collection<Long> accountIds, @Nonnull final Consumer<Account> consumer)
+            {
         Objects.requireNonNull(consumer);
         Objects.requireNonNull(accountIds);
 
@@ -91,12 +85,12 @@ public class PostgresAccountDao implements AccountDao {
                 }
             }
         } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to get account", sqlException);
+            throw ErrorTransformer.get("Failed to get account", sqlException);
         }
     }
 
     @Override
-    public void getAll(@Nonnull final Consumer<Account> consumer) throws DaoException {
+    public void getAll(@Nonnull final Consumer<Account> consumer) {
         Objects.requireNonNull(consumer);
 
         final String sql = "SELECT a.account_id, a.name, s.max_groups, s.max_tags, s.max_depth FROM accounts a JOIN "
@@ -120,20 +114,15 @@ public class PostgresAccountDao implements AccountDao {
                 consumer.accept(account);
             }
         } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to get all accounts", sqlException);
+            throw ErrorTransformer.get("Failed to get all accounts", sqlException);
         }
     }
 
     @Override
-    public void add(@Nonnull final Consumer<Account> consumer, @Nonnull final Account... accounts) throws DaoException {
-        add(consumer, Arrays.asList(Objects.requireNonNull(accounts)));
-    }
-
-    @Override
-    public void add(@Nonnull final Consumer<Account> consumer, @Nonnull final Iterable<Account> accounts)
-            throws DaoException {
-        Objects.requireNonNull(consumer);
+    public void add(@Nonnull final Iterable<Account> accounts, @Nonnull final Consumer<Account> consumer)
+            {
         Objects.requireNonNull(accounts);
+        Objects.requireNonNull(consumer);
 
         final int batchSize = 1000;
 
@@ -168,14 +157,14 @@ public class PostgresAccountDao implements AccountDao {
 
             conn.commit();
         } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to add accounts", sqlException);
+            throw ErrorTransformer.get("Failed to add accounts", sqlException);
         }
     }
 
     private void processBatch(
             @Nonnull final PreparedStatement ps, @Nonnull final Collection<Account> batch,
             @Nonnull final CloseableBiConsumer<Long, ServiceLevel> serviceLevelAdder,
-            @Nonnull final Consumer<Account> consumer) throws SQLException, DaoException {
+            @Nonnull final Consumer<Account> consumer) throws SQLException {
         try (final ResultSet rs = ps.getGeneratedKeys()) {
             final Iterator<Account> batchIter = batch.iterator();
             while (rs.next() && batchIter.hasNext()) {
@@ -192,12 +181,7 @@ public class PostgresAccountDao implements AccountDao {
     }
 
     @Override
-    public int remove(@Nonnull final Long... accountIds) throws DaoException {
-        return remove(Arrays.asList(Objects.requireNonNull(accountIds)));
-    }
-
-    @Override
-    public int remove(@Nonnull final Collection<Long> accountIds) throws DaoException {
+    public int remove(@Nonnull final Collection<Long> accountIds) {
         Objects.requireNonNull(accountIds);
 
         final String sql = "DELETE FROM accounts WHERE account_id = ANY (?)";
@@ -211,7 +195,7 @@ public class PostgresAccountDao implements AccountDao {
             removed += ps.executeUpdate();
             conn.commit();
         } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to remove accounts", sqlException);
+            throw ErrorTransformer.get("Failed to remove accounts", sqlException);
         }
 
         return removed;

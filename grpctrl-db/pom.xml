@@ -42,6 +42,12 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
 
+        <!-- Needed for web-app exceptions -->
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+        </dependency>
+
         <!-- Unit Testing -->
         <dependency>
             <groupId>junit</groupId>

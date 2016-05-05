@@ -9,6 +9,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -98,6 +99,24 @@ public class Group implements Comparable<Group> {
      */
     public Group(@Nonnull final Group other) {
         setValues(other);
+    }
+
+    /**
+     * @param other the group to duplicate
+     * @param tagIterator the iterator from which tags will be retrieved and added to the group
+     *
+     * @throws NullPointerException if the parameter is {@code null}
+     */
+    public Group(@Nonnull final Group other, @Nonnull final Iterator<Tag> tagIterator) {
+        Objects.requireNonNull(other);
+        setId(other.getId().orElse(null));
+        setParentId(other.getParentId().orElse(null));
+        setName(other.getName());
+
+        Objects.requireNonNull(tagIterator);
+        while (tagIterator.hasNext()) {
+            addTags(new Tag(tagIterator.next()));
+        }
     }
 
     /**

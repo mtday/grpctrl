@@ -3,14 +3,12 @@ package com.grpctrl.rest.resource.v1.account;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grpctrl.common.model.Account;
 import com.grpctrl.db.dao.AccountDao;
-import com.grpctrl.db.error.DaoException;
 
 import java.util.Collection;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -46,11 +44,7 @@ public class AccountAdd extends BaseAccountResource {
         // TODO: Only admins should be able to add accounts.
 
         final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapper(), consumer -> {
-            try {
-                getAccountDao().add(consumer, accounts);
-            } catch (final DaoException daoException) {
-                throw new InternalServerErrorException("Failed to add accounts to backing store", daoException);
-            }
+            getAccountDao().add(accounts, consumer);
         });
 
         return Response.ok().entity(streamingOutput).type(MediaType.APPLICATION_JSON).build();

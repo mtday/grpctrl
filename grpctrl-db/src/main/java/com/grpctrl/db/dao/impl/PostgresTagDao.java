@@ -5,7 +5,7 @@ import com.grpctrl.common.model.Tag;
 import com.grpctrl.common.util.CloseableBiConsumer;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.TagDao;
-import com.grpctrl.db.error.DaoException;
+import com.grpctrl.db.error.ErrorTransformer;
 import com.grpctrl.db.error.QuotaExceededException;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -19,14 +19,12 @@ import java.util.stream.IntStream;
 
 import javax.annotation.Nonnull;
 import javax.sql.DataSource;
-import javax.ws.rs.InternalServerErrorException;
 
 /**
  * Provides an implementation of a {@link TagDao} using a JDBC {@link DataSourceSupplier} to communicate
  * with a back-end PostgreSQL database.
  */
-@SuppressFBWarnings(value = "SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING", justification = "just a "
-        + "little code deduplication, it really is constant")
+@SuppressFBWarnings(value = "SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING")
 public class PostgresTagDao implements TagDao {
     @Nonnull
     private final DataSourceSupplier dataSourceSupplier;
@@ -45,7 +43,7 @@ public class PostgresTagDao implements TagDao {
     }
 
     @Override
-    public int count(@Nonnull final Connection conn, @Nonnull final Account account) throws DaoException {
+    public int count(@Nonnull final Connection conn, @Nonnull final Account account) {
         Objects.requireNonNull(conn);
         Objects.requireNonNull(account);
 
@@ -60,40 +58,37 @@ public class PostgresTagDao implements TagDao {
                 return 0;
             }
         } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to retrieve tag count", sqlException);
+            throw ErrorTransformer.get("Failed to retrieve tag count", sqlException);
         }
     }
 
     @Override
-    public CloseableBiConsumer<Long, Tag> getAddConsumer(@Nonnull Connection conn, @Nonnull Account account)
-            throws DaoException {
+    public CloseableBiConsumer<Long, Tag> getAddConsumer(@Nonnull Connection conn, @Nonnull Account account) {
         final int available = account.getServiceLevel().getMaxTags() - count(conn, account);
         return new AddConsumer(conn, account, available);
     }
 
     @Override
     public int add(
-            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Iterable<Tag> tags)
-            throws DaoException {
+            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Iterable<Tag> tags) {
         final String sql = "INSERT INTO tags (account_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?)";
 
         try {
             return processTags(sql, 1000, account, groupId, tags);
         } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to add tags", sqlException);
+            throw ErrorTransformer.get("Failed to add tags", sqlException);
         }
     }
 
     @Override
     public int remove(
-            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Iterable<Tag> tags)
-            throws DaoException {
+            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Iterable<Tag> tags) {
         final String sql = "DELETE FROM tags WHERE account_id = ? AND group_id = ? AND tag_label = ? AND tag_value = ?";
 
         try {
             return processTags(sql, 1000, account, groupId, tags);
         } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to remove tags", sqlException);
+            throw ErrorTransformer.get("Failed to remove tags", sqlException);
         }
     }
 
@@ -134,8 +129,7 @@ public class PostgresTagDao implements TagDao {
 
     @Override
     public int removeLabels(
-            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Iterable<String> tagLabels)
-            throws DaoException {
+            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Iterable<String> tagLabels) {
         Objects.requireNonNull(account);
         Objects.requireNonNull(groupId);
         Objects.requireNonNull(tagLabels);
@@ -165,7 +159,7 @@ public class PostgresTagDao implements TagDao {
             }
             conn.commit();
         } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to remove tags by label", sqlException);
+            throw ErrorTransformer.get("Failed to remove tags by label", sqlException);
         }
 
         return removed;
@@ -190,25 +184,24 @@ public class PostgresTagDao implements TagDao {
                 this.account = Objects.requireNonNull(account);
                 this.available = available;
             } catch (final SQLException sqlException) {
-                throw new InternalServerErrorException(
-                        "Failed to create tag insert prepared statement", sqlException);
+                throw ErrorTransformer.get("Failed to create tag insert prepared statement", sqlException);
             }
         }
 
         @Override
         public void accept(@Nonnull final Long groupId, @Nonnull final Tag tag) {
             try {
-                this.ps.setLong(1, account.getId().orElse(null));
+                this.ps.setLong(1, this.account.getId().orElse(null));
                 this.ps.setLong(2, groupId);
                 this.ps.setString(3, tag.getLabel());
                 this.ps.setString(4, tag.getValue());
                 this.ps.addBatch();
-                batchCount++;
+                this.batchCount++;
 
                 if (this.batchCount >= BATCH_SIZE) {
                     this.ps.executeBatch();
                     this.batchCount = 0;
-                    this.added += IntStream.of(ps.executeBatch()).sum();
+                    this.added += IntStream.of(this.ps.executeBatch()).sum();
                     if (this.available - this.added < 0) {
                         throw new QuotaExceededException(
                                 "Unable to add the requested tags without exceeding allocated quota. Account has "
@@ -216,7 +209,7 @@ public class PostgresTagDao implements TagDao {
                     }
                 }
             } catch (final SQLException sqlException) {
-                throw new InternalServerErrorException("Failed to add tag batch", sqlException);
+                throw ErrorTransformer.get("Failed to add tag batch", sqlException);
             }
         }
 
@@ -224,7 +217,7 @@ public class PostgresTagDao implements TagDao {
         public void close() {
             try {
                 if (this.batchCount > 0) {
-                    this.added += IntStream.of(ps.executeBatch()).sum();
+                    this.added += IntStream.of(this.ps.executeBatch()).sum();
                     if (this.available - this.added < 0) {
                         throw new QuotaExceededException(
                                 "Unable to add the requested tags without exceeding allocated quota. Account has "
@@ -232,12 +225,12 @@ public class PostgresTagDao implements TagDao {
                     }
                 }
             } catch (final SQLException sqlException) {
-                throw new InternalServerErrorException("Failed to execute tag insert batch", sqlException);
+                throw ErrorTransformer.get("Failed to execute tag insert batch", sqlException);
             } finally {
                 try {
                     this.ps.close();
                 } catch (final SQLException sqlException) {
-                    throw new InternalServerErrorException("Failed to close prepared statement", sqlException);
+                    throw ErrorTransformer.get("Failed to close prepared statement", sqlException);
                 }
             }
         }

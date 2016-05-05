@@ -82,7 +82,7 @@ public class Account implements Comparable<Account> {
         Objects.requireNonNull(other);
         setId(other.getId().orElse(null));
         setName(other.getName());
-        setServiceLevel(other.getServiceLevel());
+        setServiceLevel(new ServiceLevel(other.getServiceLevel()));
         return this;
     }
 

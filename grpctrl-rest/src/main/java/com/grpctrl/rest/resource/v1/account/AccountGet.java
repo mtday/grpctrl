@@ -2,13 +2,13 @@ package com.grpctrl.rest.resource.v1.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grpctrl.db.dao.AccountDao;
-import com.grpctrl.db.error.DaoException;
+
+import java.util.Collections;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -44,11 +44,7 @@ public class AccountGet extends BaseAccountResource {
         // TODO: Only admins should be able to retrieve accounts.
 
         final StreamingOutput streamingOutput = new SingleAccountStreamer(getObjectMapper(), consumer -> {
-            try {
-                getAccountDao().get(consumer, accountId);
-            } catch (final DaoException daoException) {
-                throw new InternalServerErrorException("Failed to add account to backing store", daoException);
-            }
+            getAccountDao().get(Collections.singleton(accountId), consumer);
         });
 
         return Response.ok().entity(streamingOutput).type(MediaType.APPLICATION_JSON).build();

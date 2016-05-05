@@ -12,10 +12,10 @@ INSERT INTO accounts (account_id, name) VALUES
 
 
 INSERT INTO service_levels (account_id, max_groups, max_tags, max_depth) VALUES
-(1, 100, 10, 3),
-(2, 100, 10, 3),
-(3, 100, 10, 3),
-(4, 100, 10, 3);
+(1, 100, 1000, 3),
+(2, 100, 1000, 3),
+(3, 100, 1000, 3),
+(4, 100, 1000, 3);
 
 
 -- Building this groups structure:

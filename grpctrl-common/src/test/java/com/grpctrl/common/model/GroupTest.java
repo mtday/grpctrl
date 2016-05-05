@@ -10,6 +10,9 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Perform testing on the {@link Group} class.
  */
@@ -149,6 +152,17 @@ public class GroupTest {
                 .addTags(new Tag("t1", "v1"), new Tag("t2", "v2"));
 
         assertEquals(group, new Group(group));
+    }
+
+    @Test
+    public void testCopyWithTagIterator() {
+        final Group expected = new Group("g").setId(1L).setParentId(2L)
+                .addTags(new Tag("t1", "v1"), new Tag("t2", "v2"));
+
+        final Group group = new Group("g").setId(1L).setParentId(2L);
+        final List<Tag> tags = Arrays.asList(new Tag("t1", "v1"), new Tag("t2", "v2"));
+
+        assertEquals(expected, new Group(group, tags.iterator()));
     }
 
     @Test
