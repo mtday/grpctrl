@@ -1,7 +1,5 @@
 package com.grpctrl.common.model;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -12,33 +10,53 @@ import java.util.Objects;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.concurrent.Immutable;
-import javax.annotation.concurrent.ThreadSafe;
 
 /**
- * Represents a tag assigned to a group or a member, where a tag represents a label and a value. This class is
- * immutable.
+ * Represents a tag assigned to a group or a member, where a tag represents a label and a value.
  */
-@Immutable
-@ThreadSafe
 public class Tag implements Comparable<Tag> {
     @Nonnull
-    private final String label;
+    private String label = "label";
     @Nonnull
-    private final String value;
+    private String value = "";
 
-    @SuppressWarnings("all")
-    @SuppressFBWarnings(value = "NP_STORE_INTO_NONNULL_FIELD", justification = "required by Jackson")
-    private Tag() {
-        // Required for Jackson deserialization.
-        this.label = null;
-        this.value = null;
+    /**
+     * Default constructor.
+     */
+    public Tag() {
     }
 
-    private Tag(@Nonnull final String label, @Nonnull final String value) {
-        // These values have already been validated by the builder.
-        this.label = label;
-        this.value = value;
+    /**
+     * @param label the label for this tag
+     * @param value the value for this tag
+     *
+     * @throws IllegalArgumentException if any of the parameters are invalid
+     * @throws NullPointerException if any of the parameters are {@code null}
+     */
+    public Tag(@Nonnull final String label, @Nonnull final String value) {
+        setLabel(label);
+        setValue(value);
+    }
+
+    /**
+     * @param other the tag to duplicate
+     *
+     * @throws NullPointerException if the parameter is {@code null}
+     */
+    public Tag(@Nonnull final Tag other) {
+        setValues(other);
+    }
+
+    /**
+     * @param other the tag to duplicate
+     *
+     * @throws NullPointerException if the parameter is {@code null}
+     */
+    public Tag setValues(@Nonnull final Tag other) {
+        Objects.requireNonNull(other);
+        setLabel(other.getLabel());
+        setValue(other.getValue());
+        return this;
     }
 
     /**
@@ -50,11 +68,37 @@ public class Tag implements Comparable<Tag> {
     }
 
     /**
+     * @param label the new label for this tag
+     *
+     * @return {@code this} for fluent-style usage
+     *
+     * @throws IllegalArgumentException if the parameter is invalid
+     * @throws NullPointerException if the parameter is {@code null}
+     */
+    public Tag setLabel(@Nonnull final String label) {
+        this.label = Validator.validateLabel(label);
+        return this;
+    }
+
+    /**
      * @return the value for this tag
      */
     @Nonnull
     public String getValue() {
         return this.value;
+    }
+
+    /**
+     * @param value the new value for this tag
+     *
+     * @return {@code this} for fluent-style usage
+     *
+     * @throws IllegalArgumentException if the parameter is invalid
+     * @throws NullPointerException if the parameter is {@code null}
+     */
+    public Tag setValue(@Nonnull final String value) {
+        this.value = Validator.validateValue(value);
+        return this;
     }
 
     @Override
@@ -139,81 +183,6 @@ public class Tag implements Comparable<Tag> {
             }
 
             return value;
-        }
-    }
-
-    /**
-     * Responsible for building tag objects.
-     */
-    public static class Builder {
-        @Nonnull
-        private String label = "";
-
-        @Nonnull
-        private String value = "";
-
-        /**
-         * Create a tag builder instance with the provided label and value.
-         *
-         * @param label the user-provided label for this tag
-         * @param value the user-provided value for this tag
-         *
-         * @throws NullPointerException if either of the provided parameters is {@code null}
-         * @throws IllegalArgumentException if either of the provided parameters is invalid
-         */
-        public Builder(@Nonnull final String label, @Nonnull final String value) {
-            setLabel(label);
-            setValue(value);
-        }
-
-        /**
-         * Create a tag builder instance using the contents of the provided tag for the initial values.
-         *
-         * @param other the existing tag to duplicate
-         *
-         * @throws NullPointerException if the provided parameter is {@code null}
-         */
-        public Builder(@Nonnull final Tag other) {
-            setLabel(other.getLabel());
-            setValue(other.getValue());
-        }
-
-        /**
-         * @param label the user-provided label for this tag
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if provided parameter is {@code null}
-         * @throws IllegalArgumentException if the provided parameter is invalid
-         */
-        @Nonnull
-        public Builder setLabel(@Nonnull final String label) {
-            this.label = Validator.validateLabel(label);
-            return this;
-        }
-
-        /**
-         * @param value the user-provided value for this tag
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if provided parameter is {@code null}
-         * @throws IllegalArgumentException if the provided parameter is invalid
-         */
-        @Nonnull
-        public Builder setValue(@Nonnull final String value) {
-            this.value = Validator.validateValue(value);
-            return this;
-        }
-
-        /**
-         * Create the configured tag using the current values in this builder.
-         *
-         * @return the tag represented by the current values in this builder
-         */
-        @Nonnull
-        public Tag build() {
-            return new Tag(this.label, this.value);
         }
     }
 }

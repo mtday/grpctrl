@@ -61,12 +61,12 @@ public interface AccountDao {
      *
      * @param consumer the consumer to receive each of the stored account objects (which now include their unique
      *     identifiers)
-     * @param accounts the collection of accounts to be added to the backing store
+     * @param accounts the iterable of accounts to be added to the backing store
      *
      * @throws NullPointerException if either parameter is {@code null}
      * @throws DaoException if there is a problem interacting with the database
      */
-    void add(@Nonnull Consumer<Account> consumer, @Nonnull Collection<Account> accounts) throws DaoException;
+    void add(@Nonnull Consumer<Account> consumer, @Nonnull Iterable<Account> accounts) throws DaoException;
 
     /**
      * Remove the accounts with the specified ids.

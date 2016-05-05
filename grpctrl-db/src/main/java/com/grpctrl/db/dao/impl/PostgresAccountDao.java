@@ -2,8 +2,10 @@ package com.grpctrl.db.dao.impl;
 
 import com.grpctrl.common.model.Account;
 import com.grpctrl.common.model.ServiceLevel;
+import com.grpctrl.common.util.CloseableBiConsumer;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.AccountDao;
+import com.grpctrl.db.dao.ServiceLevelDao;
 import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
 import com.grpctrl.db.error.DaoException;
 
@@ -12,7 +14,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -66,25 +67,27 @@ public class PostgresAccountDao implements AccountDao {
         Objects.requireNonNull(consumer);
         Objects.requireNonNull(accountIds);
 
-        final String sql = "SELECT a.account_id, a.name, s.max_groups, s.max_tags, s.max_depth FROM accounts a JOIN "
-                + "service_levels s ON (a.account_id = s.account_id) WHERE a.account_id = ANY (?)";
+        final String sql =
+                "SELECT a.account_id, a.name, s.max_groups, s.max_tags, s.max_depth FROM accounts a LEFT JOIN "
+                        + "service_levels s ON (a.account_id = s.account_id) WHERE a.account_id = ANY (?)";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setArray(1, conn.createArrayOf("bigint", accountIds.toArray()));
 
+            final Account account = new Account();
+
             try (final ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    final long accountId = rs.getLong("account_id");
-                    final String name = rs.getString("name");
+                while (rs.next()) {
+                    account.setId(rs.getLong("account_id"));
+                    account.setName(rs.getString("name"));
 
-                    final ServiceLevel.Builder serviceLevel = new ServiceLevel.Builder();
-                    serviceLevel.setMaxGroups(rs.getInt("max_groups"));
-                    serviceLevel.setMaxTags(rs.getInt("max_tags"));
-                    serviceLevel.setMaxDepth(rs.getInt("max_depth"));
+                    account.getServiceLevel().setMaxGroups(rs.getInt("max_groups"));
+                    account.getServiceLevel().setMaxTags(rs.getInt("max_tags"));
+                    account.getServiceLevel().setMaxDepth(rs.getInt("max_depth"));
 
-                    consumer.accept(new Account.Builder(name, serviceLevel.build()).setId(accountId).build());
+                    consumer.accept(account);
                 }
             }
         } catch (final SQLException sqlException) {
@@ -104,17 +107,17 @@ public class PostgresAccountDao implements AccountDao {
              final PreparedStatement ps = conn.prepareStatement(sql);
              final ResultSet rs = ps.executeQuery()) {
 
-            final ServiceLevel.Builder serviceLevel = new ServiceLevel.Builder();
+            final Account account = new Account();
 
             while (rs.next()) {
-                final long accountId = rs.getLong("account_id");
-                final String name = rs.getString("name");
+                account.setId(rs.getLong("account_id"));
+                account.setName(rs.getString("name"));
 
-                serviceLevel.setMaxGroups(rs.getInt("max_groups"));
-                serviceLevel.setMaxTags(rs.getInt("max_tags"));
-                serviceLevel.setMaxDepth(rs.getInt("max_depth"));
+                account.getServiceLevel().setMaxGroups(rs.getInt("max_groups"));
+                account.getServiceLevel().setMaxTags(rs.getInt("max_tags"));
+                account.getServiceLevel().setMaxDepth(rs.getInt("max_depth"));
 
-                consumer.accept(new Account.Builder(name, serviceLevel.build()).setId(accountId).build());
+                consumer.accept(account);
             }
         } catch (final SQLException sqlException) {
             throw new DaoException("Failed to get all accounts", sqlException);
@@ -127,7 +130,7 @@ public class PostgresAccountDao implements AccountDao {
     }
 
     @Override
-    public void add(@Nonnull final Consumer<Account> consumer, @Nonnull final Collection<Account> accounts)
+    public void add(@Nonnull final Consumer<Account> consumer, @Nonnull final Iterable<Account> accounts)
             throws DaoException {
         Objects.requireNonNull(consumer);
         Objects.requireNonNull(accounts);
@@ -137,24 +140,30 @@ public class PostgresAccountDao implements AccountDao {
         final String sql = "INSERT INTO accounts (name) VALUES (?)";
 
         final DataSource dataSource = getDataSourceSupplier().get();
+        final ServiceLevelDao serviceLevelDao = getServiceLevelDaoSupplier().get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            final Collection<Account> batch = new LinkedList<>();
+            // Need to close the service-level adder before committing.
+            try (final CloseableBiConsumer<Long, ServiceLevel> serviceLevelAdder = serviceLevelDao
+                    .getAddConsumer(conn)) {
 
-            for (final Account account : accounts) {
-                ps.setString(1, account.getName());
-                ps.addBatch();
-                batch.add(account);
+                final Collection<Account> batch = new LinkedList<>();
 
-                if (batch.size() >= batchSize) {
-                    ps.executeBatch();
-                    processBatch(conn, ps, batch, consumer);
+                for (final Account account : accounts) {
+                    ps.setString(1, account.getName());
+                    ps.addBatch();
+                    batch.add(account);
+
+                    if (batch.size() >= batchSize) {
+                        ps.executeBatch();
+                        processBatch(ps, batch, serviceLevelAdder, consumer);
+                    }
                 }
-            }
-            if (!batch.isEmpty()) {
-                ps.executeBatch();
-                processBatch(conn, ps, batch, consumer);
+                if (!batch.isEmpty()) {
+                    ps.executeBatch();
+                    processBatch(ps, batch, serviceLevelAdder, consumer);
+                }
             }
 
             conn.commit();
@@ -164,21 +173,20 @@ public class PostgresAccountDao implements AccountDao {
     }
 
     private void processBatch(
-            @Nonnull final Connection conn, @Nonnull final PreparedStatement ps,
-            @Nonnull final Collection<Account> batch, @Nonnull final Consumer<Account> consumer)
-            throws SQLException, DaoException {
+            @Nonnull final PreparedStatement ps, @Nonnull final Collection<Account> batch,
+            @Nonnull final CloseableBiConsumer<Long, ServiceLevel> serviceLevelAdder,
+            @Nonnull final Consumer<Account> consumer) throws SQLException, DaoException {
         try (final ResultSet rs = ps.getGeneratedKeys()) {
-            final Collection<Account> added = new ArrayList<>(batch.size());
             final Iterator<Account> batchIter = batch.iterator();
             while (rs.next() && batchIter.hasNext()) {
                 final long accountId = rs.getLong(1);
 
-                final Account account = new Account.Builder(batchIter.next()).setId(accountId).build();
-                consumer.accept(account);
-                added.add(account);
-            }
+                final Account account = batchIter.next();
+                account.setId(accountId);
 
-            getServiceLevelDaoSupplier().get().add(conn, added);
+                consumer.accept(account);
+                serviceLevelAdder.accept(accountId, account.getServiceLevel());
+            }
             batch.clear();
         }
     }

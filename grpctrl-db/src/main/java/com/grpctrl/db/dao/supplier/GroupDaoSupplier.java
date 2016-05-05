@@ -2,7 +2,6 @@ package com.grpctrl.db.dao.supplier;
 
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.GroupDao;
-import com.grpctrl.db.dao.TagDao;
 import com.grpctrl.db.dao.impl.PostgresGroupDao;
 
 import org.glassfish.hk2.api.Factory;
@@ -27,7 +26,7 @@ public class GroupDaoSupplier
     @Nonnull
     private final DataSourceSupplier dataSourceSupplier;
     @Nonnull
-    private final TagDao tagDao;
+    private final TagDaoSupplier tagDaoSupplier;
 
     @Nullable
     private volatile GroupDao singleton;
@@ -37,14 +36,14 @@ public class GroupDaoSupplier
      *
      * @param dataSourceSupplier the {@link DataSourceSupplier} responsible for providing access to a configured
      *     data source used to communicate with the JDBC database
-     * @param tagDao the {@link TagDao} used to perform operations on tag data
+     * @param tagDaoSupplier the {@link TagDaoSupplier} used to perform operations on tag data
      *
      * @throws NullPointerException if the provided parameter is {@code null}
      */
     @Inject
-    public GroupDaoSupplier(@Nonnull final DataSourceSupplier dataSourceSupplier, @Nonnull final TagDao tagDao) {
+    public GroupDaoSupplier(@Nonnull final DataSourceSupplier dataSourceSupplier, @Nonnull final TagDaoSupplier tagDaoSupplier) {
         this.dataSourceSupplier = Objects.requireNonNull(dataSourceSupplier);
-        this.tagDao = Objects.requireNonNull(tagDao);
+        this.tagDaoSupplier = Objects.requireNonNull(tagDaoSupplier);
     }
 
     @Nonnull
@@ -53,8 +52,8 @@ public class GroupDaoSupplier
     }
 
     @Nonnull
-    private TagDao getTagDao() {
-        return this.tagDao;
+    private TagDaoSupplier getTagDaoSupplier() {
+        return this.tagDaoSupplier;
     }
 
     @Override
@@ -91,7 +90,7 @@ public class GroupDaoSupplier
 
     @Nonnull
     private GroupDao create() {
-        return new PostgresGroupDao(getDataSourceSupplier(), getTagDao());
+        return new PostgresGroupDao(getDataSourceSupplier(), getTagDaoSupplier());
     }
 
     /**

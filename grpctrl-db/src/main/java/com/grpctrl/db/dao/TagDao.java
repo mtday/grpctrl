@@ -1,14 +1,11 @@
 package com.grpctrl.db.dao;
 
 import com.grpctrl.common.model.Account;
-import com.grpctrl.common.model.Group;
 import com.grpctrl.common.model.Tag;
+import com.grpctrl.common.util.CloseableBiConsumer;
 import com.grpctrl.db.error.DaoException;
 
 import java.sql.Connection;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.function.BiConsumer;
 
 import javax.annotation.Nonnull;
 
@@ -28,36 +25,18 @@ public interface TagDao {
     int count(@Nonnull Connection conn, @Nonnull Account account) throws DaoException;
 
     /**
-     * Retrieve all of the tags associated with the specified groups.
+     * Retrieve a consumer capable of adding tags to the database.
      *
-     * @param consumer the consumer used to process each of the groups with their tags
-     * @param conn the {@link Connection} to use when retrieving the tags as part of an existing transaction
-     * @param account the account that owns the specified groups
-     * @param groups the groups for which tags are to be retrieved
-     *
-     * @throws NullPointerException if any of the parameters are {@code null}
-     * @throws DaoException if there is a problem interacting with the database
-     */
-    void get(
-            @Nonnull BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull Connection conn, @Nonnull Account account,
-            @Nonnull Collection<Group> groups) throws DaoException;
-
-    /**
-     * Add all the tags contained in the provided groups.
-     *
-     * @param consumer the consumer used to process each of the groups with their tags after addition
      * @param conn the {@link Connection} to use when adding the tags as part of an existing transaction
-     * @param account the account that owns the group
-     * @param groups the groups containing the tags to be inserted
+     * @param account the account that owns the groups containing the tags
      *
-     * @return the number of tags that were inserted into the backing store
+     * @return a consumer capable of adding tags to the database
      *
      * @throws NullPointerException if any of the parameters are {@code null}
      * @throws DaoException if there is a problem interacting with the database
      */
-    int add(
-            @Nonnull BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull Connection conn, @Nonnull Account account,
-            @Nonnull Collection<Group> groups) throws DaoException;
+    CloseableBiConsumer<Long, Tag> getAddConsumer(@Nonnull Connection conn, @Nonnull Account account)
+            throws DaoException;
 
     /**
      * Add the specified tags to the group with the provided id.
@@ -71,7 +50,7 @@ public interface TagDao {
      * @throws NullPointerException if any of the parameters are {@code null}
      * @throws DaoException if there is a problem interacting with the database
      */
-    int add(@Nonnull Account account, @Nonnull Long groupId, @Nonnull Collection<Tag> tags) throws DaoException;
+    int add(@Nonnull Account account, @Nonnull Long groupId, @Nonnull Iterable<Tag> tags) throws DaoException;
 
     /**
      * Remove the specified tags from the group with the specified id.
@@ -86,7 +65,7 @@ public interface TagDao {
      * @throws NullPointerException if any of the parameters are {@code null}
      * @throws DaoException if there is a problem interacting with the database
      */
-    int remove(@Nonnull Account account, @Nonnull Long groupId, @Nonnull Collection<Tag> tags) throws DaoException;
+    int remove(@Nonnull Account account, @Nonnull Long groupId, @Nonnull Iterable<Tag> tags) throws DaoException;
 
     /**
      * Remove tags with the specified labels from the group with the provided id.
@@ -102,6 +81,6 @@ public interface TagDao {
      * @throws NullPointerException if any of the parameters are {@code null}
      * @throws DaoException if there is a problem interacting with the database
      */
-    int removeLabels(@Nonnull Account account, @Nonnull Long groupId, @Nonnull Collection<String> tagLabels)
+    int removeLabels(@Nonnull Account account, @Nonnull Long groupId, @Nonnull Iterable<String> tagLabels)
             throws DaoException;
 }

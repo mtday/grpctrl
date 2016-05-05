@@ -5,6 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.Sets;
+
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
@@ -13,43 +15,15 @@ import org.junit.Test;
  */
 public class GroupTest {
     @Test
-    public void testHasId() {
-        final Group a = new Group.Builder("name1").build();
-        final Group b = new Group.Builder("name1").setId(1L).build();
-
-        assertFalse(a.hasId());
-        assertTrue(b.hasId());
-    }
-
-    @Test
-    public void testHasParentId() {
-        final Group a = new Group.Builder("name1").build();
-        final Group b = new Group.Builder("name1").setParentId(1L).build();
-
-        assertFalse(a.hasParentId());
-        assertTrue(b.hasParentId());
-    }
-
-    @Test
-    public void testHasTags() {
-        final Group a = new Group.Builder("id1").build();
-        final Group b = new Group.Builder("id1")
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t1", "v2").build()).build();
-
-        assertFalse(a.hasTags());
-        assertTrue(b.hasTags());
-    }
-
-    @Test
     public void testCompareTo() {
-        final Group a = new Group.Builder("name1").build();
-        final Group b = new Group.Builder("name1").setId(1L).build();
-        final Group c = new Group.Builder("name1")
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t1", "v2").build()).build();
-        final Group d = new Group.Builder("name1")
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
-        final Group e = new Group.Builder("name2").setId(1L).setParentId(2L)
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
+        final Group a = new Group("name1");
+        final Group b = new Group(1L, "name1");
+        final Group c = new Group("name1")
+                .addTags(new Tag("t1", "v1"), new Tag("t1", "v2"));
+        final Group d = new Group("name1")
+                .addTags(new Tag("t1", "v1"), new Tag("t2", "v2"));
+        final Group e = new Group("name2").setId(1L).setParentId(2L)
+                .addTags(new Tag("t1", "v1"), new Tag("t2", "v2"));
 
         assertEquals(1, a.compareTo(null));
         assertEquals(0, a.compareTo(a));
@@ -81,14 +55,14 @@ public class GroupTest {
 
     @Test
     public void testEquals() {
-        final Group a = new Group.Builder("name1").build();
-        final Group b = new Group.Builder("name1").setId(1L).build();
-        final Group c = new Group.Builder("name1")
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t1", "v2").build()).build();
-        final Group d = new Group.Builder("name1")
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
-        final Group e = new Group.Builder("name2").setId(1L).setParentId(2L)
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
+        final Group a = new Group("name1");
+        final Group b = new Group("name1").setId(1L);
+        final Group c = new Group("name1")
+                .addTags(new Tag("t1", "v1"), new Tag("t1", "v2"));
+        final Group d = new Group("name1")
+                .addTags(new Tag("t1", "v1"), new Tag("t2", "v2"));
+        final Group e = new Group("name2").setId(1L).setParentId(2L)
+                .addTags(new Tag("t1", "v1"), new Tag("t2", "v2"));
 
         assertNotEquals(a, null);
         assertEquals(a, a);
@@ -120,14 +94,14 @@ public class GroupTest {
 
     @Test
     public void testHashCode() {
-        final Group a = new Group.Builder("name1").build();
-        final Group b = new Group.Builder("name1").setId(1L).build();
-        final Group c = new Group.Builder("name1")
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t1", "v2").build()).build();
-        final Group d = new Group.Builder("name1")
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
-        final Group e = new Group.Builder("name2").setId(1L).setParentId(2L)
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
+        final Group a = new Group("name1");
+        final Group b = new Group("name1").setId(1L);
+        final Group c = new Group("name1")
+                .addTags(new Tag("t1", "v1"), new Tag("t1", "v2"));
+        final Group d = new Group("name1")
+                .addTags(new Tag("t1", "v1"), new Tag("t2", "v2"));
+        final Group e = new Group("name2").setId(1L).setParentId(2L)
+                .addTags(new Tag("t1", "v1"), new Tag("t2", "v2"));
 
         assertEquals(-393462817, a.hashCode());
         assertEquals(-393412164, b.hashCode());
@@ -138,8 +112,8 @@ public class GroupTest {
 
     @Test
     public void testToString() {
-        final Group group = new Group.Builder("name").setId(1L).setParentId(2L)
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
+        final Group group = new Group("name").setId(1L).setParentId(2L)
+                .addTags(new Tag("t1", "v1"), new Tag("t2", "v2"));
         assertEquals("Group[id=Optional[1],parentId=Optional[2],name=name,tags=[Tag[label=t1,value=v1], Tag[label=t2,"
                 + "value=v2]]]", group.toString());
     }
@@ -152,74 +126,58 @@ public class GroupTest {
 
     @SuppressWarnings("all")
     @Test(expected = NullPointerException.class)
-    public void testBuilderWithNullName() {
-        new Group.Builder((String) null);
+    public void testWithNullName() {
+        new Group((String) null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBuilderWithTooLongName() {
-        new Group.Builder(StringUtils.leftPad("", Group.Validator.MAX_NAME_LENGTH + 1, "N"));
+    public void testWithTooLongName() {
+        new Group(StringUtils.leftPad("", Group.Validator.MAX_NAME_LENGTH + 1, "N"));
     }
 
     @Test
-    public void testBuilderWithLongName() {
+    public void testWithLongName() {
         final String name = StringUtils.leftPad("", Group.Validator.MAX_NAME_LENGTH, "N");
-        final Group group = new Group.Builder(name).build();
+        final Group group = new Group(name);
 
         assertEquals(name, group.getName());
     }
 
     @Test
-    public void testBuilderCopy() {
-        final Group group = new Group.Builder("g").setId(1L).setParentId(2L)
-                .addTags(new Tag.Builder("t1", "v1").build(), new Tag.Builder("t2", "v2").build()).build();
+    public void testCopy() {
+        final Group group = new Group("g").setId(1L).setParentId(2L)
+                .addTags(new Tag("t1", "v1"), new Tag("t2", "v2"));
 
-        assertEquals(group, new Group.Builder(group).build());
+        assertEquals(group, new Group(group));
     }
 
     @Test
-    public void testBuilderClearId() {
-        final Group group = new Group.Builder("id").setId(1L).clearId().build();
+    public void testDefaultConstructor() {
+        final Group group = new Group();
 
         assertFalse(group.getId().isPresent());
-    }
-
-    @Test
-    public void testBuilderClearParentId() {
-        final Group group = new Group.Builder("id").setParentId(1L).clearParentId().build();
-
         assertFalse(group.getParentId().isPresent());
+        assertEquals("group-name", group.getName());
+        assertTrue(group.getTags().isEmpty());
     }
 
     @Test
-    public void testBuilderRemoveTag() {
-        final Tag tag1 = new Tag.Builder("1", "v").build();
-        final Tag tag2 = new Tag.Builder("2", "v").build();
-        final Group group = new Group.Builder("id").addTags(tag1, tag2).removeTag(tag1).build();
+    public void testParameterConstructor() {
+        final Group group = new Group(1L, null, "name", Sets.newHashSet(new Tag("a", "a"), new Tag("b", "b")));
 
-        assertTrue(group.hasTags());
-        assertEquals(1, group.getTags().size());
-        assertTrue(group.getTags().contains(tag2));
+        assertEquals(new Long(1), group.getId().orElse(null));
+        assertFalse(group.getParentId().isPresent());
+        assertEquals("name", group.getName());
+        assertEquals(2, group.getTags().size());
+        assertTrue(group.getTags().containsAll(Sets.newHashSet(new Tag("a", "a"), new Tag("b", "b"))));
     }
 
     @Test
-    public void testBuilderClearTags() {
-        final Tag tag1 = new Tag.Builder("1", "v").build();
-        final Tag tag2 = new Tag.Builder("2", "v").build();
-        final Group group = new Group.Builder("id").addTags(tag1, tag2).clearTags().build();
+    public void testTags() {
+        final Group group = new Group().addTags(Sets.newHashSet(new Tag("zzz", "zzz")));
+        group.setTags(new Tag("a", "a"), new Tag("b", "b"));
 
-        assertFalse(group.hasTags());
-    }
-
-    @Test
-    public void testBuilderDedupesTags() {
-        final Tag tag1 = new Tag.Builder("L", "V").build();
-        final Tag tag2 = new Tag.Builder("L", "V").build();
-        final Group group = new Group.Builder("id").addTags(tag1, tag2).build();
-
-        assertTrue(group.hasTags());
-        assertEquals(1, group.getTags().size());
-        assertTrue(group.getTags().contains(tag1));
-        assertTrue(group.getTags().contains(tag2));
+        assertEquals(2, group.getTags().size());
+        assertTrue(group.getTags().containsAll(Sets.newHashSet(new Tag("a", "a"), new Tag("b", "b"))));
     }
 }

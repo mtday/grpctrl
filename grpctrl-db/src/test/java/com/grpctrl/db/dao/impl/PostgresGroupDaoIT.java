@@ -4,7 +4,9 @@ import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.AccountDao;
+import com.grpctrl.db.dao.GroupDao;
 import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
+import com.grpctrl.db.dao.supplier.TagDaoSupplier;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
@@ -20,10 +22,10 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 /**
- * Perform testing on the {@link PostgresAccountDao} class. This is an integration test because it expects a
+ * Perform testing on the {@link PostgresGroupDao} class. This is an integration test because it expects a
  * live PostgreSQL server to be up and running.
  */
-public class PostgresAccountDaoIT extends BaseAccountDaoTest {
+public class PostgresGroupDaoIT extends BaseGroupDaoTest {
     private static DataSourceSupplier dataSourceSupplier;
 
     @BeforeClass
@@ -54,7 +56,12 @@ public class PostgresAccountDaoIT extends BaseAccountDaoTest {
     }
 
     @Override
-    public AccountDao getAccountDaoWithDataSourceException() {
+    public GroupDao getGroupDao() {
+        return new PostgresGroupDao(dataSourceSupplier, new TagDaoSupplier(dataSourceSupplier));
+    }
+
+    @Override
+    public GroupDao getGroupDaoWithDataSourceException() {
         try {
             final DataSource mockDataSource = Mockito.mock(DataSource.class);
             Mockito.when(mockDataSource.getConnection()).thenThrow(new SQLException("Fake"));
@@ -62,7 +69,7 @@ public class PostgresAccountDaoIT extends BaseAccountDaoTest {
             final DataSourceSupplier mockDataSourceSupplier = Mockito.mock(DataSourceSupplier.class);
             Mockito.when(mockDataSourceSupplier.get()).thenReturn(mockDataSource);
 
-            return new PostgresAccountDao(mockDataSourceSupplier, new ServiceLevelDaoSupplier());
+            return new PostgresGroupDao(mockDataSourceSupplier, new TagDaoSupplier(mockDataSourceSupplier));
         } catch (final SQLException fake) {
             throw new RuntimeException("Fake");
         }

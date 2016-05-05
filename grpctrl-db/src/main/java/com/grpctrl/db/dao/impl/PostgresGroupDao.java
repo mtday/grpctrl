@@ -3,10 +3,15 @@ package com.grpctrl.db.dao.impl;
 import com.grpctrl.common.model.Account;
 import com.grpctrl.common.model.Group;
 import com.grpctrl.common.model.Tag;
+import com.grpctrl.common.util.CloseableBiConsumer;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.GroupDao;
 import com.grpctrl.db.dao.TagDao;
+import com.grpctrl.db.dao.supplier.TagDaoSupplier;
 import com.grpctrl.db.error.DaoException;
+
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,12 +20,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.annotation.Nonnull;
@@ -35,16 +41,16 @@ public class PostgresGroupDao implements GroupDao {
     @Nonnull
     private final DataSourceSupplier dataSourceSupplier;
     @Nonnull
-    private final TagDao tagDao;
+    private final TagDaoSupplier tagDaoSupplier;
 
     /**
      * @param dataSourceSupplier the supplier of the JDBC {@link DataSource} to use when communicating with the
      *     back-end database
-     * @param tagDao the {@link TagDao} used to perform tag operations
+     * @param tagDaoSupplier the {@link TagDaoSupplier} used to perform tag operations
      */
-    public PostgresGroupDao(@Nonnull final DataSourceSupplier dataSourceSupplier, @Nonnull final TagDao tagDao) {
+    public PostgresGroupDao(@Nonnull final DataSourceSupplier dataSourceSupplier, @Nonnull final TagDaoSupplier tagDaoSupplier) {
         this.dataSourceSupplier = Objects.requireNonNull(dataSourceSupplier);
-        this.tagDao = Objects.requireNonNull(tagDao);
+        this.tagDaoSupplier = Objects.requireNonNull(tagDaoSupplier);
     }
 
     @Nonnull
@@ -53,8 +59,8 @@ public class PostgresGroupDao implements GroupDao {
     }
 
     @Nonnull
-    private TagDao getTagDao() {
-        return this.tagDao;
+    private TagDaoSupplier getTagDaoSupplier() {
+        return this.tagDaoSupplier;
     }
 
     @Override
@@ -102,6 +108,20 @@ public class PostgresGroupDao implements GroupDao {
         }
     }
 
+    private void consumeQuery(@Nonnull final BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull final PreparedStatement ps) throws SQLException {
+        try (final ResultSet rs = ps.executeQuery()) {
+            final ResultSetIterator iter = new ResultSetIterator(rs);
+            while (iter.hasNext()) {
+                final Pair<Group, TagIterator> pair = iter.next();
+                consumer.accept(pair.getLeft(), pair.getRight());
+            }
+            final Optional<SQLException> exception = iter.getException();
+            if (exception.isPresent()) {
+                throw exception.get();
+            }
+        }
+    }
+
     @Override
     public void get(
             @Nonnull final BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull final Account account)
@@ -109,36 +129,14 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(consumer);
         Objects.requireNonNull(account);
 
-        final int batchSize = 1000;
-        final String sql = "SELECT group_id, group_name FROM groups WHERE account_id = ? AND parent_id IS NULL";
+        final String sql = "SELECT parent_id, group_id, group_name, tag_label, tag_value FROM groups g LEFT JOIN tags t"
+                + " ON (g.group_id = t.group_id) WHERE account_id = ? AND parent_id IS NULL";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
-
-            final Collection<Group> batch = new LinkedList<>();
-
-            try (final ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    final long groupId = rs.getLong("group_id");
-                    final Group.Builder bld = new Group.Builder(rs.getString("group_name")).setId(groupId);
-
-                    final long parentId = rs.getLong("parent_id");
-                    if (!rs.wasNull()) {
-                        bld.setParentId(parentId);
-                    }
-
-                    batch.add(bld.build());
-                    if (batch.size() >= batchSize) {
-                        getTagDao().get(consumer, conn, account, batch);
-                        batch.clear();
-                    }
-                }
-                if (!batch.isEmpty()) {
-                    getTagDao().get(consumer, conn, account, batch);
-                }
-            }
+            consumeQuery(consumer, ps);
         } catch (final SQLException sqlException) {
             throw new DaoException("Failed to retrieve group by id", sqlException);
         }
@@ -152,27 +150,15 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(account);
         Objects.requireNonNull(groupId);
 
-        final String sql = "SELECT parent_id, group_name FROM groups WHERE account_id = ? AND group_id = ?";
+        final String sql = "SELECT parent_id, group_id, group_name, tag_label, tag_value FROM groups g LEFT JOIN tags t"
+                + " ON (g.group_id = t.group_id) WHERE account_id = ? AND group_id = ?";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
             ps.setLong(2, groupId);
-
-            try (final ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    final Group.Builder bld = new Group.Builder(rs.getString("group_name"));
-                    bld.setId(groupId);
-
-                    final long parentId = rs.getLong("parent_id");
-                    if (!rs.wasNull()) {
-                        bld.setParentId(parentId);
-                    }
-
-                    getTagDao().get(consumer, conn, account, Collections.singleton(bld.build()));
-                }
-            }
+            consumeQuery(consumer, ps);
         } catch (final SQLException sqlException) {
             throw new DaoException("Failed to retrieve group by id", sqlException);
         }
@@ -186,37 +172,15 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(account);
         Objects.requireNonNull(groupName);
 
-        final int batchSize = 1000;
-        final String sql = "SELECT parent_id, group_id FROM groups WHERE account_id = ? AND group_name = ?";
+        final String sql = "SELECT parent_id, group_id, group_name, tag_label, tag_value FROM groups g LEFT JOIN tags t"
+                + " ON (g.group_id = t.group_id) WHERE account_id = ? AND group_name = ?";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
             ps.setString(2, groupName);
-
-            final Collection<Group> batch = new LinkedList<>();
-
-            try (final ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    final Group.Builder bld = new Group.Builder(groupName).setId(rs.getLong("group_id"));
-
-                    final Long parentId = rs.getLong("parent_id");
-                    if (!rs.wasNull()) {
-                        bld.setParentId(parentId);
-                    }
-
-                    batch.add(bld.build());
-
-                    if (batch.size() >= batchSize) {
-                        getTagDao().get(consumer, conn, account, batch);
-                        batch.clear();
-                    }
-                }
-                if (!batch.isEmpty()) {
-                    getTagDao().get(consumer, conn, account, batch);
-                }
-            }
+            consumeQuery(consumer, ps);
         } catch (final SQLException sqlException) {
             throw new DaoException("Failed to retrieve group by name", sqlException);
         }
@@ -229,29 +193,14 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(consumer);
         Objects.requireNonNull(account);
 
-        final int batchSize = 1000;
-        final String sql = "SELECT group_id, group_name FROM groups WHERE account_id = ? AND parent_id IS NULL";
+        final String sql = "SELECT parent_id, group_id, group_name, tag_label, tag_value FROM groups g LEFT JOIN tags t"
+                + " ON (g.group_id = t.group_id) WHERE account_id = ? AND parent_id IS NULL";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
-
-            final Collection<Group> batch = new LinkedList<>();
-
-            try (final ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    batch.add(new Group.Builder(rs.getString("group_name")).setId(rs.getLong("group_id")).build());
-
-                    if (batch.size() >= batchSize) {
-                        getTagDao().get(consumer, conn, account, batch);
-                        batch.clear();
-                    }
-                }
-                if (!batch.isEmpty()) {
-                    getTagDao().get(consumer, conn, account, batch);
-                }
-            }
+            consumeQuery(consumer, ps);
         } catch (final SQLException sqlException) {
             throw new DaoException("Failed to retrieve top-level groups", sqlException);
         }
@@ -265,31 +214,15 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(account);
         Objects.requireNonNull(parentId);
 
-        final int batchSize = 1000;
-        final String sql = "SELECT group_id, group_name FROM groups WHERE account_id = ? AND parent_id = ?";
+        final String sql = "SELECT parent_id, group_id, group_name, tag_label, tag_value FROM groups g LEFT JOIN tags t"
+                + " ON (g.group_id = t.group_id) WHERE account_id = ? AND parent_id = ?";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
             ps.setLong(2, parentId);
-
-            final Collection<Group> batch = new LinkedList<>();
-
-            try (final ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    batch.add(new Group.Builder(rs.getString("group_name")).setId(rs.getLong("group_id"))
-                            .setParentId(parentId).build());
-
-                    if (batch.size() >= batchSize) {
-                        getTagDao().get(consumer, conn, account, batch);
-                        batch.clear();
-                    }
-                }
-                if (!batch.isEmpty()) {
-                    getTagDao().get(consumer, conn, account, batch);
-                }
-            }
+            consumeQuery(consumer, ps);
         } catch (final SQLException sqlException) {
             throw new DaoException("Failed to retrieve children for group id", sqlException);
         }
@@ -303,8 +236,8 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(account);
         Objects.requireNonNull(parentName);
 
-        final int batchSize = 1000;
-        final String sql = "SELECT parent_id, group_id, group_name FROM groups WHERE account_id = ? AND parent_id IN "
+        final String sql = "SELECT parent_id, group_id, group_name, tag_label, tag_value FROM groups g LEFT JOIN tags t"
+                + " ON (groups.group_id = tags.tag_id) WHERE account_id = ? AND parent_id IN "
                 + "(SELECT group_id FROM groups where account_id = ? AND group_name = ?)";
 
         final DataSource dataSource = getDataSourceSupplier().get();
@@ -313,23 +246,7 @@ public class PostgresGroupDao implements GroupDao {
             ps.setLong(1, account.getId().orElse(null));
             ps.setLong(2, account.getId().orElse(null));
             ps.setString(3, parentName);
-
-            final Collection<Group> batch = new LinkedList<>();
-
-            try (final ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    batch.add(new Group.Builder(rs.getString("group_name")).setId(rs.getLong("group_id"))
-                            .setParentId(rs.getLong("parent_id")).build());
-
-                    if (batch.size() >= batchSize) {
-                        getTagDao().get(consumer, conn, account, batch);
-                        batch.clear();
-                    }
-                }
-                if (!batch.isEmpty()) {
-                    getTagDao().get(consumer, conn, account, batch);
-                }
-            }
+            consumeQuery(consumer, ps);
         } catch (final SQLException sqlException) {
             throw new DaoException("Failed to retrieve children for parent group name", sqlException);
         }
@@ -338,14 +255,14 @@ public class PostgresGroupDao implements GroupDao {
     @Override
     public void add(
             @Nonnull final BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull final Account account,
-            @Nonnull final Collection<Group> groups) throws DaoException {
+            @Nonnull final Iterable<Group> groups) throws DaoException {
         add(consumer, account, null, groups);
     }
 
     @Override
     public void add(
             @Nonnull final BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull final Account account,
-            @Nullable final Long parentId, @Nonnull final Collection<Group> groups) throws DaoException {
+            @Nullable final Long parentId, @Nonnull final Iterable<Group> groups) throws DaoException {
         Objects.requireNonNull(consumer);
         Objects.requireNonNull(account);
         Objects.requireNonNull(groups);
@@ -361,18 +278,15 @@ public class PostgresGroupDao implements GroupDao {
 
     private void add(
             @Nonnull final BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull final Connection conn,
-            @Nonnull final Account account, @Nullable final Long parentId, @Nonnull final Collection<Group> groups)
+            @Nonnull final Account account, @Nullable final Long parentId, @Nonnull final Iterable<Group> groups)
             throws DaoException {
-        if (groups.isEmpty()) {
-            // Quick exit when no work to do.
-            return;
-        }
-
         final int batchSize = 1000;
         final String sql = "INSERT INTO groups (account_id, parent_id, group_name) VALUES (?, ?, ?)";
 
-        try (final PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            final Collection<Group.Builder> batch = new LinkedList<>();
+        final TagDao tagDao = getTagDaoSupplier().get();
+        try (final PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+             final CloseableBiConsumer<Long, Tag> tagAddConsumer = tagDao.getAddConsumer(conn, account)) {
+            final Collection<Group> batch = new LinkedList<>();
 
             ps.setLong(1, account.getId().orElse(null));
             for (final Group group : groups) {
@@ -383,14 +297,14 @@ public class PostgresGroupDao implements GroupDao {
                 }
                 ps.setString(3, group.getName());
                 ps.addBatch();
-                batch.add(new Group.Builder(group).setParentId(parentId));
+                batch.add(group.setParentId(parentId));
 
                 if (batch.size() >= batchSize) {
-                    consumeBatch(consumer, conn, ps, account, batch);
+                    consumeBatch(consumer, ps, batch, tagAddConsumer);
                 }
             }
             if (!batch.isEmpty()) {
-                consumeBatch(consumer, conn, ps, account, batch);
+                consumeBatch(consumer, ps, batch, tagAddConsumer);
             }
             conn.commit();
         } catch (final SQLException sqlException) {
@@ -399,30 +313,31 @@ public class PostgresGroupDao implements GroupDao {
     }
 
     private void consumeBatch(
-            @Nonnull final BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull final Connection conn,
-            @Nonnull final PreparedStatement ps, @Nonnull final Account account,
-            @Nonnull final Collection<Group.Builder> batch) throws DaoException, SQLException {
+            @Nonnull final BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull final PreparedStatement ps,
+            @Nonnull final Collection<Group> batch, final CloseableBiConsumer<Long, Tag> tagAddConsumer)
+            throws DaoException, SQLException {
         ps.executeBatch();
         try (final ResultSet rs = ps.getGeneratedKeys()) {
-            final Iterator<Group.Builder> iter = batch.iterator();
+            final Iterator<Group> iter = batch.iterator();
             while (rs.next() && iter.hasNext()) {
-                iter.next().setId(rs.getLong(1));
+                final long groupId = rs.getLong(1);
+                final Group group = iter.next();
+                group.setId(groupId);
+
+                for (final Tag tag : group.getTags()) {
+                    tagAddConsumer.accept(groupId, tag);
+                }
+                consumer.accept(group, group.getTags().iterator());
             }
         }
-        getTagDao().add(consumer, conn, account, batch.stream().map(Group.Builder::build).collect(Collectors.toList()));
         batch.clear();
     }
 
     @Override
     public int remove(
-            @Nonnull final Account account, @Nonnull final Collection<Long> groupIds) throws DaoException {
+            @Nonnull final Account account, @Nonnull final Iterable<Long> groupIds) throws DaoException {
         Objects.requireNonNull(account);
         Objects.requireNonNull(groupIds);
-
-        if (groupIds.isEmpty()) {
-            // Quick exit when no work to do.
-            return 0;
-        }
 
         int removed = 0;
 
@@ -453,5 +368,169 @@ public class PostgresGroupDao implements GroupDao {
         }
 
         return removed;
+    }
+
+    /**
+     * This class is responsible for providing an iterator over {@link Tag} objects for streaming processing.
+     */
+    private static class TagIterator implements Iterator<Tag> {
+        @Nonnull
+        private final ResultSet rs;
+        private final long groupId;
+
+        private boolean hasNext = true;
+        private Tag prev = new Tag();
+        private Tag next = new Tag();
+
+        private SQLException exception;
+
+        /**
+         * @param rs the result set from which tags will be read
+         * @param groupId the unique id of the current group for which tags are being read
+         */
+        TagIterator(@Nonnull final ResultSet rs, final long groupId) {
+            this.rs = rs;
+            this.groupId = groupId;
+
+            fetchNextReturnCurrent();
+        }
+
+        /**
+         * @return whether more tags are available for this group
+         */
+        public boolean hasNext() {
+            return this.hasNext;
+        }
+
+        /**
+         * @return the next tag that has been pulled from the result set
+         */
+        @Nonnull
+        public Tag next() {
+            if (this.next == null) {
+                throw new NoSuchElementException();
+            }
+            return fetchNextReturnCurrent();
+        }
+
+        @Nonnull
+        private Tag fetchNextReturnCurrent() {
+            try {
+                if (this.hasNext && this.rs.next()) {
+                    final long nextGroupId = this.rs.getLong("group_id");
+                    if (this.groupId != nextGroupId) {
+                        this.rs.previous();
+                        this.hasNext = false;
+                        return this.prev;
+                    }
+
+                    final String label = this.rs.getString("tag_label");
+                    final String value = this.rs.getString("tag_value");
+                    if (label == null || value == null) {
+                        // No tag available.
+                        return this.prev;
+                    }
+
+                    this.prev.setValues(this.next);
+                    this.next.setLabel(label);
+                    this.next.setValue(value);
+                    this.hasNext = true;
+                    return this.prev;
+                }
+            } catch (final SQLException sqlException) {
+                this.exception = sqlException;
+            }
+
+            this.hasNext = false;
+            return this.prev;
+        }
+
+        /**
+         * @return any exception that was thrown during the tag processing
+         */
+        @Nonnull
+        public Optional<SQLException> getException() {
+            return Optional.of(this.exception);
+        }
+    }
+
+    /**
+     * Responsible for reading tags from a result set for a given set of groups, chunking the tags up into iterators
+     * so they can be processed sequentially.
+     */
+    private static class ResultSetIterator implements Iterator<Map.Entry<Group, TagIterator>> {
+        @Nonnull
+        private final ResultSet rs;
+
+        private boolean hasNext = true;
+        private MutablePair<Group, TagIterator> prev = new MutablePair<>(new Group(), null);
+        private MutablePair<Group, TagIterator> next = new MutablePair<>(new Group(), null);
+
+        private SQLException exception;
+
+        /**
+         * @param rs the result set from which the tags will be read
+         */
+        ResultSetIterator(@Nonnull final ResultSet rs) {
+            this.rs = Objects.requireNonNull(rs);
+
+            fetchNextReturnCurrent();
+        }
+
+        /**
+         * @return whether more groups and tags exist
+         */
+        public boolean hasNext() {
+            return this.hasNext;
+        }
+
+        /**
+         * @return the next entry containing a group and an iterator of associated tags
+         */
+        @Nonnull
+        public Pair<Group, TagIterator> next() {
+            if (this.next == null) {
+                throw new NoSuchElementException();
+            }
+            return fetchNextReturnCurrent();
+        }
+
+        @Nonnull
+        private Pair<Group, TagIterator> fetchNextReturnCurrent() {
+            try {
+                if (this.hasNext && this.rs.next()) {
+                    final long groupId = this.rs.getLong("group_id");
+                    final long parentId = this.rs.getLong("parent_id");
+                    final String groupName = this.rs.getString("group_name");
+                    this.rs.previous(); // Back up one so we can read the tag for this current record.
+
+                    this.prev.setLeft(this.next.getLeft());
+                    this.prev.setRight(this.next.getRight());
+
+                    this.next.getLeft().setId(groupId);
+                    this.next.getLeft().setParentId(parentId);
+                    this.next.getLeft().setName(groupName);
+                    this.next.setRight(new TagIterator(this.rs, groupId));
+                    this.hasNext = true;
+                    return this.prev;
+                }
+            } catch (final SQLException sqlException) {
+                this.exception = sqlException;
+            }
+
+            this.hasNext = false;
+            return this.prev;
+        }
+
+        /**
+         * @return any exception that occurred while iterating through the result set
+         */
+        @Nonnull
+        public Optional<SQLException> getException() {
+            if (this.exception != null) {
+                return Optional.of(this.exception);
+            }
+            return this.prev.getValue().getException();
+        }
     }
 }

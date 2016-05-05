@@ -1,10 +1,7 @@
 package com.grpctrl.common.model;
 
-import com.google.common.collect.ImmutableSet;
 import com.grpctrl.common.util.CollectionComparator;
 import com.grpctrl.common.util.OptionalComparator;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -12,7 +9,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,46 +17,101 @@ import java.util.Set;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.concurrent.Immutable;
-import javax.annotation.concurrent.NotThreadSafe;
-import javax.annotation.concurrent.ThreadSafe;
 
 /**
- * A representation of a group with a name and possibly some tags describing it. This class is immutable.
+ * A representation of a group with a name and possibly some tags describing it.
  */
-@Immutable
-@ThreadSafe
 public class Group implements Comparable<Group> {
     @Nullable
-    private final Long id;
-
+    private Long id;
     @Nullable
-    private final Long parentId;
+    private Long parentId;
 
     @Nonnull
-    private final String name;
-
+    private String name = "group-name";
     @Nonnull
-    private final ImmutableSet<Tag> tags;
+    private Set<Tag> tags = new LinkedHashSet<>();
 
-    @SuppressWarnings("all")
-    @SuppressFBWarnings(value = "NP_STORE_INTO_NONNULL_FIELD", justification = "required by Jackson")
-    private Group() {
-        // Required for Jackson deserialization.
-        this.id = null;
-        this.parentId = null;
-        this.name = null;
-        this.tags = null;
+    /**
+     * Default constructor.
+     */
+    public Group() {
     }
 
-    private Group(
+    /**
+     * @param name the name of this group
+     *
+     * @throws IllegalArgumentException if the parameter is invalid
+     * @throws NullPointerException if the parameter is {@code null}
+     */
+    public Group(@Nonnull final String name) {
+        this(null, name);
+    }
+
+    /**
+     * @param id the unique group identifier, possibly {@code null}
+     * @param name the name of this group
+     *
+     * @throws IllegalArgumentException if any of the parameters are invalid
+     * @throws NullPointerException if the {@code name} parameter is {@code null}
+     */
+    public Group(@Nullable final Long id, @Nonnull final String name) {
+        this(id, null, name);
+    }
+
+    /**
+     * @param id the unique group identifier, possibly {@code null}
+     * @param parentId the unique identifier of the group in which this group resides, possibly {@code null}
+     * @param name the name of this group
+     *
+     * @throws IllegalArgumentException if any of the parameters are invalid
+     * @throws NullPointerException if the {@code name} parameter is {@code null}
+     */
+    public Group(@Nullable final Long id, @Nullable final Long parentId, @Nonnull final String name) {
+        setId(id);
+        setParentId(parentId);
+        setName(name);
+    }
+
+    /**
+     * @param id the unique group identifier, possibly {@code null}
+     * @param parentId the unique identifier of the group in which this group resides, possibly {@code null}
+     * @param name the name of this group
+     * @param tags the tags assigned to this group
+     *
+     * @throws IllegalArgumentException if any of the parameters are invalid
+     * @throws NullPointerException if the {@code name} or {@code tags} parameters are {@code null}
+     */
+    public Group(
             @Nullable final Long id, @Nullable final Long parentId, @Nonnull final String name,
-            @Nonnull final ImmutableSet<Tag> tags) {
-        // These values have already been validated via the builder.
-        this.id = id;
-        this.parentId = parentId;
-        this.name = name;
-        this.tags = tags;
+            @Nonnull final Set<Tag> tags) {
+        setId(id);
+        setParentId(parentId);
+        setName(name);
+        setTags(tags);
+    }
+
+    /**
+     * @param other the group to duplicate
+     *
+     * @throws NullPointerException if the parameter is {@code null}
+     */
+    public Group(@Nonnull final Group other) {
+        setValues(other);
+    }
+
+    /**
+     * @param other the group to duplicate
+     *
+     * @throws NullPointerException if the parameter is {@code null}
+     */
+    public Group setValues(@Nonnull final Group other) {
+        Objects.requireNonNull(other);
+        setId(other.getId().orElse(null));
+        setParentId(other.getParentId().orElse(null));
+        setName(other.getName());
+        setTags(other.getTags());
+        return this;
     }
 
     /**
@@ -72,10 +123,13 @@ public class Group implements Comparable<Group> {
     }
 
     /**
-     * @return whether this group has a unique identifier assigned
+     * @param id the new unique group identifier, possibly {@code null}
+     *
+     * @return {@code this} for fluent-style usage
      */
-    public boolean hasId() {
-        return getId().isPresent();
+    public Group setId(@Nullable final Long id) {
+        this.id = id;
+        return this;
     }
 
     /**
@@ -87,10 +141,13 @@ public class Group implements Comparable<Group> {
     }
 
     /**
-     * @return whether this group has a parent id
+     * @param parentId the new unique identifier of the group in which this group resides, possibly {@code null}
+     *
+     * @return {@code this} for fluent-style usage
      */
-    public boolean hasParentId() {
-        return getParentId().isPresent();
+    public Group setParentId(@Nullable final Long parentId) {
+        this.parentId = parentId;
+        return this;
     }
 
     /**
@@ -102,18 +159,72 @@ public class Group implements Comparable<Group> {
     }
 
     /**
-     * @return the immutable set of tags assigned to this group
+     * @param name the new name of this group
+     *
+     * @return {@code this} for fluent-style usage
+     *
+     * @throws IllegalArgumentException if the provided name is invalid
+     * @throws NullPointerException if the provided name is {@code null}
+     */
+    public Group setName(@Nonnull final String name) {
+        this.name = Validator.validateName(name);
+        return this;
+    }
+
+    /**
+     * @return the set of tags assigned to this group, not a copy
      */
     @Nonnull
-    public ImmutableSet<Tag> getTags() {
+    public Set<Tag> getTags() {
         return this.tags;
     }
 
     /**
-     * @return whether this group has any assigned tags
+     * @param tags the new set of tags assigned to this group
+     *
+     * @return {@code this} for fluent-style usage
+     *
+     * @throws NullPointerException if the provided parameter is {@code null}
      */
-    public boolean hasTags() {
-        return !getTags().isEmpty();
+    public Group setTags(@Nonnull final Set<Tag> tags) {
+        this.tags = Objects.requireNonNull(tags);
+        return this;
+    }
+
+    /**
+     * @param tags the new set of tags assigned to this group
+     *
+     * @return {@code this} for fluent-style usage
+     *
+     * @throws NullPointerException if the provided parameter is {@code null}
+     */
+    public Group setTags(@Nonnull final Tag... tags) {
+        this.tags = new LinkedHashSet<>(Arrays.asList(Objects.requireNonNull(tags)));
+        return this;
+    }
+
+    /**
+     * @param tags the new tags to be included in this group
+     *
+     * @return {@code this} for fluent-style usage
+     *
+     * @throws NullPointerException if the provided parameter is {@code null}
+     */
+    public Group addTags(@Nonnull final Set<Tag> tags) {
+        this.tags.addAll(Objects.requireNonNull(tags));
+        return this;
+    }
+
+    /**
+     * @param tags the new tags to be included in this group
+     *
+     * @return {@code this} for fluent-style usage
+     *
+     * @throws NullPointerException if the provided parameter is {@code null}
+     */
+    public Group addTags(@Nonnull final Tag... tags) {
+        this.tags.addAll(Arrays.asList(Objects.requireNonNull(tags)));
+        return this;
     }
 
     @Override
@@ -183,210 +294,6 @@ public class Group implements Comparable<Group> {
             }
 
             return name;
-        }
-    }
-
-    /**
-     * Used to manage the creation of {@link Group} objects. This class is not thread safe and should not be used across
-     * multiple threads.
-     */
-    @NotThreadSafe
-    public static class Builder {
-        @Nullable
-        private Long id;
-
-        @Nullable
-        private Long parentId;
-
-        @Nonnull
-        private String name = "";
-
-        @Nonnull
-        private final Set<Tag> tags = new LinkedHashSet<>();
-
-        /**
-         * Initialize a builder with the specified descriptive name.
-         *
-         * @param name the descriptive name of the group to be created
-         *
-         * @throws NullPointerException if the provided parameter is {@code null}
-         * @throws IllegalArgumentException if the provided parameter is invalid
-         */
-        public Builder(@Nonnull final String name) {
-            setName(name);
-        }
-
-        /**
-         * Initialize a builder based on an existing group (copy its contents).
-         *
-         * @param other the existing group to duplicate
-         *
-         * @throws NullPointerException if the provided parameter is {@code null}
-         */
-        public Builder(@Nonnull final Group other) {
-            Objects.requireNonNull(other);
-
-            setId(other.getId().orElse(null));
-            setParentId(other.getParentId().orElse(null));
-            setName(other.getName());
-            addTags(other.getTags());
-        }
-
-        /**
-         * @param id the new unique id of the group to be created
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder setId(@Nullable final Long id) {
-            this.id = id;
-            return this;
-        }
-
-        /**
-         * Removes the id value from this group.
-         *
-         * @return {@code this} for fluent-style usage
-         */
-        @Nonnull
-        public Builder clearId() {
-            this.id = null;
-            return this;
-        }
-
-        /**
-         * @param parentId the new unique id of the parent group in which this group will reside
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder setParentId(@Nullable final Long parentId) {
-            this.parentId = parentId;
-            return this;
-        }
-
-        /**
-         * Removes the parent id value from this group.
-         *
-         * @return {@code this} for fluent-style usage
-         */
-        @Nonnull
-        public Builder clearParentId() {
-            this.parentId = null;
-            return this;
-        }
-
-        /**
-         * @param name the new descriptive name of the group to be created
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         * @throws IllegalArgumentException if the parameter is invalid
-         */
-        @Nonnull
-        public Builder setName(@Nonnull final String name) {
-            this.name = Validator.validateName(name);
-            return this;
-        }
-
-        /**
-         * @param tag the new tag to include in the created group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder addTag(@Nonnull final Tag tag) {
-            return addTags(tag);
-        }
-
-        /**
-         * @param tags the new tags to include in the created group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder addTags(@Nonnull final Tag... tags) {
-            return addTags(Arrays.asList(Objects.requireNonNull(tags)));
-        }
-
-        /**
-         * @param tags the new tags to include in the created group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder addTags(@Nonnull final Collection<Tag> tags) {
-            this.tags.addAll(Objects.requireNonNull(tags));
-            return this;
-        }
-
-        /**
-         * @param tag the tag to remove from this group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder removeTag(@Nonnull final Tag tag) {
-            return removeTags(tag);
-        }
-
-        /**
-         * @param tags the tags to remove from this group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder removeTags(@Nonnull final Tag... tags) {
-            return removeTags(Arrays.asList(Objects.requireNonNull(tags)));
-        }
-
-        /**
-         * @param tags the tags to remove from this group
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder removeTags(@Nonnull final Collection<Tag> tags) {
-            this.tags.removeAll(Objects.requireNonNull(tags));
-            return this;
-        }
-
-        /**
-         * Removes all tags from this group.
-         *
-         * @return {@code this} for fluent-style usage
-         */
-        @Nonnull
-        public Builder clearTags() {
-            this.tags.clear();
-            return this;
-        }
-
-        /**
-         * Using the current values in this builder, create and return a new group.
-         *
-         * @return the group object represented by this builder
-         */
-        @Nonnull
-        public Group build() {
-            return new Group(this.id, this.parentId, this.name, ImmutableSet.copyOf(this.tags));
         }
     }
 }

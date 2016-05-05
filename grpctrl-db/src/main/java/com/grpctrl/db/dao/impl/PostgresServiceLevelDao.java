@@ -1,40 +1,67 @@
 package com.grpctrl.db.dao.impl;
 
-import com.grpctrl.common.model.Account;
+import com.grpctrl.common.model.ServiceLevel;
+import com.grpctrl.common.util.CloseableBiConsumer;
 import com.grpctrl.db.dao.ServiceLevelDao;
-import com.grpctrl.db.error.DaoException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.Objects;
 
 import javax.annotation.Nonnull;
+import javax.ws.rs.InternalServerErrorException;
 
 /**
  * Provides an implementation of a {@link ServiceLevelDao}.
  */
 public class PostgresServiceLevelDao implements ServiceLevelDao {
     @Override
-    public void add(@Nonnull final Connection conn, @Nonnull final Collection<Account> accounts)
-            throws DaoException {
-        // Note that the collection of accounts are expected to be already in a reasonable batch size, since they are
-        // coming from the PostgresAccountDao already in a batch.
+    public CloseableBiConsumer<Long, ServiceLevel> getAddConsumer(@Nonnull final Connection conn) {
+        return new AddConsumer(conn);
+    }
 
-        final String SQL =
+    private static class AddConsumer implements CloseableBiConsumer<Long, ServiceLevel> {
+        private static final String SQL =
                 "INSERT INTO service_levels (account_id, max_groups, max_tags, max_depth) VALUES (?, ?, ?, ?)";
 
-        try (final PreparedStatement ps = conn.prepareStatement(SQL)) {
-            for (final Account account : accounts) {
-                ps.setLong(1, account.getId().orElse(null));
-                ps.setInt(2, account.getServiceLevel().getMaxGroups());
-                ps.setInt(3, account.getServiceLevel().getMaxTags());
-                ps.setInt(4, account.getServiceLevel().getMaxDepth());
-                ps.addBatch();
+        private final PreparedStatement ps;
+
+        public AddConsumer(@Nonnull final Connection conn) {
+            try {
+                this.ps = Objects.requireNonNull(conn).prepareStatement(SQL);
+            } catch (final SQLException sqlException) {
+                throw new InternalServerErrorException(
+                        "Failed to create service level prepared statement", sqlException);
             }
-            ps.executeBatch();
-        } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to add service levels", sqlException);
+        }
+
+        @Override
+        public void accept(@Nonnull final Long accountId, @Nonnull final ServiceLevel serviceLevel) {
+            try {
+                this.ps.setLong(1, accountId);
+                this.ps.setInt(2, serviceLevel.getMaxGroups());
+                this.ps.setInt(3, serviceLevel.getMaxTags());
+                this.ps.setInt(4, serviceLevel.getMaxDepth());
+                this.ps.addBatch();
+            } catch (final SQLException sqlException) {
+                throw new InternalServerErrorException("Failed to add service level batch", sqlException);
+            }
+        }
+
+        @Override
+        public void close() {
+            try {
+                this.ps.executeBatch();
+            } catch (final SQLException sqlException) {
+                throw new InternalServerErrorException("Failed to execute service level batch", sqlException);
+            } finally {
+                try {
+                    this.ps.close();
+                } catch (final SQLException sqlException) {
+                    throw new InternalServerErrorException("Failed to close prepared statement", sqlException);
+                }
+            }
         }
     }
 }

@@ -41,7 +41,7 @@ public class AccountGetAll extends LocalRunner {
     /**
      * The end-point for the back-end against which the performance tests will be executed.
      */
-    private static final EndPoint END_POINT = new EndPoint.Builder().build();
+    private static final EndPoint END_POINT = new EndPoint();
 
     /**
      * The total number of get-all request operations to execute during the testing.

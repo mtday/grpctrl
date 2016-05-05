@@ -1,8 +1,8 @@
 package com.grpctrl.db.dao.impl;
 
 import com.grpctrl.common.model.Account;
-import com.grpctrl.common.model.Group;
 import com.grpctrl.common.model.Tag;
+import com.grpctrl.common.util.CloseableBiConsumer;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.TagDao;
 import com.grpctrl.db.error.DaoException;
@@ -14,21 +14,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.AbstractMap;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.sql.DataSource;
+import javax.ws.rs.InternalServerErrorException;
 
 /**
  * Provides an implementation of a {@link TagDao} using a JDBC {@link DataSourceSupplier} to communicate
@@ -73,260 +64,16 @@ public class PostgresTagDao implements TagDao {
         }
     }
 
-    /**
-     * This class is responsible for providing an iterator over {@link Tag} objects for streaming processing.
-     */
-    private static class TagIterator implements Iterator<Tag> {
-        @Nullable
-        private final ResultSet rs;
-        private final long groupId;
-
-        private Tag next;
-        private SQLException exception;
-
-        /**
-         * @param rs the result set from which tags will be read
-         * @param groupId the unique id of the current group for which tags are being read
-         */
-        TagIterator(@Nullable final ResultSet rs, final long groupId) {
-            this.rs = rs;
-            this.groupId = groupId;
-        }
-
-        /**
-         * @return whether more tags are available for this group
-         */
-        public boolean hasNext() {
-            if (this.next != null) {
-                return true;
-            } else {
-                this.next = fetchNext();
-            }
-            return this.next != null;
-        }
-
-        /**
-         * @return the next tag that has been pulled from the result set
-         */
-        @Nonnull
-        public Tag next() {
-            if (this.next == null) {
-                throw new NoSuchElementException();
-            }
-            final Tag toReturn = this.next;
-            this.next = fetchNext();
-            return toReturn;
-        }
-
-        @Nullable
-        private Tag fetchNext() {
-            try {
-                if (this.rs != null && this.rs.next()) {
-                    final long nextGroupId = this.rs.getLong("group_id");
-                    if (this.groupId != nextGroupId) {
-                        this.rs.previous();
-                        return null;
-                    }
-                    return new Tag.Builder(this.rs.getString("tag_label"), this.rs.getString("tag_value")).build();
-                }
-            } catch (final SQLException sqlException) {
-                this.exception = sqlException;
-            }
-            return null;
-        }
-
-        /**
-         * @return any exception that was thrown during the tag processing
-         */
-        @Nonnull
-        public Optional<SQLException> getException() {
-            return Optional.of(this.exception);
-        }
-    }
-
-    /**
-     * Responsible for reading tags from a result set for a given set of groups, chunking the tags up into iterators
-     * so they can be processed sequentially.
-     */
-    private static class ResultSetIterator implements Iterator<Map.Entry<Group, TagIterator>> {
-        @Nonnull
-        private final ResultSet rs;
-        @Nonnull
-        private final Map<Long, Group> groupMap = new HashMap<>();
-
-        private Map.Entry<Group, TagIterator> prev;
-        private Map.Entry<Group, TagIterator> next;
-        private SQLException exception;
-
-        /**
-         * @param rs the result set from which the tags will be read
-         * @param groups the groups for which tags will be processed
-         */
-        ResultSetIterator(
-                @Nonnull final ResultSet rs, @Nonnull final Collection<Group> groups) {
-            this.rs = Objects.requireNonNull(rs);
-            groups.stream().forEach(g -> this.groupMap.put(g.getId().orElse(null), g));
-        }
-
-        /**
-         * @return whether more groups and tags exist
-         */
-        public boolean hasNext() {
-            if (this.next != null) {
-                return true;
-            } else {
-                this.next = fetchNext();
-            }
-            return this.next != null;
-        }
-
-        /**
-         * @return the next entry containing a group and an iterator of associated tags
-         */
-        @Nonnull
-        public Map.Entry<Group, TagIterator> next() {
-            if (this.next == null) {
-                throw new NoSuchElementException();
-            }
-            this.prev = this.next;
-            this.next = null;
-            return this.prev;
-        }
-
-        @Nullable
-        private Map.Entry<Group, TagIterator> fetchNext() {
-            try {
-                if (this.rs.next()) {
-                    final long groupId = this.rs.getLong("group_id");
-                    this.rs.previous();
-
-                    return new AbstractMap.SimpleEntry<>(this.groupMap.remove(groupId), new TagIterator(this.rs, groupId));
-                }
-            } catch (final SQLException sqlException) {
-                this.exception = sqlException;
-            }
-            if (!this.groupMap.isEmpty()) {
-                final Long groupId = this.groupMap.keySet().iterator().next();
-                this.groupMap.remove(groupId);
-                return new AbstractMap.SimpleEntry<>(this.groupMap.remove(groupId), new TagIterator(null, groupId));
-            }
-            return null;
-        }
-
-        /**
-         * @return any exception that occurred while iterating through the result set
-         */
-        @Nonnull
-        public Optional<SQLException> getException() {
-            if (this.exception != null)
-                return Optional.of(this.exception);
-            return this.prev.getValue().getException();
-        }
-    }
-
     @Override
-    public void get(
-            @Nonnull final BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull final Connection conn,
-            @Nonnull final Account account, @Nonnull final Collection<Group> groups) throws DaoException {
-        Objects.requireNonNull(consumer);
-        Objects.requireNonNull(conn);
-        Objects.requireNonNull(account);
-        Objects.requireNonNull(groups);
-
-        if (groups.isEmpty()) {
-            // Quick exit when no work to do.
-            return;
-        }
-
-        final String sql =
-                "SELECT group_id, tag_label, tag_value FROM tags WHERE account_id = ? AND group_id = ANY (?) ORDER BY"
-                        + " group_id LIMIT ?";
-
-        final Collection<Long> groupIds =
-                groups.stream().map(Group::getId).filter(Optional::isPresent).map(Optional::get)
-                        .collect(Collectors.toList());
-
-        try (final PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, account.getId().orElse(null));
-            ps.setArray(2, conn.createArrayOf("bigint", groupIds.toArray()));
-            ps.setInt(3, account.getServiceLevel().getMaxTags());
-            try (final ResultSet rs = ps.executeQuery()) {
-                final ResultSetIterator iter = new ResultSetIterator(rs, groups);
-                while (iter.hasNext()) {
-                    final Map.Entry<Group, TagIterator> entry = iter.next();
-                    consumer.accept(entry.getKey(), entry.getValue());
-
-                    final Optional<SQLException> exception = iter.getException();
-                    if (exception.isPresent()) {
-                        throw exception.get();
-                    }
-                }
-            }
-        } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to retrieve tags", sqlException);
-        }
-    }
-
-    @Override
-    public int add(@Nonnull final BiConsumer<Group, Iterator<Tag>> consumer,
-            @Nonnull final Connection conn, @Nonnull final Account account, @Nonnull final Collection<Group> groups)
+    public CloseableBiConsumer<Long, Tag> getAddConsumer(@Nonnull Connection conn, @Nonnull Account account)
             throws DaoException {
-        if (groups.isEmpty()) {
-            // Quick exit when no work to do.
-            return 0;
-        }
-
-        int added = 0;
-
-        final int batchSize = 1000;
-        final String sql = "INSERT INTO tags (account_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?)";
-
         final int available = account.getServiceLevel().getMaxTags() - count(conn, account);
-
-        try (final PreparedStatement ps = conn.prepareStatement(sql)) {
-            int batches = 0;
-            ps.setLong(1, account.getId().orElse(null));
-            for (final Group group : groups) {
-                ps.setLong(2, group.getId().orElse(null));
-
-                for (final Tag tag : group.getTags()) {
-                    ps.setString(3, tag.getLabel());
-                    ps.setString(4, tag.getValue());
-                    ps.addBatch();
-                    batches++;
-
-                    if (batches >= batchSize) {
-                        batches = 0;
-                        added += IntStream.of(ps.executeBatch()).sum();
-                        if (available - added < 0) {
-                            throw new QuotaExceededException(
-                                    "Unable to add the requested tags without exceeding allocated quota. Account has "
-                                            + "a limit of " + account.getServiceLevel().getMaxTags() + " total tags.");
-                        }
-                    }
-                }
-
-                consumer.accept(group, group.getTags().iterator());
-            }
-            if (batches > 0) {
-                added += IntStream.of(ps.executeBatch()).sum();
-                if (available - added < 0) {
-                    throw new QuotaExceededException(
-                            "Unable to add the requested tags without exceeding allocated quota. Account has "
-                                    + "a limit of " + account.getServiceLevel().getMaxTags() + " total tags.");
-                }
-            }
-            conn.commit();
-        } catch (final SQLException sqlException) {
-            throw new DaoException("Failed to add tags for groups", sqlException);
-        }
-
-        return added;
+        return new AddConsumer(conn, account, available);
     }
 
     @Override
     public int add(
-            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Collection<Tag> tags)
+            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Iterable<Tag> tags)
             throws DaoException {
         final String sql = "INSERT INTO tags (account_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?)";
 
@@ -339,7 +86,7 @@ public class PostgresTagDao implements TagDao {
 
     @Override
     public int remove(
-            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Collection<Tag> tags)
+            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Iterable<Tag> tags)
             throws DaoException {
         final String sql = "DELETE FROM tags WHERE account_id = ? AND group_id = ? AND tag_label = ? AND tag_value = ?";
 
@@ -352,15 +99,10 @@ public class PostgresTagDao implements TagDao {
 
     private int processTags(
             @Nonnull final String sql, final int batchSize, @Nonnull final Account account, @Nonnull final Long groupId,
-            @Nonnull final Collection<Tag> tags) throws SQLException {
+            @Nonnull final Iterable<Tag> tags) throws SQLException {
         Objects.requireNonNull(account);
         Objects.requireNonNull(groupId);
         Objects.requireNonNull(tags);
-
-        if (tags.isEmpty()) {
-            // Quick exit when no work to do.
-            return 0;
-        }
 
         int modified = 0;
 
@@ -392,16 +134,11 @@ public class PostgresTagDao implements TagDao {
 
     @Override
     public int removeLabels(
-            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Collection<String> tagLabels)
+            @Nonnull final Account account, @Nonnull final Long groupId, @Nonnull final Iterable<String> tagLabels)
             throws DaoException {
         Objects.requireNonNull(account);
         Objects.requireNonNull(groupId);
         Objects.requireNonNull(tagLabels);
-
-        if (tagLabels.isEmpty()) {
-            // Quick exit when no work to do.
-            return 0;
-        }
 
         int removed = 0;
         final int batchSize = 1000;
@@ -432,5 +169,77 @@ public class PostgresTagDao implements TagDao {
         }
 
         return removed;
+    }
+
+    private static class AddConsumer implements CloseableBiConsumer<Long, Tag> {
+        private static final int BATCH_SIZE = 1000;
+        private static final String SQL =
+                "INSERT INTO tags (account_id, group_id, tag_label, tag_value) VALUES (?, ?, ?, ?)";
+
+        private final PreparedStatement ps;
+        private final Account account;
+
+        private final int available;
+        private int added = 0;
+
+        private int batchCount = 0;
+
+        public AddConsumer(@Nonnull final Connection conn, @Nonnull final Account account, final int available) {
+            try {
+                this.ps = Objects.requireNonNull(conn).prepareStatement(SQL);
+                this.account = Objects.requireNonNull(account);
+                this.available = available;
+            } catch (final SQLException sqlException) {
+                throw new InternalServerErrorException(
+                        "Failed to create tag insert prepared statement", sqlException);
+            }
+        }
+
+        @Override
+        public void accept(@Nonnull final Long groupId, @Nonnull final Tag tag) {
+            try {
+                this.ps.setLong(1, account.getId().orElse(null));
+                this.ps.setLong(2, groupId);
+                this.ps.setString(3, tag.getLabel());
+                this.ps.setString(4, tag.getValue());
+                this.ps.addBatch();
+                batchCount++;
+
+                if (this.batchCount >= BATCH_SIZE) {
+                    this.ps.executeBatch();
+                    this.batchCount = 0;
+                    this.added += IntStream.of(ps.executeBatch()).sum();
+                    if (this.available - this.added < 0) {
+                        throw new QuotaExceededException(
+                                "Unable to add the requested tags without exceeding allocated quota. Account has "
+                                        + "a limit of " + this.account.getServiceLevel().getMaxTags() + " total tags.");
+                    }
+                }
+            } catch (final SQLException sqlException) {
+                throw new InternalServerErrorException("Failed to add tag batch", sqlException);
+            }
+        }
+
+        @Override
+        public void close() {
+            try {
+                if (this.batchCount > 0) {
+                    this.added += IntStream.of(ps.executeBatch()).sum();
+                    if (this.available - this.added < 0) {
+                        throw new QuotaExceededException(
+                                "Unable to add the requested tags without exceeding allocated quota. Account has "
+                                        + "a limit of " + this.account.getServiceLevel().getMaxTags() + " total tags.");
+                    }
+                }
+            } catch (final SQLException sqlException) {
+                throw new InternalServerErrorException("Failed to execute tag insert batch", sqlException);
+            } finally {
+                try {
+                    this.ps.close();
+                } catch (final SQLException sqlException) {
+                    throw new InternalServerErrorException("Failed to close prepared statement", sqlException);
+                }
+            }
+        }
     }
 }

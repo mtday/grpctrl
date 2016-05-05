@@ -2,8 +2,6 @@ package com.grpctrl.common.model;
 
 import com.grpctrl.common.util.OptionalComparator;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -15,38 +13,77 @@ import java.util.Optional;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.concurrent.Immutable;
-import javax.annotation.concurrent.ThreadSafe;
 
 /**
- * A representation of a service account in this system. This class is immutable.
+ * A representation of a service account in this system.
  */
-@Immutable
-@ThreadSafe
 public class Account implements Comparable<Account> {
     @Nullable
-    private final Long id;
+    private Long id;
 
     @Nonnull
-    private final String name;
+    private String name = "";
 
     @Nonnull
-    private final ServiceLevel serviceLevel;
+    private ServiceLevel serviceLevel = new ServiceLevel();
 
-    @SuppressWarnings("all")
-    @SuppressFBWarnings(value = "NP_STORE_INTO_NONNULL_FIELD", justification = "required by Jackson")
-    private Account() {
-        // Required for Jackson deserialization.
-        this.id = null;
-        this.name = null;
-        this.serviceLevel = null;
+    /**
+     * Default constructor.
+     */
+    public Account() {
     }
 
-    private Account(@Nullable final Long id, @Nonnull final String name, @Nonnull final ServiceLevel serviceLevel) {
-        // These have already been validated by the builder.
-        this.id = id;
-        this.name = name;
-        this.serviceLevel = serviceLevel;
+    /**
+     * @param name the descriptive name assigned to this account
+     *
+     * @throws IllegalArgumentException if the name parameter is invalid
+     * @throws NullPointerException if the parameter is {@code null}
+     */
+    public Account(@Nonnull final String name) {
+        setName(name);
+    }
+
+    /**
+     * @param name the descriptive name assigned to this account
+     * @param serviceLevel the level of service provided to this account
+     *
+     * @throws IllegalArgumentException if any of the parameters are invalid
+     * @throws NullPointerException if any of the parameters are {@code null}
+     */
+    public Account(@Nonnull final String name, @Nonnull final ServiceLevel serviceLevel) {
+        this(null, name, serviceLevel);
+    }
+
+    /**
+     * @param id the unique account identifier
+     * @param name the descriptive name assigned to this account
+     * @param serviceLevel the level of service provided to this account
+     *
+     * @throws IllegalArgumentException if any of the parameters are invalid
+     * @throws NullPointerException if the {@code name} or {@code serviceLevel} parameters are {@code null}
+     */
+    public Account(@Nullable final Long id, @Nonnull final String name, @Nonnull final ServiceLevel serviceLevel) {
+        setId(id);
+        setName(name);
+        setServiceLevel(serviceLevel);
+    }
+
+    /**
+     * @param other the account to duplicate
+     */
+    public Account(@Nonnull final Account other) {
+        setValues(other);
+    }
+
+    /**
+     * @param other the account to duplicate
+     */
+    public Account setValues(@Nonnull final Account other) {
+        Objects.requireNonNull(other);
+        setId(other.getId().orElse(null));
+        setName(other.getName());
+        setServiceLevel(other.getServiceLevel());
+        return this;
     }
 
     /**
@@ -58,10 +95,13 @@ public class Account implements Comparable<Account> {
     }
 
     /**
-     * @return whether this account object has a unique identifier
+     * @param id the new unique account identifier, possibly {@code null}
+     *
+     * @return {@code this} for fluent-style usage
      */
-    public boolean hasId() {
-        return getId().isPresent();
+    public Account setId(@Nullable final Long id) {
+        this.id = id;
+        return this;
     }
 
     /**
@@ -73,11 +113,36 @@ public class Account implements Comparable<Account> {
     }
 
     /**
+     * @param name the new descriptive name assigned to this account
+     *
+     * @return {@code this} for fluent-style usage
+     *
+     * @throws NullPointerException if the provided name is {@code null}
+     * @throws IllegalArgumentException if the provided name is invalid
+     */
+    public Account setName(@Nonnull final String name) {
+        this.name = Validator.validateName(name);
+        return this;
+    }
+
+    /**
      * @return the level of service made available for this account
      */
     @Nonnull
     public ServiceLevel getServiceLevel() {
         return this.serviceLevel;
+    }
+
+    /**
+     * @param serviceLevel the new level of service provided to this account
+     *
+     * @return {@code this} for fluent-style usage
+     *
+     * @throws NullPointerException if the provided service level is {@code null}
+     */
+    public Account setServiceLevel(@Nonnull final ServiceLevel serviceLevel) {
+        this.serviceLevel = Objects.requireNonNull(serviceLevel);
+        return this;
     }
 
     @Override
@@ -142,122 +207,6 @@ public class Account implements Comparable<Account> {
             }
 
             return name;
-        }
-    }
-
-    /**
-     * Responsible for building account objects.
-     */
-    public static class Builder {
-        @Nullable
-        private Long id;
-
-        @Nonnull
-        private String name = "";
-
-        @Nonnull
-        private ServiceLevel serviceLevel = new ServiceLevel.Builder().build();
-
-        /**
-         * Initialize a builder with the account name and service level.
-         *
-         * @param name the descriptive name of the account to be created
-         * @param serviceLevel the level of service made available for this account
-         *
-         * @throws NullPointerException if either of the provided parameters is {@code null}
-         * @throws IllegalArgumentException if either of the provided parameters is invalid
-         */
-        public Builder(@Nonnull final String name, @Nonnull final ServiceLevel serviceLevel) {
-            this(null, name, serviceLevel);
-        }
-
-        /**
-         * Initialize a builder with the unique account identifier, account name and service level.
-         *
-         * @param id the unique account identifier, possibly {@code null}
-         * @param name the descriptive name of the account to be created
-         * @param serviceLevel the level of service made available for this account
-         *
-         * @throws NullPointerException if either of the provided parameters is {@code null}
-         * @throws IllegalArgumentException if either of the provided parameters is invalid
-         */
-        public Builder(@Nullable final Long id, @Nonnull final String name, @Nonnull final ServiceLevel serviceLevel) {
-            setId(id);
-            setName(name);
-            setServiceLevel(serviceLevel);
-        }
-
-        /**
-         * Initialize a builder using the provided account values.
-         *
-         * @param other the account to duplicate
-         *
-         * @throws NullPointerException if the provided parameter is {@code null}
-         */
-        public Builder(@Nonnull final Account other) {
-            this(Objects.requireNonNull(other).getId().orElse(null), other.getName(), other.getServiceLevel());
-        }
-
-        /**
-         * @param id the new unique identifier of the account to be created, possibly {@code null}
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         * @throws IllegalArgumentException if the parameter is invalid
-         */
-        @Nonnull
-        public Builder setId(@Nullable final Long id) {
-            this.id = id;
-            return this;
-        }
-
-        /**
-         * Removes the id value from this group.
-         *
-         * @return {@code this} for fluent-style usage
-         */
-        @Nonnull
-        public Builder clearId() {
-            this.id = null;
-            return this;
-        }
-
-        /**
-         * @param name the new descriptive name of the account to be created
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         * @throws IllegalArgumentException if the parameter is invalid
-         */
-        @Nonnull
-        public Builder setName(@Nonnull final String name) {
-            this.name = Validator.validateName(name);
-            return this;
-        }
-
-        /**
-         * @param serviceLevel the new unique id of the group to be created
-         *
-         * @return {@code this} for fluent-style usage
-         *
-         * @throws NullPointerException if the parameter is {@code null}
-         */
-        @Nonnull
-        public Builder setServiceLevel(@Nonnull final ServiceLevel serviceLevel) {
-            this.serviceLevel = Objects.requireNonNull(serviceLevel);
-            return this;
-        }
-
-        /**
-         * Create an account based on the current state of this builder.
-         *
-         * @return the account represented by this builder
-         */
-        @Nonnull
-        public Account build() {
-            return new Account(this.id, this.name, this.serviceLevel);
         }
     }
 }

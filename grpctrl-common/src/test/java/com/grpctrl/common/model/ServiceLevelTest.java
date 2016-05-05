@@ -11,12 +11,9 @@ import org.junit.Test;
 public class ServiceLevelTest {
     @Test
     public void testCompareTo() {
-        final ServiceLevel a =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(1).build();
-        final ServiceLevel b =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(2).build();
-        final ServiceLevel c =
-                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxDepth(4).build();
+        final ServiceLevel a = new ServiceLevel(1, 1, 1);
+        final ServiceLevel b = new ServiceLevel(1, 1, 2);
+        final ServiceLevel c = new ServiceLevel(2, 3, 4);
 
         assertEquals(1, a.compareTo(null));
         assertEquals(0, a.compareTo(a));
@@ -32,12 +29,9 @@ public class ServiceLevelTest {
 
     @Test
     public void testEquals() {
-        final ServiceLevel a =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(1).build();
-        final ServiceLevel b =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(2).build();
-        final ServiceLevel c =
-                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxDepth(4).build();
+        final ServiceLevel a = new ServiceLevel(1, 1, 1);
+        final ServiceLevel b = new ServiceLevel(1, 1, 2);
+        final ServiceLevel c = new ServiceLevel(2, 3, 4);
 
         assertNotEquals(a, null);
         assertEquals(a, a);
@@ -53,12 +47,9 @@ public class ServiceLevelTest {
 
     @Test
     public void testHashCode() {
-        final ServiceLevel a =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(1).build();
-        final ServiceLevel b =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(1).setMaxDepth(2).build();
-        final ServiceLevel c =
-                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxDepth(4).build();
+        final ServiceLevel a = new ServiceLevel(1, 1, 1);
+        final ServiceLevel b = new ServiceLevel(1, 1, 2);
+        final ServiceLevel c = new ServiceLevel(2, 3, 4);
 
         assertEquals(862508, a.hashCode());
         assertEquals(862509, b.hashCode());
@@ -67,8 +58,7 @@ public class ServiceLevelTest {
 
     @Test
     public void testToString() {
-        final ServiceLevel serviceLevel =
-                new ServiceLevel.Builder().setMaxGroups(1).setMaxTags(2).setMaxDepth(3).build();
+        final ServiceLevel serviceLevel = new ServiceLevel(1, 2, 3);
         assertEquals("ServiceLevel[maxGroups=1,maxTags=2,maxDepth=3]", serviceLevel.toString());
     }
 
@@ -94,10 +84,9 @@ public class ServiceLevelTest {
     }
 
     @Test
-    public void testBuilderCopy() {
-        final ServiceLevel original =
-                new ServiceLevel.Builder().setMaxGroups(2).setMaxTags(3).setMaxDepth(4).build();
-        final ServiceLevel copy = new ServiceLevel.Builder(original).build();
+    public void tesCopy() {
+        final ServiceLevel original = new ServiceLevel(2, 3, 4);
+        final ServiceLevel copy = new ServiceLevel(original);
 
         assertEquals(original, copy);
     }

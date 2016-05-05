@@ -11,8 +11,8 @@ import org.junit.Test;
  */
 public class EndPointTest {
     @Test
-    public void testDefaultBuilder() {
-        final EndPoint ept = new EndPoint.Builder().build();
+    public void testDefaul() {
+        final EndPoint ept = new EndPoint();
         assertEquals("localhost", ept.getHost());
         assertEquals(5000, ept.getPort());
         assertTrue(ept.isSecure());
@@ -20,18 +20,18 @@ public class EndPointTest {
 
     @Test
     public void testAsUrl() {
-        assertEquals("http://host1:1111/", new EndPoint.Builder("host1", 1111, false).build().asUrl());
-        assertEquals("https://host1:1111/", new EndPoint.Builder("host1", 1111, true).build().asUrl());
-        assertEquals("http://host1:2222/", new EndPoint.Builder("host1", 2222, false).build().asUrl());
-        assertEquals("http://host2:1111/", new EndPoint.Builder("host2", 1111, false).build().asUrl());
+        assertEquals("http://host1:1111/", new EndPoint("host1", 1111, false).asUrl());
+        assertEquals("https://host1:1111/", new EndPoint("host1", 1111, true).asUrl());
+        assertEquals("http://host1:2222/", new EndPoint("host1", 2222, false).asUrl());
+        assertEquals("http://host2:1111/", new EndPoint("host2", 1111, false).asUrl());
     }
 
     @Test
     public void testCompareTo() {
-        final EndPoint ept1 = new EndPoint.Builder("host1", 1111, false).build();
-        final EndPoint ept2 = new EndPoint.Builder("host1", 1111, true).build();
-        final EndPoint ept3 = new EndPoint.Builder("host1", 2222, false).build();
-        final EndPoint ept4 = new EndPoint.Builder("host2", 1111, false).build();
+        final EndPoint ept1 = new EndPoint("host1", 1111, false);
+        final EndPoint ept2 = new EndPoint("host1", 1111, true);
+        final EndPoint ept3 = new EndPoint("host1", 2222, false);
+        final EndPoint ept4 = new EndPoint("host2", 1111, false);
 
         assertEquals(1, ept1.compareTo(null));
 
@@ -58,10 +58,10 @@ public class EndPointTest {
 
     @Test
     public void testEquals() {
-        final EndPoint ept1 = new EndPoint.Builder("host1", 1111, false).build();
-        final EndPoint ept2 = new EndPoint.Builder("host1", 1111, true).build();
-        final EndPoint ept3 = new EndPoint.Builder("host1", 2222, false).build();
-        final EndPoint ept4 = new EndPoint.Builder("host2", 1111, false).build();
+        final EndPoint ept1 = new EndPoint("host1", 1111, false);
+        final EndPoint ept2 = new EndPoint("host1", 1111, true);
+        final EndPoint ept3 = new EndPoint("host1", 2222, false);
+        final EndPoint ept4 = new EndPoint("host2", 1111, false);
 
         assertNotEquals(ept1, null);
 
@@ -88,10 +88,10 @@ public class EndPointTest {
 
     @Test
     public void testHashCode() {
-        final EndPoint ept1 = new EndPoint.Builder("host1", 1111, false).build();
-        final EndPoint ept2 = new EndPoint.Builder("host1", 1111, true).build();
-        final EndPoint ept3 = new EndPoint.Builder("host1", 2222, false).build();
-        final EndPoint ept4 = new EndPoint.Builder("host2", 1111, false).build();
+        final EndPoint ept1 = new EndPoint("host1", 1111, false);
+        final EndPoint ept2 = new EndPoint("host1", 1111, true);
+        final EndPoint ept3 = new EndPoint("host1", 2222, false);
+        final EndPoint ept4 = new EndPoint("host2", 1111, false);
 
         assertEquals(-1267529758, ept1.hashCode());
         assertEquals(-1267529759, ept2.hashCode());
@@ -101,14 +101,14 @@ public class EndPointTest {
 
     @Test
     public void testToString() {
-        final EndPoint ept = new EndPoint.Builder("host", 1111, false).build();
+        final EndPoint ept = new EndPoint("host", 1111, false);
         assertEquals("EndPoint[host=host,port=1111,secure=false]", ept.toString());
     }
 
     @Test
-    public void testBuilderCopy() {
-        final EndPoint original = new EndPoint.Builder("host", 1111, false).build();
-        final EndPoint copy = new EndPoint.Builder(original).build();
+    public void testCopy() {
+        final EndPoint original = new EndPoint("host", 1111, false);
+        final EndPoint copy = new EndPoint(original);
         assertEquals(original, copy);
     }
 }

@@ -6,7 +6,6 @@ import com.grpctrl.common.model.Tag;
 import com.grpctrl.db.error.DaoException;
 
 import java.sql.Connection;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.function.BiConsumer;
 
@@ -130,7 +129,7 @@ public interface GroupDao {
      */
     void add(
             @Nonnull BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull Account account,
-            @Nonnull Collection<Group> groups) throws DaoException;
+            @Nonnull Iterable<Group> groups) throws DaoException;
 
     /**
      * Add the specified groups to the backing store as children for the specified parent id.
@@ -147,7 +146,7 @@ public interface GroupDao {
      */
     void add(
             @Nonnull BiConsumer<Group, Iterator<Tag>> consumer, @Nonnull Account account, @Nullable Long parentId,
-            @Nonnull Collection<Group> groups) throws DaoException;
+            @Nonnull Iterable<Group> groups) throws DaoException;
 
     /**
      * Remove groups with the specified unique identifiers.
@@ -161,5 +160,5 @@ public interface GroupDao {
      * @throws NullPointerException if any of the parameters are {@code null}
      * @throws DaoException if there is a problem interacting with the database
      */
-    int remove(@Nonnull Account account, @Nonnull Collection<Long> groupIds) throws DaoException;
+    int remove(@Nonnull Account account, @Nonnull Iterable<Long> groupIds) throws DaoException;
 }
