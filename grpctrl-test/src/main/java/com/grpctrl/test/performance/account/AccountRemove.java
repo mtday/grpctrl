@@ -1,24 +1,25 @@
-package com.grpctrl.test.performance;
+package com.grpctrl.test.performance.account;
 
 import com.grpctrl.client.AccountClient;
 import com.grpctrl.common.model.EndPoint;
+import com.grpctrl.test.performance.BasePerformanceTest;
+import com.grpctrl.test.performance.PerformanceWorker;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Run some performance tests on the account get-all capability.
+ * Run some performance tests on the account remove capability.
  */
-public class AccountGetAll extends BasePerformanceTest {
-    private static final Logger LOG = LoggerFactory.getLogger(AccountGetAll.class);
+public class AccountRemove extends BasePerformanceTest {
+    private static final Logger LOG = LoggerFactory.getLogger(AccountRemove.class);
 
     private static final EndPoint END_POINT = new EndPoint();
     private static final int TOTAL_REQUESTS = 10000;
@@ -32,28 +33,28 @@ public class AccountGetAll extends BasePerformanceTest {
      * @throws InterruptedException if there is a problem performing the tests
      */
     public static void main(final String... args) throws InterruptedException {
-        new AccountGetAll().runTests();
+        new AccountRemove().runTests();
     }
 
     @Nonnull
     private final AccountClient client;
 
-    public AccountGetAll() {
+    public AccountRemove() {
         this.client = new AccountClient(getObjectMapper(), getHttpClient(), END_POINT);
     }
 
     public void runTests() throws InterruptedException {
-        runTests(new AccountGetAllWorkerSupplier(this.client), TOTAL_REQUESTS, CONCURRENT);
+        runTests(new AccountRemoveWorkerSupplier(this.client), TOTAL_REQUESTS, CONCURRENT);
     }
 
-    private static class AccountGetAllWorkerSupplier implements Supplier<PerformanceWorker> {
+    private static class AccountRemoveWorkerSupplier implements Supplier<PerformanceWorker> {
         @Nonnull
         private final AccountClient client;
 
         /**
          * @param client the account client
          */
-        public AccountGetAllWorkerSupplier(@Nonnull final AccountClient client) {
+        public AccountRemoveWorkerSupplier(@Nonnull final AccountClient client) {
             this.client = Objects.requireNonNull(client);
         }
 
@@ -81,9 +82,8 @@ public class AccountGetAll extends BasePerformanceTest {
         public void run() {
             this.start = System.currentTimeMillis();
 
-            final AtomicInteger total = new AtomicInteger(0);
             try {
-                this.client.getAll(account -> total.incrementAndGet());
+                this.client.remove(1L);
             } catch (final Throwable failure) {
                 this.failure = failure;
                 LOG.error("Failed to get all accounts", failure);

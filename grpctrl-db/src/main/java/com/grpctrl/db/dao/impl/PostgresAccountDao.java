@@ -56,10 +56,43 @@ public class PostgresAccountDao implements AccountDao {
     }
 
     @Override
-    public void get(@Nonnull final Collection<Long> accountIds, @Nonnull final Consumer<Account> consumer)
-            {
+    public void get(@Nonnull final Long accountId, @Nonnull final Consumer<Account> consumer) {
+        // NOTE: We don't call the other get method here since it requires the creation of a new collection.
+        Objects.requireNonNull(accountId);
         Objects.requireNonNull(consumer);
+
+        final String sql =
+                "SELECT a.account_id, a.name, s.max_groups, s.max_tags, s.max_depth FROM accounts a LEFT JOIN "
+                        + "service_levels s ON (a.account_id = s.account_id) WHERE a.account_id = ?";
+
+        final DataSource dataSource = getDataSourceSupplier().get();
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, accountId);
+
+            final Account account = new Account();
+
+            try (final ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    account.setId(rs.getLong("account_id"));
+                    account.setName(rs.getString("name"));
+
+                    account.getServiceLevel().setMaxGroups(rs.getInt("max_groups"));
+                    account.getServiceLevel().setMaxTags(rs.getInt("max_tags"));
+                    account.getServiceLevel().setMaxDepth(rs.getInt("max_depth"));
+
+                    consumer.accept(account);
+                }
+            }
+        } catch (final SQLException sqlException) {
+            throw ErrorTransformer.get("Failed to get account by id", sqlException);
+        }
+    }
+
+    @Override
+    public void get(@Nonnull final Collection<Long> accountIds, @Nonnull final Consumer<Account> consumer) {
         Objects.requireNonNull(accountIds);
+        Objects.requireNonNull(consumer);
 
         final String sql =
                 "SELECT a.account_id, a.name, s.max_groups, s.max_tags, s.max_depth FROM accounts a LEFT JOIN "
@@ -85,7 +118,7 @@ public class PostgresAccountDao implements AccountDao {
                 }
             }
         } catch (final SQLException sqlException) {
-            throw ErrorTransformer.get("Failed to get account", sqlException);
+            throw ErrorTransformer.get("Failed to get accounts by id", sqlException);
         }
     }
 
@@ -119,8 +152,7 @@ public class PostgresAccountDao implements AccountDao {
     }
 
     @Override
-    public void add(@Nonnull final Iterable<Account> accounts, @Nonnull final Consumer<Account> consumer)
-            {
+    public void add(@Nonnull final Iterable<Account> accounts, @Nonnull final Consumer<Account> consumer) {
         Objects.requireNonNull(accounts);
         Objects.requireNonNull(consumer);
 
@@ -178,6 +210,28 @@ public class PostgresAccountDao implements AccountDao {
             }
             batch.clear();
         }
+    }
+
+    @Override
+    public int remove(@Nonnull final Long accountId) {
+        // NOTE: We don't call the other remove method here since it requires the creation of a new collection.
+        Objects.requireNonNull(accountId);
+
+        final String sql = "DELETE FROM accounts WHERE account_id = ?";
+
+        int removed = 0;
+
+        final DataSource dataSource = getDataSourceSupplier().get();
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, accountId);
+            removed += ps.executeUpdate();
+            conn.commit();
+        } catch (final SQLException sqlException) {
+            throw ErrorTransformer.get("Failed to remove accounts", sqlException);
+        }
+
+        return removed;
     }
 
     @Override

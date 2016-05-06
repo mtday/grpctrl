@@ -94,4 +94,21 @@ public class AccountClient {
             throw new ClientException("Failed to communicate with back-end server", ioException);
         }
     }
+
+    public void remove(final long id) throws ClientException {
+        try {
+            final Request request = new Request.Builder().url(getEndPointUrl() + "/" + id).delete().build();
+            final Response response = getHttpClient().newCall(request).execute();
+            switch (response.code()) {
+                case HttpServletResponse.SC_OK:
+                    //LOG.info("Remove response: {}", response.body().string());
+                    break;
+                default:
+                    throw new ClientException(
+                            "Response code " + response.code() + " with body: " + response.body().string());
+            }
+        } catch (final IOException ioException) {
+            throw new ClientException("Failed to communicate with back-end server", ioException);
+        }
+    }
 }

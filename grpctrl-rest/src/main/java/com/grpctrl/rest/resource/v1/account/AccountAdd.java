@@ -4,10 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grpctrl.common.model.Account;
 import com.grpctrl.db.dao.AccountDao;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -19,10 +23,13 @@ import javax.ws.rs.core.StreamingOutput;
 /**
  * Add an account to the backing data store.
  */
+@Singleton
 @Path("/v1/account/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class AccountAdd extends BaseAccountResource {
+    private static final Logger LOG = LoggerFactory.getLogger(AccountAdd.class);
+
     /**
      * @param objectMapper the {@link ObjectMapper} used to generate JSON data
      * @param accountDao the {@link AccountDao} used to perform the account operation
@@ -30,6 +37,7 @@ public class AccountAdd extends BaseAccountResource {
     @Inject
     public AccountAdd(@Nonnull final ObjectMapper objectMapper, @Nonnull final AccountDao accountDao) {
         super(objectMapper, accountDao);
+        LOG.info("Created {}", getClass().getSimpleName());
     }
 
     /**
@@ -43,9 +51,8 @@ public class AccountAdd extends BaseAccountResource {
     public Response add(@Nonnull final Collection<Account> accounts) {
         // TODO: Only admins should be able to add accounts.
 
-        final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapper(), consumer -> {
-            getAccountDao().add(accounts, consumer);
-        });
+        final StreamingOutput streamingOutput =
+                new MultipleAccountStreamer(getObjectMapper(), consumer -> getAccountDao().add(accounts, consumer));
 
         return Response.ok().entity(streamingOutput).type(MediaType.APPLICATION_JSON).build();
     }

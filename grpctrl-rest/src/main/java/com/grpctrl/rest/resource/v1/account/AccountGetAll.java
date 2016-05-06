@@ -1,11 +1,15 @@
 package com.grpctrl.rest.resource.v1.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.grpctrl.common.model.Account;
 import com.grpctrl.db.dao.AccountDao;
+
+import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -16,9 +20,12 @@ import javax.ws.rs.core.StreamingOutput;
 /**
  * Retrieve all of the accounts in the system.
  */
+@Singleton
 @Path("/v1/account/")
 @Produces(MediaType.APPLICATION_JSON)
 public class AccountGetAll extends BaseAccountResource {
+    private final Consumer<Consumer<Account>> consumer = consumer -> getAccountDao().getAll(consumer);
+
     /**
      * @param objectMapper the {@link ObjectMapper} responsible for generating JSON data
      * @param accountDao the {@link AccountDao} used to perform the account operation
@@ -38,9 +45,7 @@ public class AccountGetAll extends BaseAccountResource {
     public Response getAll() {
         // TODO: Only admins should be able to retrieve accounts.
 
-        final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapper(), consumer -> {
-            getAccountDao().getAll(consumer);
-        });
+        final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapper(), this.consumer);
 
         return Response.ok().entity(streamingOutput).type(MediaType.APPLICATION_JSON).build();
     }

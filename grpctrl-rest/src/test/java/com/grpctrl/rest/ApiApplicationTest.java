@@ -42,23 +42,14 @@ public class ApiApplicationTest {
                 baseApplication.getClasses().stream().map(Class::getName).collect(Collectors.toList());
         final Iterator<String> nameIter = new TreeSet<>(names).iterator();
 
-        assertEquals("com.grpctrl.common.supplier.ConfigSupplier", nameIter.next());
-        assertEquals("com.grpctrl.common.supplier.HealthCheckRegistrySupplier", nameIter.next());
-        assertEquals("com.grpctrl.common.supplier.MetricRegistrySupplier", nameIter.next());
         assertEquals("com.grpctrl.common.supplier.ObjectMapperSupplier", nameIter.next());
-        assertEquals("com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier", nameIter.next());
-        assertEquals("com.grpctrl.crypto.ske.SymmetricKeyEncryptionSupplier", nameIter.next());
-        assertEquals("com.grpctrl.crypto.ssl.SslContextSupplier", nameIter.next());
-        assertEquals("com.grpctrl.crypto.store.KeyStoreSupplier", nameIter.next());
-        assertEquals("com.grpctrl.crypto.store.TrustStoreSupplier", nameIter.next());
-        assertEquals("com.grpctrl.db.DataSourceSupplier", nameIter.next());
-        assertEquals("com.grpctrl.db.dao.supplier.AccountDaoSupplier", nameIter.next());
-        assertEquals("com.grpctrl.db.dao.supplier.GroupDaoSupplier", nameIter.next());
-        assertEquals("com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier", nameIter.next());
-        assertEquals("com.grpctrl.db.dao.supplier.TagDaoSupplier", nameIter.next());
+        assertEquals("com.grpctrl.rest.filter.RequestLoggingFilter", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountAdd", nameIter.next());
+        assertEquals("com.grpctrl.rest.resource.v1.account.AccountDelete", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountGet", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountGetAll", nameIter.next());
+        assertEquals("org.glassfish.jersey.message.GZipEncoder", nameIter.next());
+        assertEquals("org.glassfish.jersey.server.filter.EncodingFilter", nameIter.next());
         assertFalse(nameIter.hasNext());
     }
 }

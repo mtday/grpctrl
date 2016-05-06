@@ -3,11 +3,10 @@ package com.grpctrl.rest.resource.v1.account;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grpctrl.db.dao.AccountDao;
 
-import java.util.Collections;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -19,6 +18,7 @@ import javax.ws.rs.core.StreamingOutput;
 /**
  * Retrieve the account information for the provided unique account identifier.
  */
+@Singleton
 @Path("/v1/account/{accountId}")
 @Produces(MediaType.APPLICATION_JSON)
 public class AccountGet extends BaseAccountResource {
@@ -43,9 +43,8 @@ public class AccountGet extends BaseAccountResource {
     public Response get(@Nonnull @PathParam("accountId") final Long accountId) {
         // TODO: Only admins should be able to retrieve accounts.
 
-        final StreamingOutput streamingOutput = new SingleAccountStreamer(getObjectMapper(), consumer -> {
-            getAccountDao().get(Collections.singleton(accountId), consumer);
-        });
+        final StreamingOutput streamingOutput = new SingleAccountStreamer(getObjectMapper(),
+                consumer -> getAccountDao().get(accountId, consumer));
 
         return Response.ok().entity(streamingOutput).type(MediaType.APPLICATION_JSON).build();
     }

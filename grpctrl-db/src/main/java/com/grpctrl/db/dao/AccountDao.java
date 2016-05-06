@@ -12,6 +12,17 @@ import javax.annotation.Nonnull;
  */
 public interface AccountDao {
     /**
+     * Consume the account with the specified unique id.
+     *
+     * @param accountId the unique identifier of the account to be consumed
+     * @param consumer the consumer to receive the indicated account object
+     *
+     * @throws NullPointerException if either parameter is {@code null}
+     * @throws javax.ws.rs.WebApplicationException if there is a problem interacting with the database
+     */
+    void get(@Nonnull Long accountId, @Nonnull Consumer<Account> consumer);
+
+    /**
      * Consume the accounts with the specified unique ids.
      *
      * @param accountIds the unique identifiers of the accounts to be consumed
@@ -43,6 +54,18 @@ public interface AccountDao {
      * @throws javax.ws.rs.WebApplicationException if there is a problem interacting with the database
      */
     void add(@Nonnull Iterable<Account> accounts, @Nonnull Consumer<Account> consumer);
+
+    /**
+     * Remove the account with the specified id.
+     *
+     * @param accountId the unique identifier indicating the account to be deleted
+     *
+     * @return the total number of accounts removed
+     *
+     * @throws NullPointerException if the parameter is {@code null}
+     * @throws javax.ws.rs.WebApplicationException if there is a problem interacting with the database
+     */
+    int remove(@Nonnull Long accountId);
 
     /**
      * Remove the accounts with the specified ids.

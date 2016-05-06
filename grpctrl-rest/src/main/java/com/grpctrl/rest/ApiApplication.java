@@ -14,7 +14,9 @@ import com.grpctrl.db.dao.supplier.AccountDaoSupplier;
 import com.grpctrl.db.dao.supplier.GroupDaoSupplier;
 import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
 import com.grpctrl.db.dao.supplier.TagDaoSupplier;
+import com.grpctrl.rest.filter.RequestLoggingFilter;
 import com.grpctrl.rest.resource.v1.account.AccountAdd;
+import com.grpctrl.rest.resource.v1.account.AccountDelete;
 import com.grpctrl.rest.resource.v1.account.AccountGet;
 import com.grpctrl.rest.resource.v1.account.AccountGetAll;
 
@@ -49,30 +51,19 @@ public class ApiApplication extends ResourceConfig {
         register(new ServiceLevelDaoSupplier.Binder());
         register(new TagDaoSupplier.Binder());
 
-        // This is to register the ContextResolver for these classes so Jersey uses them by default also. For example,
-        // without the ObjectMapperSupplier, jersey would use it's own ObjectMapper to serialize responses to JSON,
-        // even though it would be injecting our supplier objects into our classes. This only matters for ObjectMapper
-        // (since jersey only uses ObjectMapper and not the others) but doing the others for consistency.
-        register(ConfigSupplier.class);
-        register(PasswordBasedEncryptionSupplier.class);
-        register(KeyStoreSupplier.class);
-        register(TrustStoreSupplier.class);
-        register(SymmetricKeyEncryptionSupplier.class);
-        register(SslContextSupplier.class);
+        // So Jersey will use our ObjectMapper configuration.
         register(ObjectMapperSupplier.class);
-        register(MetricRegistrySupplier.class);
-        register(HealthCheckRegistrySupplier.class);
-        register(DataSourceSupplier.class);
-        register(AccountDaoSupplier.class);
-        register(GroupDaoSupplier.class);
-        register(ServiceLevelDaoSupplier.class);
-        register(TagDaoSupplier.class);
 
         // Resource classes.
         register(AccountAdd.class);
+        register(AccountDelete.class);
         register(AccountGet.class);
         register(AccountGetAll.class);
 
+        // Log requests as they come in.
+        register(RequestLoggingFilter.class);
+
+        // Turn on gzip compression.
         EncodingFilter.enableFor(this, GZipEncoder.class);
     }
 }
