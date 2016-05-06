@@ -18,7 +18,9 @@ import com.grpctrl.rest.resource.v1.account.AccountAdd;
 import com.grpctrl.rest.resource.v1.account.AccountGet;
 import com.grpctrl.rest.resource.v1.account.AccountGetAll;
 
+import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.filter.EncodingFilter;
 
 import javax.ws.rs.ApplicationPath;
 
@@ -70,5 +72,7 @@ public class ApiApplication extends ResourceConfig {
         register(AccountAdd.class);
         register(AccountGet.class);
         register(AccountGetAll.class);
+
+        EncodingFilter.enableFor(this, GZipEncoder.class);
     }
 }

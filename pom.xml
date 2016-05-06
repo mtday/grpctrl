@@ -381,16 +381,16 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- Undertow webapp server -->
+            <!-- Jetty webapp server -->
             <dependency>
-                <groupId>io.undertow</groupId>
-                <artifactId>undertow-core</artifactId>
-                <version>1.3.21.Final</version>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>9.3.8.v20160314</version>
             </dependency>
             <dependency>
-                <groupId>io.undertow</groupId>
-                <artifactId>undertow-servlet</artifactId>
-                <version>1.3.21.Final</version>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>9.3.8.v20160314</version>
             </dependency>
 
             <!-- Glassfish Jersey used for REST end-points -->

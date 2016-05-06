@@ -18,14 +18,14 @@
             <artifactId>grpctrl-rest</artifactId>
         </dependency>
 
-        <!-- Undertow webapp server used for testing web applications -->
+        <!-- Jetty webapp server -->
         <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-core</artifactId>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-servlet</artifactId>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
         </dependency>
 
         <!-- Logging -->
