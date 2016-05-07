@@ -5,7 +5,7 @@ import javax.annotation.Nonnull;
 /**
  * A generic exception thrown by the REST clients when there are problems communicating, sending, or parsing data.
  */
-public class ClientException extends Exception {
+public class ClientException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
     /**

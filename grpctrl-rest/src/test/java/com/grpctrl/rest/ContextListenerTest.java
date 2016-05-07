@@ -9,8 +9,6 @@ import org.junit.Test;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 
-import java.util.concurrent.ScheduledExecutorService;
-
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 
