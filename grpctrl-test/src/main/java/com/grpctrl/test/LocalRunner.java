@@ -28,17 +28,13 @@ public class LocalRunner {
     public Config getConfig() {
         final ClassLoader classLoader = LocalRunner.class.getClassLoader();
         final Optional<URL> keystore = Optional.ofNullable(classLoader.getResource("keystore.jks"));
-        final Optional<URL> truststore = Optional.ofNullable(classLoader.getResource("truststore.jks"));
 
         final Map<String, ConfigValue> configMap = new HashMap<>();
         if (keystore.isPresent()) {
             configMap.put(ConfigKeys.CRYPTO_SSL_KEYSTORE_FILE.getKey(), fromAnyRef(keystore.get().getFile()));
         }
-        if (truststore.isPresent()) {
-            configMap.put(ConfigKeys.CRYPTO_SSL_TRUSTSTORE_FILE.getKey(), fromAnyRef(truststore.get().getFile()));
-        }
-        if (!keystore.isPresent() || !truststore.isPresent()) {
-            LOG.warn("Could not find keystore or truststore in src/main/resources, running on HTTP instead of HTTPS.");
+        if (!keystore.isPresent()) {
+            LOG.warn("Could not find keystore in src/main/resources, running on HTTP instead of HTTPS.");
             configMap.put(ConfigKeys.CRYPTO_SSL_ENABLED.getKey(), fromAnyRef(false));
         }
 

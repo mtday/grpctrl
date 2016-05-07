@@ -1,6 +1,5 @@
 package com.grpctrl.crypto.common;
 
-import com.grpctrl.crypto.EncryptionException;
 import com.grpctrl.crypto.util.HexUtils;
 
 import java.io.ByteArrayInputStream;
@@ -21,12 +20,11 @@ public abstract class CommonEncryptionImpl implements CommonEncryption {
     private static final int BUFFER_SIZE = 1024;
 
     @Override
-    public abstract void encrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output)
-            throws EncryptionException;
+    public abstract void encrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output);
 
     @Override
     @Nonnull
-    public byte[] encrypt(@Nonnull final byte[] data) throws EncryptionException {
+    public byte[] encrypt(@Nonnull final byte[] data) {
         Objects.requireNonNull(data);
         final ByteArrayOutputStream output = new ByteArrayOutputStream();
         encrypt(new ByteArrayInputStream(data), output);
@@ -35,7 +33,7 @@ public abstract class CommonEncryptionImpl implements CommonEncryption {
 
     @Override
     @Nonnull
-    public String encryptString(@Nonnull final String data, @Nonnull final Charset charset) throws EncryptionException {
+    public String encryptString(@Nonnull final String data, @Nonnull final Charset charset) {
         Objects.requireNonNull(data);
         Objects.requireNonNull(charset);
         return HexUtils.bytesToHex(encrypt(data.getBytes(charset)));
@@ -43,20 +41,18 @@ public abstract class CommonEncryptionImpl implements CommonEncryption {
 
     @Override
     @Nonnull
-    public String encryptProperty(@Nonnull final String data, @Nonnull final Charset charset)
-            throws EncryptionException {
+    public String encryptProperty(@Nonnull final String data, @Nonnull final Charset charset) {
         Objects.requireNonNull(data);
         Objects.requireNonNull(charset);
         return String.format("ENC{%s}", HexUtils.bytesToHex(encrypt(data.getBytes(charset))));
     }
 
     @Override
-    public abstract void decrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output)
-            throws EncryptionException;
+    public abstract void decrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output);
 
     @Override
     @Nonnull
-    public byte[] decrypt(@Nonnull final byte[] data) throws EncryptionException {
+    public byte[] decrypt(@Nonnull final byte[] data) {
         final ByteArrayOutputStream output = new ByteArrayOutputStream();
         decrypt(new ByteArrayInputStream(Objects.requireNonNull(data)), output);
         return output.toByteArray();
@@ -64,14 +60,13 @@ public abstract class CommonEncryptionImpl implements CommonEncryption {
 
     @Override
     @Nonnull
-    public String decryptString(@Nonnull final String data, @Nonnull final Charset charset) throws EncryptionException {
+    public String decryptString(@Nonnull final String data, @Nonnull final Charset charset) {
         return new String(decrypt(HexUtils.hexToBytes(Objects.requireNonNull(data))), Objects.requireNonNull(charset));
     }
 
     @Override
     @Nonnull
-    public String decryptProperty(@Nonnull final String data, @Nonnull final Charset charset)
-            throws EncryptionException {
+    public String decryptProperty(@Nonnull final String data, @Nonnull final Charset charset) {
         Objects.requireNonNull(data);
         Objects.requireNonNull(charset);
         if (data.matches("ENC\\{.*\\}")) {
@@ -81,7 +76,6 @@ public abstract class CommonEncryptionImpl implements CommonEncryption {
         return data;
     }
 
-    @Nonnull
     public void apply(
             @Nonnull final Cipher cipher, @Nonnull final InputStream input, @Nonnull final OutputStream output)
             throws Exception {

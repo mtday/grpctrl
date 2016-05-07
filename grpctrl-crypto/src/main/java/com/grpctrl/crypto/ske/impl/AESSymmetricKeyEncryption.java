@@ -1,6 +1,5 @@
 package com.grpctrl.crypto.ske.impl;
 
-import com.grpctrl.crypto.EncryptionException;
 import com.grpctrl.crypto.common.CommonEncryptionImpl;
 import com.grpctrl.crypto.ske.SymmetricKeyEncryption;
 import com.grpctrl.crypto.util.HexUtils;
@@ -9,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -22,6 +22,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import javax.ws.rs.InternalServerErrorException;
 
 /**
  * Provides an implementation of the {@link SymmetricKeyEncryption} interface, using the the AES algorithm to perform
@@ -44,6 +45,7 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
     /**
      * @return the {@link KeyPair} containing the public and private symmetric keys
      */
+    @Nonnull
     protected KeyPair getKeyPair() {
         return this.keyPair;
     }
@@ -52,13 +54,13 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
      * @param keyLength the length of the key to generate
      * @return the {@link SecretKey} used to do the encryption and decryption of system data
      */
-    protected SecretKey createSecretKey(final int keyLength) throws EncryptionException {
+    protected SecretKey createSecretKey(final int keyLength) {
         try {
             final KeyGenerator keyGenerator = KeyGenerator.getInstance(ALGORITHM);
             keyGenerator.init(keyLength);
             return keyGenerator.generateKey();
-        } catch (final Exception exception) {
-            throw new EncryptionException("Failed to generate secret key for encryption", exception);
+        } catch (final InvalidParameterException | NoSuchAlgorithmException badAlgorithm) {
+            throw new InternalServerErrorException("Failed to generate secret key for encryption", badAlgorithm);
         }
     }
 
@@ -89,9 +91,7 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
     }
 
     @Override
-    @Nonnull
-    public void encrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output)
-            throws EncryptionException {
+    public void encrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output) {
         Objects.requireNonNull(input);
         Objects.requireNonNull(output);
         try {
@@ -108,14 +108,12 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
             // Read data from input into buffer, encrypt and write to output
             apply(cipher, input, output);
         } catch (final Exception exception) {
-            throw new EncryptionException("Failed to encrypt data", exception);
+            throw new InternalServerErrorException("Failed to encrypt data", exception);
         }
     }
 
     @Override
-    @Nonnull
-    public void decrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output)
-            throws EncryptionException {
+    public void decrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output) {
         Objects.requireNonNull(input);
         Objects.requireNonNull(output);
         try {
@@ -135,13 +133,13 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
             // Read data from input into buffer, decrypt and write to output
             apply(cipher, input, output);
         } catch (final Exception exception) {
-            throw new EncryptionException("Failed to decrypt data", exception);
+            throw new InternalServerErrorException("Failed to decrypt data", exception);
         }
     }
 
     @Override
     @Nonnull
-    public byte[] sign(@Nonnull final byte[] data) throws EncryptionException {
+    public byte[] sign(@Nonnull final byte[] data) {
         Objects.requireNonNull(data);
         try {
             final PrivateKey privateKey = getKeyPair().getPrivate();
@@ -150,19 +148,18 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
             signature.update(data);
             return signature.sign();
         } catch (final NoSuchAlgorithmException | SignatureException | InvalidKeyException exception) {
-            throw new EncryptionException("Failed to sign data", exception);
+            throw new InternalServerErrorException("Failed to sign data", exception);
         }
     }
 
     @Override
     @Nonnull
-    public String signString(@Nonnull final String data, @Nonnull final Charset charset) throws EncryptionException {
+    public String signString(@Nonnull final String data, @Nonnull final Charset charset) {
         return HexUtils.bytesToHex(sign(Objects.requireNonNull(data).getBytes(Objects.requireNonNull(charset))));
     }
 
     @Override
-    @Nonnull
-    public boolean verify(@Nonnull final byte[] data, @Nonnull final byte[] signatureData) throws EncryptionException {
+    public boolean verify(@Nonnull final byte[] data, @Nonnull final byte[] signatureData) {
         Objects.requireNonNull(data);
         try {
             final PublicKey publicKey = getKeyPair().getPublic();
@@ -171,15 +168,13 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
             signature.update(data);
             return signature.verify(signatureData);
         } catch (final NoSuchAlgorithmException | SignatureException | InvalidKeyException exception) {
-            throw new EncryptionException("Failed to verify signature", exception);
+            throw new InternalServerErrorException("Failed to verify signature", exception);
         }
     }
 
     @Override
-    @Nonnull
     public boolean verifyString(
-            @Nonnull final String data, @Nonnull final Charset charset, @Nonnull final String signatureData)
-            throws EncryptionException {
+            @Nonnull final String data, @Nonnull final Charset charset, @Nonnull final String signatureData) {
         final byte[] dataBytes = Objects.requireNonNull(data).getBytes(Objects.requireNonNull(charset));
         return verify(dataBytes, HexUtils.hexToBytes(signatureData));
     }

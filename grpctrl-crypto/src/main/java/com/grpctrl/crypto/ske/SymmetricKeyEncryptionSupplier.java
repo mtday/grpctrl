@@ -3,7 +3,6 @@ package com.grpctrl.crypto.ske;
 import com.google.common.base.Charsets;
 import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.supplier.ConfigSupplier;
-import com.grpctrl.crypto.EncryptionException;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
@@ -14,7 +13,10 @@ import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -22,6 +24,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
@@ -116,10 +119,9 @@ public class SymmetricKeyEncryptionSupplier
 
     /**
      * @return a {@link KeyPair} representing the system public and private keys
-     * @throws EncryptionException if there is a problem retrieving the key pair
      */
     @Nonnull
-    protected KeyPair getSymmetricKeyPair() throws EncryptionException {
+    protected KeyPair getSymmetricKeyPair() {
         try {
             final KeyStore keyStore = getKeyStoreSupplier().get();
             final String alias = keyStore.aliases().nextElement();
@@ -130,10 +132,9 @@ public class SymmetricKeyEncryptionSupplier
                             .toCharArray();
             final Key key = keyStore.getKey(alias, decryptedPassword);
             return new KeyPair(keyStore.getCertificate(alias).getPublicKey(), (PrivateKey) key);
-        } catch (final EncryptionException exception) {
-            throw exception;
-        } catch (final Exception exception) {
-            throw new EncryptionException("Failed to retrieve symmetric keys from system key store", exception);
+        } catch (final UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException exception) {
+            throw new InternalServerErrorException(
+                    "Failed to retrieve symmetric keys from system key store", exception);
         }
     }
 

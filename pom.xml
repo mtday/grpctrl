@@ -18,6 +18,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <project.user>${project.groupId}</project.user>
+        <project.group>${project.groupId}</project.group>
     </properties>
 
     <modules>
@@ -26,6 +29,7 @@
         <module>grpctrl-common</module>
         <module>grpctrl-crypto</module>
         <module>grpctrl-db</module>
+        <module>grpctrl-dist</module>
         <module>grpctrl-rest</module>
         <module>grpctrl-run</module>
         <module>grpctrl-test</module>
@@ -259,7 +263,6 @@
             </plugin>
 
             <!-- Configure the maven plugin for building RPMs. -->
-            <!-- TODO: Do we need RPMs? -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>rpm-maven-plugin</artifactId>
@@ -363,6 +366,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>grpctrl-db</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>grpctrl-dist</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

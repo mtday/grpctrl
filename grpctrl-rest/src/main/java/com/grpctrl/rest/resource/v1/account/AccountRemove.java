@@ -19,13 +19,13 @@ import javax.ws.rs.core.MediaType;
 @Singleton
 @Path("/v1/account/{accountId}")
 @Produces(MediaType.APPLICATION_JSON)
-public class AccountDelete extends BaseAccountResource {
+public class AccountRemove extends BaseAccountResource {
     /**
      * @param objectMapper the {@link ObjectMapper} responsible for generating JSON data
      * @param accountDao the {@link AccountDao} used to perform the account operation
      */
     @Inject
-    public AccountDelete(@Nonnull final ObjectMapper objectMapper, @Nonnull final AccountDao accountDao) {
+    public AccountRemove(@Nonnull final ObjectMapper objectMapper, @Nonnull final AccountDao accountDao) {
         super(objectMapper, accountDao);
     }
 
@@ -38,16 +38,16 @@ public class AccountDelete extends BaseAccountResource {
      */
     @DELETE
     @Nullable
-    public DeleteResponse remove(@Nonnull @PathParam("accountId") final Long accountId) {
+    public RemoveResponse remove(@Nonnull @PathParam("accountId") final Long accountId) {
         // TODO: Only admins should be able to retrieve accounts.
 
-        return new DeleteResponse(getAccountDao().remove(accountId));
+        return new RemoveResponse(getAccountDao().remove(accountId));
     }
 
-    private static class DeleteResponse {
+    private static class RemoveResponse {
         private boolean removed;
 
-        public DeleteResponse(final int count) {
+        public RemoveResponse(final int count) {
             this.removed = count > 0;
         }
 

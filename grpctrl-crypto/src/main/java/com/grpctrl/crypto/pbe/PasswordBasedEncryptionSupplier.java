@@ -2,7 +2,6 @@ package com.grpctrl.crypto.pbe;
 
 import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.supplier.ConfigSupplier;
-import com.grpctrl.crypto.EncryptionException;
 import com.grpctrl.crypto.pbe.impl.AESPasswordBasedEncryption;
 import com.typesafe.config.Config;
 
@@ -16,6 +15,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
@@ -82,16 +82,15 @@ public class PasswordBasedEncryptionSupplier
 
     /**
      * @return the shared secret defined for the system
-     * @throws EncryptionException if there is a problem retrieving the shared secret value
      */
     @Nonnull
-    private String getSharedSecret() throws EncryptionException {
+    private String getSharedSecret() {
         final Config config = getConfigSupplier().get();
         final String sharedSecretVar = config.getString(ConfigKeys.CRYPTO_SHARED_SECRET_VARIABLE.getKey());
         if (config.hasPath(sharedSecretVar)) {
             return config.getString(sharedSecretVar);
         }
-        throw new EncryptionException("Failed to retrieve shared secret from variable " + sharedSecretVar);
+        throw new InternalServerErrorException("Failed to retrieve shared secret from variable " + sharedSecretVar);
     }
 
     @Nonnull

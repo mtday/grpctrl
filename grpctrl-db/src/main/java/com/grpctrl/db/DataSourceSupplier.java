@@ -1,7 +1,9 @@
 package com.grpctrl.db;
 
+import com.google.common.base.Charsets;
 import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.supplier.ConfigSupplier;
+import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.typesafe.config.Config;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -28,6 +30,8 @@ import javax.ws.rs.ext.Provider;
 public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSource>, ContextResolver<DataSource> {
     @Nonnull
     private final ConfigSupplier configSupplier;
+    @Nonnull
+    private final PasswordBasedEncryptionSupplier pbeSupplier;
 
     @Nullable
     private volatile DataSource singleton;
@@ -36,18 +40,27 @@ public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSou
      * Create the supplier with the necessary dependencies.
      *
      * @param configSupplier the {@link ConfigSupplier} responsible for providing access to the static system
-     * configuration
+     *     configuration
+     * @param pbeSupplier the {@link PasswordBasedEncryptionSupplier} responsible for decrypting the database password
+     *     configuration
      *
      * @throws NullPointerException if the provided parameter is {@code null}
      */
     @Inject
-    public DataSourceSupplier(@Nonnull final ConfigSupplier configSupplier) {
+    public DataSourceSupplier(
+            @Nonnull final ConfigSupplier configSupplier, @Nonnull final PasswordBasedEncryptionSupplier pbeSupplier) {
         this.configSupplier = Objects.requireNonNull(configSupplier);
+        this.pbeSupplier = Objects.requireNonNull(pbeSupplier);
     }
 
     @Nonnull
     private ConfigSupplier getConfigSupplier() {
         return this.configSupplier;
+    }
+
+    @Nonnull
+    private PasswordBasedEncryptionSupplier getPasswordBasedEncryptionSupplier() {
+        return this.pbeSupplier;
     }
 
     @Override
@@ -89,7 +102,8 @@ public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSou
         final HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setJdbcUrl(config.getString(ConfigKeys.DB_URL.getKey()));
         hikariConfig.setUsername(config.getString(ConfigKeys.DB_USERNAME.getKey()));
-        hikariConfig.setPassword(config.getString(ConfigKeys.DB_PASSWORD.getKey()));
+        hikariConfig.setPassword(getPasswordBasedEncryptionSupplier().get()
+                .decryptProperty(config.getString(ConfigKeys.DB_PASSWORD.getKey()), Charsets.UTF_8));
         hikariConfig.setMinimumIdle(config.getInt(ConfigKeys.DB_MINIMUM_IDLE.getKey()));
         hikariConfig.setMaximumPoolSize(config.getInt(ConfigKeys.DB_MAXIMUM_POOL_SIZE.getKey()));
         hikariConfig.setIdleTimeout(config.getDuration(ConfigKeys.DB_TIMEOUT_IDLE.getKey()).toMillis());

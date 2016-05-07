@@ -4,21 +4,23 @@ import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.common.supplier.HealthCheckRegistrySupplier;
 import com.grpctrl.common.supplier.MetricRegistrySupplier;
 import com.grpctrl.common.supplier.ObjectMapperSupplier;
+import com.grpctrl.common.supplier.ScheduledExecutorServiceSupplier;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.crypto.ske.SymmetricKeyEncryptionSupplier;
 import com.grpctrl.crypto.ssl.SslContextSupplier;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
-import com.grpctrl.crypto.store.TrustStoreSupplier;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.supplier.AccountDaoSupplier;
 import com.grpctrl.db.dao.supplier.GroupDaoSupplier;
 import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
 import com.grpctrl.db.dao.supplier.TagDaoSupplier;
-import com.grpctrl.rest.filter.RequestLoggingFilter;
+import com.grpctrl.rest.providers.GenericExceptionMapper;
+import com.grpctrl.rest.providers.MemoryUsageLogger;
+import com.grpctrl.rest.providers.RequestLoggingFilter;
 import com.grpctrl.rest.resource.v1.account.AccountAdd;
-import com.grpctrl.rest.resource.v1.account.AccountDelete;
 import com.grpctrl.rest.resource.v1.account.AccountGet;
 import com.grpctrl.rest.resource.v1.account.AccountGetAll;
+import com.grpctrl.rest.resource.v1.account.AccountRemove;
 
 import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -37,9 +39,9 @@ public class ApiApplication extends ResourceConfig {
      */
     public ApiApplication() {
         register(new ConfigSupplier.Binder());
+        register(new ScheduledExecutorServiceSupplier.Binder());
         register(new PasswordBasedEncryptionSupplier.Binder());
         register(new KeyStoreSupplier.Binder());
-        register(new TrustStoreSupplier.Binder());
         register(new SymmetricKeyEncryptionSupplier.Binder());
         register(new SslContextSupplier.Binder());
         register(new ObjectMapperSupplier.Binder());
@@ -56,12 +58,18 @@ public class ApiApplication extends ResourceConfig {
 
         // Resource classes.
         register(AccountAdd.class);
-        register(AccountDelete.class);
+        register(AccountRemove.class);
         register(AccountGet.class);
         register(AccountGetAll.class);
 
         // Log requests as they come in.
         register(RequestLoggingFilter.class);
+
+        // Log memory usage stats.
+        register(MemoryUsageLogger.class);
+
+        // Handle exceptions.
+        register(GenericExceptionMapper.class);
 
         // Turn on gzip compression.
         EncodingFilter.enableFor(this, GZipEncoder.class);

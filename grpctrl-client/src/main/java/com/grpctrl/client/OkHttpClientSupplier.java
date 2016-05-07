@@ -115,6 +115,7 @@ public class OkHttpClientSupplier
         if (getConfigSupplier().get().getBoolean(ConfigKeys.CRYPTO_SSL_ENABLED.getKey())) {
             // SSL using our crypto configuration
             builder.sslSocketFactory(getSslContextSupplier().get().getSocketFactory());
+            builder.hostnameVerifier((hostName, sslSession) -> true);
         }
 
         return builder.build();

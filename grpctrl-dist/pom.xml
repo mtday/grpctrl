@@ -1,0 +1,179 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>grpctrl</groupId>
+        <artifactId>grpctrl</artifactId>
+        <version>0.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>grpctrl-dist</artifactId>
+    <packaging>rpm</packaging>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/rpm</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>rpm-maven-plugin</artifactId>
+                <configuration>
+                    <!-- We want grpctrl instead of grpctrl-dist. -->
+                    <name>${project.groupId}</name>
+                    <!-- From https://fedoraproject.org/wiki/RPMGroups. -->
+                    <group>Applications/System</group>
+                    <targetOS>linux</targetOS>
+
+                    <mappings>
+                        <mapping>
+                            <!-- Holds the service installation files for all versions. -->
+                            <directory>/opt/${project.groupId}</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
+                            <!-- Holds the service installation files for this specific version. -->
+                            <directory>/opt/${project.groupId}/${project.version}</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
+                            <!-- Holds the service execution scripts. -->
+                            <directory>/opt/${project.groupId}/${project.version}/bin</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <sources>
+                                <source>
+                                    <location>${project.build.directory}/classes/bin</location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <!-- Holds the service configuration files. -->
+                            <directory>/etc/sysconfig/${project.groupId}</directory>
+                            <!-- Treat this directory as configuration so modified files do not get overwritten -->
+                            <configuration>true</configuration>
+                            <filemode>640</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <sources>
+                                <source>
+                                    <location>${project.build.directory}/classes/config</location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <!-- Used to store service configuration files. -->
+                            <directory>/etc/sysconfig/${project.groupId}</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
+                            <!-- Used to store service log files. -->
+                            <directory>/var/log/${project.groupId}</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
+                            <!-- Used to store running service process id files. -->
+                            <directory>/var/run/${project.groupId}</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
+                            <!-- Stores the user files for the service user. -->
+                            <directory>/home/${project.user}</directory>
+                            <!-- Treat this directory as configuration so modified files do not get overwritten -->
+                            <configuration>true</configuration>
+                            <filemode>640</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <sources>
+                                <source>
+                                    <location>${project.build.directory}/classes/home</location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <!-- Stores the user files for the service user. -->
+                            <directory>/home/${project.user}</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
+                            <!-- Stores the user PKI files for the service user. -->
+                            <directory>/home/${project.user}/pki</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
+                            <!-- Stores the service dependency jar files. -->
+                            <directory>/opt/${project.groupId}/${project.version}/lib</directory>
+                            <filemode>640</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <dependency/>
+                        </mapping>
+                        <mapping>
+                            <!-- Stores the service dependency jar files. -->
+                            <directory>/opt/${project.groupId}/${project.version}/lib</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                    </mappings>
+                    <preinstallScriptlet>
+                        <scriptFile>${project.build.directory}/classes/scripts/preinstall.sh</scriptFile>
+                        <fileEncoding>${project.build.sourceEncoding}</fileEncoding>
+                    </preinstallScriptlet>
+                    <postinstallScriptlet>
+                        <scriptFile>${project.build.directory}/classes/scripts/postinstall.sh</scriptFile>
+                        <fileEncoding>${project.build.sourceEncoding}</fileEncoding>
+                    </postinstallScriptlet>
+                    <preremoveScriptlet>
+                        <scriptFile>${project.build.directory}/classes/scripts/preremove.sh</scriptFile>
+                        <fileEncoding>${project.build.sourceEncoding}</fileEncoding>
+                    </preremoveScriptlet>
+                    <postremoveScriptlet>
+                        <scriptFile>${project.build.directory}/classes/scripts/postremove.sh</scriptFile>
+                        <fileEncoding>${project.build.sourceEncoding}</fileEncoding>
+                    </postremoveScriptlet>
+                    <requires>
+                        <!-- Needed for the user and group creation during preinstall. -->
+                        <require>shadow-utils</require>
+                    </requires>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <!-- Project modules -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>grpctrl-run</artifactId>
+        </dependency>
+    </dependencies>
+</project>

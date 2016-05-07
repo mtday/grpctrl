@@ -7,7 +7,6 @@ import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
-import com.grpctrl.crypto.store.TrustStoreSupplier;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
@@ -32,25 +31,19 @@ public class SslContextSupplierTest {
     public static void beforeClass() {
         final Optional<URL> keystore =
                 Optional.ofNullable(SslContextSupplierTest.class.getClassLoader().getResource("keystore.jks"));
-        final Optional<URL> truststore =
-                Optional.ofNullable(SslContextSupplierTest.class.getClassLoader().getResource("truststore.jks"));
         if (!keystore.isPresent()) {
             throw new RuntimeException("Failed to find keystore classpath resource");
-        }
-        if (!truststore.isPresent()) {
-            throw new RuntimeException("Failed to find truststore classpath resource");
         }
 
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(ConfigKeys.CRYPTO_SSL_KEYSTORE_FILE.getKey(), fromAnyRef(keystore.get().getFile()));
-        map.put(ConfigKeys.CRYPTO_SSL_TRUSTSTORE_FILE.getKey(), fromAnyRef(truststore.get().getFile()));
 
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
         final ConfigSupplier configSupplier = new ConfigSupplier(config);
 
         final PasswordBasedEncryptionSupplier pbeSupplier = new PasswordBasedEncryptionSupplier(configSupplier);
-        supplier = new SslContextSupplier(configSupplier, new KeyStoreSupplier(configSupplier, pbeSupplier),
-                new TrustStoreSupplier(configSupplier, pbeSupplier), pbeSupplier);
+        supplier =
+                new SslContextSupplier(configSupplier, new KeyStoreSupplier(configSupplier, pbeSupplier), pbeSupplier);
     }
 
     @Test
@@ -62,8 +55,9 @@ public class SslContextSupplierTest {
         final ConfigSupplier configSupplier = new ConfigSupplier(config);
 
         final PasswordBasedEncryptionSupplier pbeSupplier = new PasswordBasedEncryptionSupplier(configSupplier);
-        assertNotNull(new SslContextSupplier(configSupplier, new KeyStoreSupplier(configSupplier, pbeSupplier),
-                new TrustStoreSupplier(configSupplier, pbeSupplier), pbeSupplier).get());
+        assertNotNull(
+                new SslContextSupplier(configSupplier, new KeyStoreSupplier(configSupplier, pbeSupplier), pbeSupplier)
+                        .get());
     }
 
     @Test

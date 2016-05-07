@@ -52,6 +52,10 @@ public class MultipleAccountStreamer implements StreamingOutput {
     @Override
     public void write(@Nonnull final OutputStream output) throws IOException, WebApplicationException {
         try (final JsonGenerator generator = getObjectMapper().getFactory().createGenerator(output)) {
+            generator.writeStartObject();
+            generator.writeFieldName("success");
+            generator.writeBoolean(true);
+            generator.writeFieldName("accounts");
             generator.writeStartArray();
             getConsumer().accept(account -> {
                 try {
@@ -61,6 +65,7 @@ public class MultipleAccountStreamer implements StreamingOutput {
                 }
             });
             generator.writeEndArray();
+            generator.writeEndObject();
         }
     }
 }

@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNotNull;
 
 import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.supplier.ConfigSupplier;
-import com.grpctrl.crypto.EncryptionException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 
@@ -16,6 +15,8 @@ import org.mockito.Mockito;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.ws.rs.InternalServerErrorException;
 
 /**
  * Perform testing on the {@link com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier}.
@@ -28,7 +29,7 @@ public class PasswordBasedEncryptionSupplierTest {
         supplier = new com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier(new ConfigSupplier());
     }
 
-    @Test(expected = EncryptionException.class)
+    @Test(expected = InternalServerErrorException.class)
     public void testNoSharedSecret() {
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(ConfigKeys.CRYPTO_SHARED_SECRET_VARIABLE.getKey(), fromAnyRef("DOES_NOT_EXIST"));

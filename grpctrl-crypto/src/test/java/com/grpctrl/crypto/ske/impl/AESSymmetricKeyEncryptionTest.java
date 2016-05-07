@@ -3,8 +3,6 @@ package com.grpctrl.crypto.ske.impl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.grpctrl.crypto.EncryptionException;
-
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -19,24 +17,25 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Objects;
 
+import javax.ws.rs.InternalServerErrorException;
+
 /**
- * Perform testing on the {@link com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption} class.
+ * Perform testing on the {@link AESSymmetricKeyEncryption} class.
  */
 public class AESSymmetricKeyEncryptionTest {
-    protected KeyPair getKeyPair() throws EncryptionException {
+    protected KeyPair getKeyPair() {
         try {
             final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
             keyPairGenerator.initialize(2048);
             return keyPairGenerator.generateKeyPair();
         } catch (final NoSuchAlgorithmException badAlgorithm) {
-            throw new EncryptionException("Unrecognized algorithm", badAlgorithm);
+            throw new InternalServerErrorException("Unrecognized algorithm", badAlgorithm);
         }
     }
 
     @Test
-    public void testRoundTripStreamSame() throws EncryptionException, IOException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    public void testRoundTripStreamSame() throws IOException {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final byte[] original = {0x01, 0x02, 0x03, (byte) 0xFD, (byte) 0xFE, (byte) 0xFF};
         final ByteArrayInputStream originalInput = new ByteArrayInputStream(original);
@@ -56,12 +55,10 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testRoundTripStreamMultiple() throws EncryptionException, IOException {
+    public void testRoundTripStreamMultiple() throws IOException {
         final KeyPair keyPair = getKeyPair();
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske1 = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(keyPair);
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske2 = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(keyPair);
+        final AESSymmetricKeyEncryption ske1 = new AESSymmetricKeyEncryption(keyPair);
+        final AESSymmetricKeyEncryption ske2 = new AESSymmetricKeyEncryption(keyPair);
 
         final byte[] original = {0x01, 0x02, 0x03, (byte) 0xFD, (byte) 0xFE, (byte) 0xFF};
         final ByteArrayInputStream originalInput = new ByteArrayInputStream(original);
@@ -81,9 +78,8 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testRoundTripStreamEmpty() throws EncryptionException, IOException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    public void testRoundTripStreamEmpty() throws IOException {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final byte[] original = new byte[0];
         final ByteArrayInputStream originalInput = new ByteArrayInputStream(original);
@@ -103,9 +99,8 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testRoundTripStreamBufferSize() throws EncryptionException, IOException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    public void testRoundTripStreamBufferSize() throws IOException {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final byte[] original = new byte[1024];
         final ByteArrayInputStream originalInput = new ByteArrayInputStream(original);
@@ -125,9 +120,8 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testRoundTripByteArraySame() throws EncryptionException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    public void testRoundTripByteArraySame() {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final byte[] original = {0x01, 0x02, 0x03, (byte) 0xFD, (byte) 0xFE, (byte) 0xFF};
         final byte[] encrypted = ske.encrypt(original);
@@ -137,12 +131,10 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testRoundTripByteArrayMultiple() throws EncryptionException {
+    public void testRoundTripByteArrayMultiple() {
         final KeyPair keyPair = getKeyPair();
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske1 = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(keyPair);
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske2 = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(keyPair);
+        final AESSymmetricKeyEncryption ske1 = new AESSymmetricKeyEncryption(keyPair);
+        final AESSymmetricKeyEncryption ske2 = new AESSymmetricKeyEncryption(keyPair);
 
         final byte[] original = {0x01, 0x02, 0x03, (byte) 0xFD, (byte) 0xFE, (byte) 0xFF};
         final byte[] encrypted = ske1.encrypt(original);
@@ -152,9 +144,8 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testRoundTripStringSame() throws EncryptionException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    public void testRoundTripStringSame() {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final String original = "original data";
         final String encrypted = ske.encryptString(original, StandardCharsets.UTF_8);
@@ -164,12 +155,10 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testRoundTripStringMultiple() throws EncryptionException {
+    public void testRoundTripStringMultiple() {
         final KeyPair keyPair = getKeyPair();
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske1 = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(keyPair);
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske2 = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(keyPair);
+        final AESSymmetricKeyEncryption ske1 = new AESSymmetricKeyEncryption(keyPair);
+        final AESSymmetricKeyEncryption ske2 = new AESSymmetricKeyEncryption(keyPair);
 
         final String original = "original data";
         final String encrypted = ske1.encryptString(original, StandardCharsets.UTF_8);
@@ -178,10 +167,9 @@ public class AESSymmetricKeyEncryptionTest {
         assertEquals(original, decrypted);
     }
 
-    @Test(expected = EncryptionException.class)
-    public void testEncryptStreamThrowsException() throws EncryptionException, IOException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    @Test(expected = InternalServerErrorException.class)
+    public void testEncryptStreamThrowsException() throws IOException {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final ByteArrayInputStream input = Mockito.mock(ByteArrayInputStream.class);
         Mockito.when(input.read(Mockito.any())).thenThrow(new IOException("Failed"));
@@ -190,10 +178,9 @@ public class AESSymmetricKeyEncryptionTest {
         ske.encrypt(input, output);
     }
 
-    @Test(expected = EncryptionException.class)
-    public void testDecryptStreamThrowsException() throws EncryptionException, IOException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    @Test(expected = InternalServerErrorException.class)
+    public void testDecryptStreamThrowsException() throws IOException {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final String original = "original data";
         final String encrypted = ske.encryptString(original, StandardCharsets.UTF_8);
@@ -205,9 +192,8 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testSignVerifyByteArraySame() throws EncryptionException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    public void testSignVerifyByteArraySame() {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final byte[] data = {0x01, 0x02, 0x03, (byte) 0xFD, (byte) 0xFE, (byte) 0xFF};
         final byte[] signature = ske.sign(data);
@@ -217,12 +203,10 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testSignVerifyByteArrayMultiple() throws EncryptionException {
+    public void testSignVerifyByteArrayMultiple() {
         final KeyPair keyPair = getKeyPair();
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske1 = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(keyPair);
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske2 = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(keyPair);
+        final AESSymmetricKeyEncryption ske1 = new AESSymmetricKeyEncryption(keyPair);
+        final AESSymmetricKeyEncryption ske2 = new AESSymmetricKeyEncryption(keyPair);
 
         final byte[] data = {0x01, 0x02, 0x03, (byte) 0xFD, (byte) 0xFE, (byte) 0xFF};
         final byte[] signature = ske1.sign(data);
@@ -232,9 +216,8 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testSignVerifyStringSame() throws EncryptionException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    public void testSignVerifyStringSame() {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final String data = "original data";
         final String signature = ske.signString(data, StandardCharsets.UTF_8);
@@ -244,12 +227,10 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testSignVerifyStringMultiple() throws EncryptionException {
+    public void testSignVerifyStringMultiple() {
         final KeyPair keyPair = getKeyPair();
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske1 = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(keyPair);
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske2 = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(keyPair);
+        final AESSymmetricKeyEncryption ske1 = new AESSymmetricKeyEncryption(keyPair);
+        final AESSymmetricKeyEncryption ske2 = new AESSymmetricKeyEncryption(keyPair);
 
         final String data = "original data";
         final String signature = ske1.signString(data, StandardCharsets.UTF_8);
@@ -259,9 +240,8 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testSignVerifyByteArrayEmpty() throws EncryptionException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    public void testSignVerifyByteArrayEmpty() {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final byte[] data = new byte[0];
         final byte[] signature = ske.sign(data);
@@ -271,9 +251,8 @@ public class AESSymmetricKeyEncryptionTest {
     }
 
     @Test
-    public void testSignVerifyStringEmpty() throws EncryptionException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    public void testSignVerifyStringEmpty() {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final String signature = ske.signString("", StandardCharsets.UTF_8);
         final boolean verified = ske.verifyString("", StandardCharsets.UTF_8, signature);
@@ -281,40 +260,37 @@ public class AESSymmetricKeyEncryptionTest {
         assertTrue(verified);
     }
 
-    @Test(expected = EncryptionException.class)
-    public void testSignException() throws EncryptionException {
+    @Test(expected = InternalServerErrorException.class)
+    public void testSignException() {
         final PublicKey publicKey = Mockito.mock(PublicKey.class);
         final PrivateKey privateKey = Mockito.mock(PrivateKey.class);
         Mockito.when(privateKey.getAlgorithm()).thenReturn("notvalid");
         final KeyPair keyPair = new KeyPair(publicKey, privateKey);
 
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = Mockito.mock(com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption.class);
+        final AESSymmetricKeyEncryption ske = Mockito.mock(AESSymmetricKeyEncryption.class);
         Mockito.when(ske.getKeyPair()).thenReturn(keyPair);
         Mockito.when(ske.sign(Mockito.any())).thenCallRealMethod();
 
         ske.sign(new byte[0]);
     }
 
-    @Test(expected = EncryptionException.class)
-    public void testVerifyException() throws EncryptionException {
+    @Test(expected = InternalServerErrorException.class)
+    public void testVerifyException() {
         final PublicKey publicKey = Mockito.mock(PublicKey.class);
         Mockito.when(publicKey.getAlgorithm()).thenReturn("notvalid");
         final PrivateKey privateKey = Mockito.mock(PrivateKey.class);
         final KeyPair keyPair = new KeyPair(publicKey, privateKey);
 
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = Mockito.mock(com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption.class);
+        final AESSymmetricKeyEncryption ske = Mockito.mock(AESSymmetricKeyEncryption.class);
         Mockito.when(ske.getKeyPair()).thenReturn(keyPair);
         Mockito.when(ske.verify(Mockito.any(), Mockito.any())).thenCallRealMethod();
 
         ske.verify(new byte[0], new byte[0]);
     }
 
-    @Test(expected = EncryptionException.class)
-    public void testCreateSecretKeyException() throws EncryptionException {
-        final com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption
-                ske = new com.grpctrl.crypto.ske.impl.AESSymmetricKeyEncryption(getKeyPair());
+    @Test(expected = InternalServerErrorException.class)
+    public void testCreateSecretKeyException() {
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
         ske.createSecretKey(-1);
     }
 }

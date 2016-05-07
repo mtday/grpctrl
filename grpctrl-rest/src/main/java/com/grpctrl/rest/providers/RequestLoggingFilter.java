@@ -1,4 +1,4 @@
-package com.grpctrl.rest.filter;
+package com.grpctrl.rest.providers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

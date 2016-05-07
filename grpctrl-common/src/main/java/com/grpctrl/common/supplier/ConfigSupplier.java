@@ -70,7 +70,7 @@ public class ConfigSupplier implements Supplier<Config>, Factory<Config>, Contex
 
     @Nonnull
     private Config create() {
-        return ConfigFactory.load();
+        return ConfigFactory.load().withFallback(ConfigFactory.systemEnvironment());
     }
 
     /**

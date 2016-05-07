@@ -4,6 +4,7 @@ import static org.junit.Assert.assertNotNull;
 
 import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.supplier.ConfigSupplier;
+import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.db.DataSourceSupplier;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -37,13 +38,18 @@ public class AccountDaoSupplierTest {
         map.put(ConfigKeys.DB_CLEAN.getKey(), ConfigValueFactory.fromAnyRef("true"));
         map.put(ConfigKeys.DB_MIGRATE.getKey(), ConfigValueFactory.fromAnyRef("false"));
 
+        map.put(ConfigKeys.CRYPTO_SHARED_SECRET_VARIABLE.getKey(), ConfigValueFactory.fromAnyRef("SHARED_SECRET"));
+        map.put("SHARED_SECRET", ConfigValueFactory.fromAnyRef("SHARED_SECRET"));
+
         final Config config = ConfigFactory.parseMap(map);
 
         final ConfigSupplier configSupplier = Mockito.mock(ConfigSupplier.class);
         Mockito.when(configSupplier.get()).thenReturn(config);
 
         final ServiceLevelDaoSupplier serviceLevelDaoSupplier = new ServiceLevelDaoSupplier();
-        supplier = new AccountDaoSupplier(new DataSourceSupplier(configSupplier), serviceLevelDaoSupplier);
+        supplier = new AccountDaoSupplier(
+                new DataSourceSupplier(configSupplier, new PasswordBasedEncryptionSupplier(configSupplier)),
+                serviceLevelDaoSupplier);
     }
 
     @Test

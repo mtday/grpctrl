@@ -67,6 +67,34 @@ public class AccountClient {
         return getEndPoint().asUrl() + API;
     }
 
+    public void get(final int accountId, @Nonnull final Consumer<Account> consumer) throws ClientException {
+        try {
+            final Request request = new Request.Builder().url(getEndPointUrl() + "/" + accountId).get().build();
+            final Response response = getHttpClient().newCall(request).execute();
+            switch (response.code()) {
+                case HttpServletResponse.SC_OK:
+                    try {
+                        final JsonParser jsonParser =
+                                getObjectMapper().getFactory().createParser(response.body().byteStream());
+                        jsonParser.nextToken(); // Start array.
+                        jsonParser.nextToken(); // Start object.
+                        final Iterator<Account> iter = jsonParser.readValuesAs(Account.class);
+                        while (iter.hasNext()) {
+                            consumer.accept(iter.next());
+                        }
+                    } catch (final IOException ioException) {
+                        throw new ClientException("Failed to parse response data from server", ioException);
+                    }
+                    break;
+                default:
+                    throw new ClientException(
+                            "Response code " + response.code() + " with body: " + response.body().string());
+            }
+        } catch (final IOException ioException) {
+            throw new ClientException("Failed to communicate with back-end server", ioException);
+        }
+    }
+
     public void getAll(@Nonnull final Consumer<Account> consumer) throws ClientException {
         try {
             final Request request = new Request.Builder().url(getEndPointUrl()).get().build();
@@ -101,7 +129,8 @@ public class AccountClient {
             final Response response = getHttpClient().newCall(request).execute();
             switch (response.code()) {
                 case HttpServletResponse.SC_OK:
-                    //LOG.info("Remove response: {}", response.body().string());
+                    // We don't really care what the response is, but we need to read it so the connection can close.
+                    response.body().string();
                     break;
                 default:
                     throw new ClientException(

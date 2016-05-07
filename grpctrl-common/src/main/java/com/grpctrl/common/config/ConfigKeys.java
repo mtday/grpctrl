@@ -33,11 +33,6 @@ public enum ConfigKeys {
     /** The password to use when reading the key store file. */
     CRYPTO_SSL_KEYSTORE_PASSWORD,
     /** The trust store file used in the SSL configuration. */
-    CRYPTO_SSL_TRUSTSTORE_FILE,
-    /** The type of the trust store file, typically either JKS or PKCS12. */
-    CRYPTO_SSL_TRUSTSTORE_TYPE,
-    /** The password to use when reading the trust store file. */
-    CRYPTO_SSL_TRUSTSTORE_PASSWORD,
 
     /** The JDBC database connection URL. */
     DB_URL,

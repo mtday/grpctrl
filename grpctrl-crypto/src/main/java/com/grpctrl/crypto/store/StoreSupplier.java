@@ -1,7 +1,6 @@
 package com.grpctrl.crypto.store;
 
 import com.grpctrl.common.supplier.ConfigSupplier;
-import com.grpctrl.crypto.EncryptionException;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 
 import org.glassfish.hk2.api.Factory;
@@ -19,6 +18,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.ext.ContextResolver;
 
 /**
@@ -119,9 +119,8 @@ abstract class StoreSupplier implements Supplier<KeyStore>, Factory<KeyStore>, C
             keyStore.load(fis, getPassword());
             return keyStore;
         } catch (final IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException exception) {
-            throw new EncryptionException(String.format(
-                    "Failed to load key store from file %s (with type %s)", new File(getFile()).getAbsolutePath(),
-                    getType()), exception);
+            throw new InternalServerErrorException(String.format("Failed to load key store from file %s (with type %s)",
+                    new File(getFile()).getAbsolutePath(), getType()), exception);
         }
     }
 }

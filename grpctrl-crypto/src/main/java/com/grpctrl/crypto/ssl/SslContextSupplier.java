@@ -3,16 +3,20 @@ package com.grpctrl.crypto.ssl;
 import com.google.common.base.Charsets;
 import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.supplier.ConfigSupplier;
-import com.grpctrl.crypto.EncryptionException;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
-import com.grpctrl.crypto.store.TrustStoreSupplier;
 
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
+import java.security.KeyManagementException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -22,7 +26,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
@@ -38,9 +44,6 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
     private final KeyStoreSupplier keyStoreSupplier;
 
     @Nonnull
-    private final TrustStoreSupplier trustStoreSupplier;
-
-    @Nonnull
     private final PasswordBasedEncryptionSupplier passwordBasedEncryptionSupplier;
 
     @Nullable
@@ -49,17 +52,14 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
     /**
      * @param configSupplier provides access to the static system configuration properties
      * @param keyStoreSupplier provides access to the system key store
-     * @param trustStoreSupplier provides access to the system trust store
      * @param passwordBasedEncryptionSupplier provides support for password-based encryption and decryption
      */
     @Inject
     public SslContextSupplier(
             @Nonnull final ConfigSupplier configSupplier, @Nonnull final KeyStoreSupplier keyStoreSupplier,
-            @Nonnull final TrustStoreSupplier trustStoreSupplier,
             @Nonnull final PasswordBasedEncryptionSupplier passwordBasedEncryptionSupplier) {
         this.configSupplier = Objects.requireNonNull(configSupplier);
         this.keyStoreSupplier = Objects.requireNonNull(keyStoreSupplier);
-        this.trustStoreSupplier = Objects.requireNonNull(trustStoreSupplier);
         this.passwordBasedEncryptionSupplier = Objects.requireNonNull(passwordBasedEncryptionSupplier);
     }
 
@@ -77,14 +77,6 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
     @Nonnull
     protected KeyStoreSupplier getKeyStoreSupplier() {
         return this.keyStoreSupplier;
-    }
-
-    /**
-     * @return provides access to the system trust store
-     */
-    @Nonnull
-    protected TrustStoreSupplier getTrustStoreSupplier() {
-        return this.trustStoreSupplier;
     }
 
     /**
@@ -135,7 +127,6 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
             }
 
             final KeyStore keyStore = getKeyStoreSupplier().get();
-            final KeyStore trustStore = getTrustStoreSupplier().get();
 
             final String encryptedPassword =
                     getConfigSupplier().get().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_PASSWORD.getKey());
@@ -147,18 +138,15 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
                     KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             keyManagerFactory.init(keyStore, decryptedPassword);
 
-            final TrustManagerFactory trustManagerFactory =
-                    TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            trustManagerFactory.init(trustStore);
+            // Trusting everybody.
+            final TrustManager[] trustManagers = {new TrustEverybody()};
 
             final SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(),
-                    new SecureRandom());
+            sslContext.init(keyManagerFactory.getKeyManagers(), trustManagers, new SecureRandom());
             return sslContext;
-        } catch (final EncryptionException exception) {
-            throw exception;
-        } catch (final Exception exception) {
-            throw new EncryptionException("Failed to create SSLContext", exception);
+        } catch (final UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException |
+                KeyManagementException exception) {
+            throw new InternalServerErrorException("Failed to create SSLContext", exception);
         }
     }
 
@@ -170,6 +158,21 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
         protected void configure() {
             bind(SslContextSupplier.class).to(SslContextSupplier.class).in(Singleton.class);
             bindFactory(SslContextSupplier.class).to(SSLContext.class).in(Singleton.class);
+        }
+    }
+
+    private static class TrustEverybody implements X509TrustManager {
+        @Override
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
         }
     }
 }

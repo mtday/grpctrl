@@ -7,7 +7,6 @@ import com.grpctrl.common.supplier.ObjectMapperSupplier;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.crypto.ssl.SslContextSupplier;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
-import com.grpctrl.crypto.store.TrustStoreSupplier;
 import com.grpctrl.test.LocalRunner;
 
 import okhttp3.OkHttpClient;
@@ -44,9 +43,8 @@ public class BasePerformanceTest extends LocalRunner {
         final ConfigSupplier configSupplier = new ConfigSupplier(getConfig());
         final PasswordBasedEncryptionSupplier pbeSupplier = new PasswordBasedEncryptionSupplier(configSupplier);
         final KeyStoreSupplier keyStoreSupplier = new KeyStoreSupplier(configSupplier, pbeSupplier);
-        final TrustStoreSupplier trustStoreSupplier = new TrustStoreSupplier(configSupplier, pbeSupplier);
         final SslContextSupplier sslContextSupplier =
-                new SslContextSupplier(configSupplier, keyStoreSupplier, trustStoreSupplier, pbeSupplier);
+                new SslContextSupplier(configSupplier, keyStoreSupplier, pbeSupplier);
 
         this.httpClient = new OkHttpClientSupplier(configSupplier, sslContextSupplier).get();
         this.objectMapper = new ObjectMapperSupplier().get();
@@ -79,7 +77,6 @@ public class BasePerformanceTest extends LocalRunner {
             @Nonnull final Supplier<PerformanceWorker> workerSupplier, final int workerCount, final int concurrent)
             throws InterruptedException {
         final ExecutorService testExecutor = Executors.newFixedThreadPool(concurrent);
-        final ExecutorService clientExecutor = Executors.newFixedThreadPool(concurrent);
 
         final List<PerformanceWorker> workers = new ArrayList<>(workerCount);
 
@@ -95,8 +92,6 @@ public class BasePerformanceTest extends LocalRunner {
             testExecutor.awaitTermination(5, TimeUnit.MILLISECONDS);
         }
         final long stop = System.currentTimeMillis();
-
-        clientExecutor.shutdown();
 
         logResults(workers, concurrent, stop - start);
     }

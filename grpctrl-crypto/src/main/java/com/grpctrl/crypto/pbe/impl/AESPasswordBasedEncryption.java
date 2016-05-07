@@ -1,6 +1,5 @@
 package com.grpctrl.crypto.pbe.impl;
 
-import com.grpctrl.crypto.EncryptionException;
 import com.grpctrl.crypto.common.CommonEncryptionImpl;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryption;
 
@@ -20,6 +19,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.ws.rs.InternalServerErrorException;
 
 /**
  * Provides an implementation of the {@link PasswordBasedEncryption} interface, and is responsible for performing
@@ -76,8 +76,7 @@ public class AESPasswordBasedEncryption extends CommonEncryptionImpl implements 
 
     @Override
     @Nonnull
-    public void encrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output)
-            throws EncryptionException {
+    public void encrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output) {
         Objects.requireNonNull(input);
         Objects.requireNonNull(output);
         try {
@@ -101,14 +100,13 @@ public class AESPasswordBasedEncryption extends CommonEncryptionImpl implements 
             // Read data from input into buffer, encrypt and write to output
             apply(cipher, input, output);
         } catch (final Exception exception) {
-            throw new EncryptionException("Failed to encrypt data", exception);
+            throw new InternalServerErrorException("Failed to encrypt data", exception);
         }
     }
 
     @Override
     @Nonnull
-    public void decrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output)
-            throws EncryptionException {
+    public void decrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output) {
         Objects.requireNonNull(input);
         Objects.requireNonNull(output);
         try {
@@ -135,7 +133,7 @@ public class AESPasswordBasedEncryption extends CommonEncryptionImpl implements 
             // Read data from input into buffer, decrypt and write to output
             apply(cipher, input, output);
         } catch (final Exception exception) {
-            throw new EncryptionException("Failed to decrypt data", exception);
+            throw new InternalServerErrorException("Failed to decrypt data", exception);
         }
     }
 }

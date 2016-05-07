@@ -52,6 +52,10 @@ public class SingleAccountStreamer implements StreamingOutput {
     @Override
     public void write(@Nonnull final OutputStream output) throws IOException, WebApplicationException {
         try (final JsonGenerator generator = getObjectMapper().getFactory().createGenerator(output)) {
+            generator.writeStartObject();
+            generator.writeFieldName("success");
+            generator.writeBoolean(true);
+            generator.writeFieldName("account");
             getConsumer().accept(account -> {
                 try {
                     generator.writeObject(account);
@@ -59,6 +63,7 @@ public class SingleAccountStreamer implements StreamingOutput {
                     throw new InternalServerErrorException("Failed to write JSON data to client", ioException);
                 }
             });
+            generator.writeEndObject();
         }
     }
 }

@@ -28,6 +28,12 @@
             <artifactId>hk2-api</artifactId>
         </dependency>
 
+        <!-- Needed for Jersey exceptions -->
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+        </dependency>
+
         <!-- Used to provide JSON serialization -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

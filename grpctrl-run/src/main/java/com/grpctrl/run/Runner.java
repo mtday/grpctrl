@@ -5,7 +5,6 @@ import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.crypto.ssl.SslContextSupplier;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
-import com.grpctrl.crypto.store.TrustStoreSupplier;
 import com.grpctrl.rest.ApiApplication;
 import com.grpctrl.rest.ContextListener;
 import com.typesafe.config.Config;
@@ -77,10 +76,8 @@ public class Runner {
             final PasswordBasedEncryptionSupplier pbeSupplier =
                     new PasswordBasedEncryptionSupplier(getConfigSupplier());
             final KeyStoreSupplier keyStoreSupplier = new KeyStoreSupplier(getConfigSupplier(), pbeSupplier);
-            final TrustStoreSupplier trustStoreSupplier = new TrustStoreSupplier(getConfigSupplier(), pbeSupplier);
             final SSLContext sslContext =
-                    new SslContextSupplier(getConfigSupplier(), keyStoreSupplier, trustStoreSupplier, pbeSupplier)
-                            .get();
+                    new SslContextSupplier(getConfigSupplier(), keyStoreSupplier, pbeSupplier).get();
 
             final SslContextFactory sslContextFactory = new SslContextFactory();
             sslContextFactory.setSslContext(sslContext);

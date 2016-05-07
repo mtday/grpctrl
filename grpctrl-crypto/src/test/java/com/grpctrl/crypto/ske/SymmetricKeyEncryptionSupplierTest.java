@@ -31,18 +31,12 @@ public class SymmetricKeyEncryptionSupplierTest {
     public static void beforeClass() {
         final Optional<URL> keystore = Optional.ofNullable(
                 SymmetricKeyEncryptionSupplierTest.class.getClassLoader().getResource("keystore.jks"));
-        final Optional<URL> truststore = Optional.ofNullable(
-                SymmetricKeyEncryptionSupplierTest.class.getClassLoader().getResource("truststore.jks"));
         if (!keystore.isPresent()) {
             throw new RuntimeException("Failed to find keystore classpath resource");
-        }
-        if (!truststore.isPresent()) {
-            throw new RuntimeException("Failed to find truststore classpath resource");
         }
 
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(ConfigKeys.CRYPTO_SSL_KEYSTORE_FILE.getKey(), fromAnyRef(keystore.get().getFile()));
-        map.put(ConfigKeys.CRYPTO_SSL_TRUSTSTORE_FILE.getKey(), fromAnyRef(truststore.get().getFile()));
 
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
         final ConfigSupplier configSupplier = new ConfigSupplier(config);

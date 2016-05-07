@@ -26,11 +26,11 @@ public class ApiApplicationTest {
         assertEquals("com.grpctrl.common.supplier.HealthCheckRegistrySupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.common.supplier.MetricRegistrySupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.common.supplier.ObjectMapperSupplier$Binder", objIter.next());
+        assertEquals("com.grpctrl.common.supplier.ScheduledExecutorServiceSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.crypto.ske.SymmetricKeyEncryptionSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.crypto.ssl.SslContextSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.crypto.store.KeyStoreSupplier$Binder", objIter.next());
-        assertEquals("com.grpctrl.crypto.store.TrustStoreSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.db.DataSourceSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.db.dao.supplier.AccountDaoSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.db.dao.supplier.GroupDaoSupplier$Binder", objIter.next());
@@ -43,11 +43,13 @@ public class ApiApplicationTest {
         final Iterator<String> nameIter = new TreeSet<>(names).iterator();
 
         assertEquals("com.grpctrl.common.supplier.ObjectMapperSupplier", nameIter.next());
-        assertEquals("com.grpctrl.rest.filter.RequestLoggingFilter", nameIter.next());
+        assertEquals("com.grpctrl.rest.providers.GenericExceptionMapper", nameIter.next());
+        assertEquals("com.grpctrl.rest.providers.MemoryUsageLogger", nameIter.next());
+        assertEquals("com.grpctrl.rest.providers.RequestLoggingFilter", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountAdd", nameIter.next());
-        assertEquals("com.grpctrl.rest.resource.v1.account.AccountDelete", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountGet", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountGetAll", nameIter.next());
+        assertEquals("com.grpctrl.rest.resource.v1.account.AccountRemove", nameIter.next());
         assertEquals("org.glassfish.jersey.message.GZipEncoder", nameIter.next());
         assertEquals("org.glassfish.jersey.server.filter.EncodingFilter", nameIter.next());
         assertFalse(nameIter.hasNext());
