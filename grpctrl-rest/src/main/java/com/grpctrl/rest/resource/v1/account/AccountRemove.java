@@ -1,5 +1,6 @@
 package com.grpctrl.rest.resource.v1.account;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grpctrl.db.dao.AccountDao;
 
@@ -44,19 +45,22 @@ public class AccountRemove extends BaseAccountResource {
         return new RemoveResponse(getAccountDao().remove(accountId));
     }
 
+    @JsonPropertyOrder({"success", "removed"})
     private static class RemoveResponse {
-        private boolean removed;
+        private final boolean success;
+        private final boolean removed;
 
         public RemoveResponse(final int count) {
+            this.success = true;
             this.removed = count > 0;
+        }
+
+        public boolean isSuccess() {
+            return this.success;
         }
 
         public boolean isRemoved() {
             return this.removed;
-        }
-
-        public void setRemoved(final boolean removed) {
-            this.removed = removed;
         }
     }
 }

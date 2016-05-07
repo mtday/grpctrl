@@ -22,7 +22,7 @@ public class AccountRemovePerformanceTest extends BasePerformanceTest {
     private static final Logger LOG = LoggerFactory.getLogger(AccountRemovePerformanceTest.class);
 
     private static final EndPoint END_POINT = new EndPoint();
-    private static final int TOTAL_REQUESTS = 10000;
+    private static final int TOTAL_REQUESTS = 1;
     private static final int CONCURRENT = 100;
 
     /**

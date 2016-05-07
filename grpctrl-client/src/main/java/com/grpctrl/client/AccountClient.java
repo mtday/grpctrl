@@ -112,8 +112,8 @@ public class AccountClient {
 
                             throw new ClientException("Failed with code " + code + " and message: " + message);
                         }
-                    } catch (final IOException ioException) {
-                        throw new ClientException("Failed to parse response data from server", ioException);
+                    } catch (final Exception exception) {
+                        throw new ClientException("Failed to parse response data from server", exception);
                     }
                     break;
                 default:
@@ -172,8 +172,8 @@ public class AccountClient {
 
                             throw new ClientException("Failed with code " + code + " and message: " + message);
                         }
-                    } catch (final IOException ioException) {
-                        throw new ClientException("Failed to parse response data from server", ioException);
+                    } catch (final Exception exception) {
+                        throw new ClientException("Failed to parse response data from server", exception);
                     }
                     break;
                 default:
@@ -220,8 +220,8 @@ public class AccountClient {
 
                             throw new ClientException("Failed with code " + code + " and message: " + message);
                         }
-                    } catch (final IOException ioException) {
-                        throw new ClientException("Failed to parse response data from server", ioException);
+                    } catch (final Exception exception) {
+                        throw new ClientException("Failed to parse response data from server", exception);
                     }
                     break;
                 default:
