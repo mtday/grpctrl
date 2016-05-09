@@ -1,6 +1,7 @@
 package com.grpctrl.test.performance.account;
 
 import com.grpctrl.client.AccountClient;
+import com.grpctrl.common.model.Account;
 import com.grpctrl.common.model.EndPoint;
 import com.grpctrl.test.performance.BasePerformanceTest;
 import com.grpctrl.test.performance.PerformanceWorker;
@@ -8,8 +9,7 @@ import com.grpctrl.test.performance.PerformanceWorker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -20,10 +20,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Run some performance tests on the account get capability.
+ * Run some performance tests on the account add capability.
  */
-public class AccountGetPerformanceTest extends BasePerformanceTest {
-    private static final Logger LOG = LoggerFactory.getLogger(AccountGetPerformanceTest.class);
+public class AccountAddPerformanceTest extends BasePerformanceTest {
+    private static final Logger LOG = LoggerFactory.getLogger(AccountAddPerformanceTest.class);
 
     private static final EndPoint END_POINT = new EndPoint();
     private static final int TOTAL_REQUESTS = 10000;
@@ -37,25 +37,23 @@ public class AccountGetPerformanceTest extends BasePerformanceTest {
      * @throws InterruptedException if there is a problem performing the tests
      */
     public static void main(final String... args) throws InterruptedException {
-        new AccountGetPerformanceTest().runTests();
+        new AccountAddPerformanceTest().runTests();
     }
 
     @Nonnull
     private final AccountClient client;
 
-    public AccountGetPerformanceTest() {
+    public AccountAddPerformanceTest() {
         this.client = new AccountClient(getObjectMapper(), getHttpClient(), END_POINT);
     }
 
     public void runTests() throws InterruptedException {
-        runTests(new AccountGetWorkerSupplier(this.client), TOTAL_REQUESTS, CONCURRENT);
+        runTests(new AccountAddWorkerSupplier(this.client), TOTAL_REQUESTS, CONCURRENT);
     }
 
-    private static class AccountGetWorkerSupplier implements Supplier<PerformanceWorker> {
+    private static class AccountAddWorkerSupplier implements Supplier<PerformanceWorker> {
         @Nonnull
         private final AccountClient client;
-        @Nonnull
-        private final List<Long> accountIds;
 
         @Nonnull
         private final Random random = new Random();
@@ -63,24 +61,23 @@ public class AccountGetPerformanceTest extends BasePerformanceTest {
         /**
          * @param client the account client
          */
-        public AccountGetWorkerSupplier(@Nonnull final AccountClient client) {
+        public AccountAddWorkerSupplier(@Nonnull final AccountClient client) {
             this.client = Objects.requireNonNull(client);
-            this.accountIds = new ArrayList<>();
-            this.client.getAll(account -> accountIds.add(account.getId().orElse(null)));
         }
 
         @Override
         public PerformanceWorker get() {
-            final long randomId = this.accountIds.get(random.nextInt(this.accountIds.size()));
-            return new AccountGetWorker(this.client, randomId);
+            return new AccountAddWorker(
+                    this.client,
+                    new Account().setName("performance-testing-account-" + Math.abs(this.random.nextLong())));
         }
     }
 
-    private static class AccountGetWorker implements PerformanceWorker {
+    private static class AccountAddWorker implements PerformanceWorker {
         @Nonnull
         private final AccountClient client;
         @Nonnull
-        private final Long accountId;
+        private final Account account;
 
         private long start = 0L;
         private long stop = 0L;
@@ -88,9 +85,9 @@ public class AccountGetPerformanceTest extends BasePerformanceTest {
         @Nullable
         private Throwable failure = null;
 
-        public AccountGetWorker(@Nonnull final AccountClient client, @Nonnull final Long accountId) {
+        public AccountAddWorker(@Nonnull final AccountClient client, @Nonnull final Account account) {
             this.client = Objects.requireNonNull(client);
-            this.accountId = Objects.requireNonNull(accountId);
+            this.account = Objects.requireNonNull(account);
         }
 
         @Override
@@ -99,10 +96,10 @@ public class AccountGetPerformanceTest extends BasePerformanceTest {
 
             final AtomicInteger total = new AtomicInteger(0);
             try {
-                this.client.get(this.accountId, account -> total.incrementAndGet());
+                this.client.add(Collections.singleton(this.account), account -> total.incrementAndGet());
             } catch (final Throwable failure) {
                 this.failure = failure;
-                LOG.error("Failed to get account by id " + this.accountId, failure);
+                LOG.error("Failed to add account", failure);
             } finally {
                 this.stop = System.currentTimeMillis();
             }

@@ -8,11 +8,14 @@ import com.grpctrl.client.error.ClientException;
 import com.grpctrl.common.model.Account;
 import com.grpctrl.common.model.EndPoint;
 
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -24,7 +27,7 @@ import javax.servlet.http.HttpServletResponse;
  * Provides remote access over REST to the back-end server for account management.
  */
 public class AccountClient {
-    //private static final MediaType POST_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
+    private static final MediaType POST_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
     private static final String API = "api/v1/account";
 
     @Nonnull
@@ -69,57 +72,74 @@ public class AccountClient {
         return getEndPoint().asUrl() + API;
     }
 
+    private boolean validateSuccess(@Nonnull final JsonParser jsonParser) throws IOException {
+        final JsonToken startObj = jsonParser.nextToken();
+        Preconditions.checkArgument(startObj == JsonToken.START_OBJECT);
+        final JsonToken successField = jsonParser.nextToken();
+        Preconditions.checkArgument(successField == JsonToken.FIELD_NAME);
+        Preconditions.checkArgument("success".equals(jsonParser.getCurrentName()));
+        final JsonToken successValue = jsonParser.nextToken();
+        Preconditions.checkArgument(successValue == JsonToken.VALUE_TRUE || successValue == JsonToken.VALUE_FALSE);
+        return jsonParser.getBooleanValue();
+    }
+
+    private void processError(@Nonnull final JsonParser jsonParser) throws ClientException, IOException {
+        final JsonToken codeField = jsonParser.nextToken();
+        Preconditions.checkArgument(codeField == JsonToken.FIELD_NAME);
+        Preconditions.checkArgument("code".equals(jsonParser.getCurrentName()));
+        final JsonToken codeValue = jsonParser.nextToken();
+        Preconditions.checkArgument(codeValue == JsonToken.VALUE_NUMBER_INT);
+        final int code = jsonParser.getIntValue();
+
+        final JsonToken messageField = jsonParser.nextToken();
+        Preconditions.checkArgument(messageField == JsonToken.FIELD_NAME);
+        Preconditions.checkArgument("message".equals(jsonParser.getCurrentName()));
+        final JsonToken messageValue = jsonParser.nextToken();
+        Preconditions.checkArgument(messageValue == JsonToken.VALUE_STRING);
+        final String message = jsonParser.getValueAsString();
+
+        throw new ClientException("Failed with code " + code + " and message: " + message);
+    }
+
+    private void consumeAccounts(@Nonnull final Response response, @Nonnull final Consumer<Account> consumer)
+            throws ClientException, IOException {
+        switch (response.code()) {
+            case HttpServletResponse.SC_OK:
+                final JsonParser jsonParser = getObjectMapper().getFactory().createParser(response.body().byteStream());
+                final boolean success = validateSuccess(jsonParser);
+                if (success) {
+                    final JsonToken accountField = jsonParser.nextToken();
+                    Preconditions.checkArgument(accountField == JsonToken.FIELD_NAME);
+                    if ("account".equals(jsonParser.getCurrentName())) {
+                        final JsonToken accountValue = jsonParser.nextToken();
+                        Preconditions.checkArgument(accountValue == JsonToken.START_OBJECT);
+                        consumer.accept(jsonParser.readValueAs(Account.class));
+                    } else if ("accounts".equals(jsonParser.getCurrentName())) {
+                        final JsonToken accountsArray = jsonParser.nextToken();
+                        Preconditions.checkArgument(accountsArray == JsonToken.START_ARRAY);
+                        final JsonToken firstAccount = jsonParser.nextToken();
+                        Preconditions.checkArgument(firstAccount == JsonToken.START_OBJECT);
+                        final Iterator<Account> iter = jsonParser.readValuesAs(Account.class);
+                        while (iter.hasNext()) {
+                            consumer.accept(iter.next());
+                        }
+                    } else {
+                        throw new IOException("Expected account or accounts field in response");
+                    }
+                } else {
+                    processError(jsonParser);
+                }
+                break;
+            default:
+                throw new ClientException(
+                        "Response code " + response.code() + " with body: " + response.body().string());
+        }
+    }
+
     public void get(final long accountId, @Nonnull final Consumer<Account> consumer) throws ClientException {
         try {
             final Request request = new Request.Builder().url(getEndPointUrl() + "/" + accountId).get().build();
-            final Response response = getHttpClient().newCall(request).execute();
-            switch (response.code()) {
-                case HttpServletResponse.SC_OK:
-                    try {
-                        final JsonParser jsonParser =
-                                getObjectMapper().getFactory().createParser(response.body().byteStream());
-                        final JsonToken startObj = jsonParser.nextToken();
-                        Preconditions.checkArgument(startObj == JsonToken.START_OBJECT);
-                        final JsonToken successField = jsonParser.nextToken();
-                        Preconditions.checkArgument(successField == JsonToken.FIELD_NAME);
-                        Preconditions.checkArgument("success".equals(jsonParser.getCurrentName()));
-                        final JsonToken successValue = jsonParser.nextToken();
-                        Preconditions.checkArgument(
-                                successValue == JsonToken.VALUE_TRUE || successValue == JsonToken.VALUE_FALSE);
-                        final boolean success = jsonParser.getBooleanValue();
-                        if (success) {
-                            final JsonToken accountField = jsonParser.nextToken();
-                            Preconditions.checkArgument(accountField == JsonToken.FIELD_NAME);
-                            Preconditions.checkArgument("account".equals(jsonParser.getCurrentName()));
-                            final JsonToken accountValue = jsonParser.nextToken();
-                            Preconditions.checkArgument(accountValue == JsonToken.START_OBJECT);
-
-                            consumer.accept(jsonParser.readValueAs(Account.class));
-                        } else {
-                            final JsonToken codeField = jsonParser.nextToken();
-                            Preconditions.checkArgument(codeField == JsonToken.FIELD_NAME);
-                            Preconditions.checkArgument("code".equals(jsonParser.getCurrentName()));
-                            final JsonToken codeValue = jsonParser.nextToken();
-                            Preconditions.checkArgument(codeValue == JsonToken.VALUE_NUMBER_INT);
-                            final int code = jsonParser.getIntValue();
-
-                            final JsonToken messageField = jsonParser.nextToken();
-                            Preconditions.checkArgument(messageField == JsonToken.FIELD_NAME);
-                            Preconditions.checkArgument("message".equals(jsonParser.getCurrentName()));
-                            final JsonToken messageValue = jsonParser.nextToken();
-                            Preconditions.checkArgument(messageValue == JsonToken.VALUE_STRING);
-                            final String message = jsonParser.getValueAsString();
-
-                            throw new ClientException("Failed with code " + code + " and message: " + message);
-                        }
-                    } catch (final Exception exception) {
-                        throw new ClientException("Failed to parse response data from server", exception);
-                    }
-                    break;
-                default:
-                    throw new ClientException(
-                            "Response code " + response.code() + " with body: " + response.body().string());
-            }
+            consumeAccounts(getHttpClient().newCall(request).execute(), consumer);
         } catch (final IOException ioException) {
             throw new ClientException("Failed to communicate with back-end server", ioException);
         }
@@ -128,100 +148,35 @@ public class AccountClient {
     public void getAll(@Nonnull final Consumer<Account> consumer) throws ClientException {
         try {
             final Request request = new Request.Builder().url(getEndPointUrl()).get().build();
-            final Response response = getHttpClient().newCall(request).execute();
-            switch (response.code()) {
-                case HttpServletResponse.SC_OK:
-                    try {
-                        final JsonParser jsonParser =
-                                getObjectMapper().getFactory().createParser(response.body().byteStream());
-                        final JsonToken startObj = jsonParser.nextToken();
-                        Preconditions.checkArgument(startObj == JsonToken.START_OBJECT);
-                        final JsonToken successField = jsonParser.nextToken();
-                        Preconditions.checkArgument(successField == JsonToken.FIELD_NAME);
-                        Preconditions.checkArgument("success".equals(jsonParser.getCurrentName()));
-                        final JsonToken successValue = jsonParser.nextToken();
-                        Preconditions.checkArgument(
-                                successValue == JsonToken.VALUE_TRUE || successValue == JsonToken.VALUE_FALSE);
-                        final boolean success = jsonParser.getBooleanValue();
-                        if (success) {
-                            final JsonToken accountsField = jsonParser.nextToken();
-                            Preconditions.checkArgument(accountsField == JsonToken.FIELD_NAME);
-                            Preconditions.checkArgument("accounts".equals(jsonParser.getCurrentName()));
-                            final JsonToken accountsArray = jsonParser.nextToken();
-                            Preconditions.checkArgument(accountsArray == JsonToken.START_ARRAY);
-                            final JsonToken firstAccount = jsonParser.nextToken();
-                            Preconditions.checkArgument(firstAccount == JsonToken.START_OBJECT);
-                            final Iterator<Account> iter = jsonParser.readValuesAs(Account.class);
-                            while (iter.hasNext()) {
-                                consumer.accept(iter.next());
-                            }
-                        } else {
-                            final JsonToken codeField = jsonParser.nextToken();
-                            Preconditions.checkArgument(codeField == JsonToken.FIELD_NAME);
-                            Preconditions.checkArgument("code".equals(jsonParser.getCurrentName()));
-                            final JsonToken codeValue = jsonParser.nextToken();
-                            Preconditions.checkArgument(codeValue == JsonToken.VALUE_NUMBER_INT);
-                            final int code = jsonParser.getIntValue();
-
-                            final JsonToken messageField = jsonParser.nextToken();
-                            Preconditions.checkArgument(messageField == JsonToken.FIELD_NAME);
-                            Preconditions.checkArgument("message".equals(jsonParser.getCurrentName()));
-                            final JsonToken messageValue = jsonParser.nextToken();
-                            Preconditions.checkArgument(messageValue == JsonToken.VALUE_STRING);
-                            final String message = jsonParser.getValueAsString();
-
-                            throw new ClientException("Failed with code " + code + " and message: " + message);
-                        }
-                    } catch (final Exception exception) {
-                        throw new ClientException("Failed to parse response data from server", exception);
-                    }
-                    break;
-                default:
-                    throw new ClientException(
-                            "Response code " + response.code() + " with body: " + response.body().string());
-            }
+            consumeAccounts(getHttpClient().newCall(request).execute(), consumer);
         } catch (final IOException ioException) {
             throw new ClientException("Failed to communicate with back-end server", ioException);
         }
     }
 
-    public void remove(final long id) throws ClientException {
+    public void add(final Collection<Account> accounts, @Nonnull final Consumer<Account> consumer)
+            throws ClientException {
         try {
-            final Request request = new Request.Builder().url(getEndPointUrl() + "/" + id).delete().build();
+            final RequestBody body =
+                    RequestBody.create(POST_MEDIA_TYPE, getObjectMapper().writeValueAsString(accounts));
+            final Request request = new Request.Builder().url(getEndPointUrl()).post(body).build();
+            consumeAccounts(getHttpClient().newCall(request).execute(), consumer);
+        } catch (final IOException ioException) {
+            throw new ClientException("Failed to communicate with back-end server", ioException);
+        }
+    }
+
+    public void remove(final long accountId) throws ClientException {
+        try {
+            final Request request = new Request.Builder().url(getEndPointUrl() + "/" + accountId).delete().build();
             final Response response = getHttpClient().newCall(request).execute();
             switch (response.code()) {
                 case HttpServletResponse.SC_OK:
-                    try {
-                        final JsonParser jsonParser =
-                                getObjectMapper().getFactory().createParser(response.body().byteStream());
-                        final JsonToken startObj = jsonParser.nextToken();
-                        Preconditions.checkArgument(startObj == JsonToken.START_OBJECT);
-                        final JsonToken successField = jsonParser.nextToken();
-                        Preconditions.checkArgument(successField == JsonToken.FIELD_NAME);
-                        Preconditions.checkArgument("success".equals(jsonParser.getCurrentName()));
-                        final JsonToken successValue = jsonParser.nextToken();
-                        Preconditions.checkArgument(
-                                successValue == JsonToken.VALUE_TRUE || successValue == JsonToken.VALUE_FALSE);
-                        final boolean success = jsonParser.getBooleanValue();
-                        if (!success) {
-                            final JsonToken codeField = jsonParser.nextToken();
-                            Preconditions.checkArgument(codeField == JsonToken.FIELD_NAME);
-                            Preconditions.checkArgument("code".equals(jsonParser.getCurrentName()));
-                            final JsonToken codeValue = jsonParser.nextToken();
-                            Preconditions.checkArgument(codeValue == JsonToken.VALUE_NUMBER_INT);
-                            final int code = jsonParser.getIntValue();
-
-                            final JsonToken messageField = jsonParser.nextToken();
-                            Preconditions.checkArgument(messageField == JsonToken.FIELD_NAME);
-                            Preconditions.checkArgument("message".equals(jsonParser.getCurrentName()));
-                            final JsonToken messageValue = jsonParser.nextToken();
-                            Preconditions.checkArgument(messageValue == JsonToken.VALUE_STRING);
-                            final String message = jsonParser.getValueAsString();
-
-                            throw new ClientException("Failed with code " + code + " and message: " + message);
-                        }
-                    } catch (final Exception exception) {
-                        throw new ClientException("Failed to parse response data from server", exception);
+                    final JsonParser jsonParser =
+                            getObjectMapper().getFactory().createParser(response.body().byteStream());
+                    final boolean success = validateSuccess(jsonParser);
+                    if (!success) {
+                        processError(jsonParser);
                     }
                     break;
                 default:

@@ -3,6 +3,7 @@ package com.grpctrl.db.dao;
 import com.grpctrl.common.model.Account;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
@@ -53,7 +54,7 @@ public interface AccountDao {
      * @throws NullPointerException if either parameter is {@code null}
      * @throws javax.ws.rs.WebApplicationException if there is a problem interacting with the database
      */
-    void add(@Nonnull Iterable<Account> accounts, @Nonnull Consumer<Account> consumer);
+    void add(@Nonnull Iterator<Account> accounts, @Nonnull Consumer<Account> consumer);
 
     /**
      * Remove the account with the specified id.

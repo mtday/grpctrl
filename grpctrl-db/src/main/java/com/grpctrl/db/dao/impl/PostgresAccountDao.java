@@ -152,7 +152,7 @@ public class PostgresAccountDao implements AccountDao {
     }
 
     @Override
-    public void add(@Nonnull final Iterable<Account> accounts, @Nonnull final Consumer<Account> consumer) {
+    public void add(@Nonnull final Iterator<Account> accounts, @Nonnull final Consumer<Account> consumer) {
         Objects.requireNonNull(accounts);
         Objects.requireNonNull(consumer);
 
@@ -171,7 +171,8 @@ public class PostgresAccountDao implements AccountDao {
 
                 final Collection<Account> batch = new LinkedList<>();
 
-                for (final Account account : accounts) {
+                while (accounts.hasNext()) {
+                    final Account account = accounts.next();
                     ps.setString(1, account.getName());
                     ps.addBatch();
                     batch.add(account);

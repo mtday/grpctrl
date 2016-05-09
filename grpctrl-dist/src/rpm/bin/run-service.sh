@@ -30,6 +30,9 @@ _start() {
         JAVA_OPTS="${JAVA_OPTS} ${DEFAULT_MEMORY_OPTIONS}"
     fi
 
+    # Include the CMS GC config
+    JAVA_OPTS="${JAVA_OPTS} -XX:+UseConcMarkSweepGC"
+
     LOG_CONFIG="-Dlogback.configurationFile=${CONFIG_DIR}/logback.xml"
     APP_CONFIG="-Dconfig.file=${CONFIG_DIR}/application.conf"
     STDOUT="${LOG_DIR}/stdout.log"

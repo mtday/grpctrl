@@ -359,14 +359,14 @@ public class PostgresGroupDao implements GroupDao {
 
     @Override
     public void add(
-            @Nonnull final Account account, @Nonnull final Iterable<Group> groups,
+            @Nonnull final Account account, @Nonnull final Iterator<Group> groups,
             @Nonnull final BiConsumer<Group, Iterator<Tag>> consumer) {
         add(account, null, groups, consumer);
     }
 
     @Override
     public void add(
-            @Nonnull final Account account, @Nullable final Long parentId, @Nonnull final Iterable<Group> groups,
+            @Nonnull final Account account, @Nullable final Long parentId, @Nonnull final Iterator<Group> groups,
             @Nonnull final BiConsumer<Group, Iterator<Tag>> consumer) {
         Objects.requireNonNull(account);
         Objects.requireNonNull(groups);
@@ -383,7 +383,7 @@ public class PostgresGroupDao implements GroupDao {
 
     private void add(
             @Nonnull final Connection conn, @Nonnull final Account account, @Nullable final Long parentId,
-            @Nonnull final Iterable<Group> groups, @Nonnull final BiConsumer<Group, Iterator<Tag>> consumer) {
+            @Nonnull final Iterator<Group> groups, @Nonnull final BiConsumer<Group, Iterator<Tag>> consumer) {
         final int batchSize = 1000;
         final String sql = "INSERT INTO groups (account_id, parent_id, group_name) VALUES (?, ?, ?)";
 
@@ -405,7 +405,8 @@ public class PostgresGroupDao implements GroupDao {
             final Collection<Group> batch = new LinkedList<>();
 
             ps.setLong(1, account.getId().orElse(null));
-            for (final Group group : groups) {
+            while (groups.hasNext()) {
+                final Group group = groups.next();
                 if (parentId != null) {
                     ps.setLong(2, parentId);
                 } else {

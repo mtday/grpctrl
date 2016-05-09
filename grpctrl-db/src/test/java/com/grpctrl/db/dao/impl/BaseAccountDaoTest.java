@@ -48,7 +48,7 @@ public abstract class BaseAccountDaoTest {
         final Account account4 = new Account("account-management-test-4", new ServiceLevel(11, 12, 13));
 
         final Collection<Account> addedCollection = new ArrayList<>(1);
-        dao.add(asList(account1, account2, account3, account4), new AddTo(addedCollection));
+        dao.add(asList(account1, account2, account3, account4).iterator(), new AddTo(addedCollection));
 
         // The add call will set the new id in each of the provided accounts.
         assertTrue(account1.getId().isPresent());
@@ -124,7 +124,7 @@ public abstract class BaseAccountDaoTest {
 
     @Test(expected = InternalServerErrorException.class)
     public void testAddAccountException() throws WebApplicationException {
-        getAccountDaoWithDataSourceException().add(singleton(new Account("add-account-exception")), IGNORED);
+        getAccountDaoWithDataSourceException().add(singleton(new Account("add-account-exception")).iterator(), IGNORED);
     }
 
     @Test(expected = InternalServerErrorException.class)

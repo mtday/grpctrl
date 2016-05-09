@@ -177,7 +177,7 @@ public interface GroupDao {
      * @throws javax.ws.rs.WebApplicationException if there is a problem interacting with the database
      */
     void add(
-            @Nonnull Account account, @Nonnull Iterable<Group> groups,
+            @Nonnull Account account, @Nonnull Iterator<Group> groups,
             @Nonnull BiConsumer<Group, Iterator<Tag>> consumer);
 
     /**
@@ -193,7 +193,7 @@ public interface GroupDao {
      * @throws javax.ws.rs.WebApplicationException if there is a problem interacting with the database
      */
     void add(
-            @Nonnull Account account, @Nullable Long parentId, @Nonnull Iterable<Group> groups,
+            @Nonnull Account account, @Nullable Long parentId, @Nonnull Iterator<Group> groups,
             @Nonnull BiConsumer<Group, Iterator<Tag>> consumer);
 
     /**

@@ -61,7 +61,7 @@ public abstract class BaseGroupDaoTest {
 
         final Account account1 = new Account("top-level-account-1");
         final Account account2 = new Account("top-level-account-2");
-        getAccountDao().add(asList(account1, account2), ACCOUNT_IGNORED);
+        getAccountDao().add(asList(account1, account2).iterator(), ACCOUNT_IGNORED);
 
         final Group a = new Group("simple-a-no-tags");
         final Group b = new Group("simple-b").addTags(new Tag("b", "b1"), new Tag("b", "b2"));
@@ -69,7 +69,7 @@ public abstract class BaseGroupDaoTest {
 
         // Adding the groups gives back the same groups along with the tags.
         final Collection<Group> added = new ArrayList<>();
-        dao.add(account1, asList(a, b, c), new AddTo(added));
+        dao.add(account1, asList(a, b, c).iterator(), new AddTo(added));
         assertEquals(3, added.size());
         assertTrue(added.contains(a));
         assertTrue(added.contains(b));
@@ -181,11 +181,11 @@ public abstract class BaseGroupDaoTest {
 
         final Account account1 = new Account("mid-level-account-1");
         final Account account2 = new Account("mid-level-account-2");
-        getAccountDao().add(asList(account1, account2), ACCOUNT_IGNORED);
+        getAccountDao().add(asList(account1, account2).iterator(), ACCOUNT_IGNORED);
 
         final Group p1 = new Group("parent-1");
         final Group p2 = new Group("parent-2");
-        dao.add(account1, asList(p1, p2), IGNORED);
+        dao.add(account1, asList(p1, p2).iterator(), IGNORED);
         final Long p1id = p1.getId().orElse(null);
         final Long p2id = p2.getId().orElse(null);
 
@@ -203,8 +203,8 @@ public abstract class BaseGroupDaoTest {
 
         // Adding the groups gives back the same groups along with the tags.
         final Collection<Group> added = new ArrayList<>();
-        dao.add(account1, p1id, asList(a1, b1, c1), new AddTo(added));
-        dao.add(account1, p2id, asList(a2, b2, c2), new AddTo(added));
+        dao.add(account1, p1id, asList(a1, b1, c1).iterator(), new AddTo(added));
+        dao.add(account1, p2id, asList(a2, b2, c2).iterator(), new AddTo(added));
         assertEquals(6, added.size());
         assertTrue(added.containsAll(asList(a1, b1, c1, a2, b2, c2)));
         assertEquals(p1id, a1.getParentId().orElse(null));
@@ -224,8 +224,8 @@ public abstract class BaseGroupDaoTest {
 
         // Add the 3rd level children.
         final Collection<Group> thirds = new ArrayList<>();
-        dao.add(account1, a1id, asList(a1a, a1b), new AddTo(thirds));
-        dao.add(account1, a2id, asList(a2a, a2b), new AddTo(thirds));
+        dao.add(account1, a1id, asList(a1a, a1b).iterator(), new AddTo(thirds));
+        dao.add(account1, a2id, asList(a2a, a2b).iterator(), new AddTo(thirds));
         assertEquals(4, thirds.size());
         assertTrue(thirds.containsAll(asList(a1a, a1b, a2a, a2b)));
         assertEquals(a1id, a1a.getParentId().orElse(null));
@@ -420,11 +420,11 @@ public abstract class BaseGroupDaoTest {
 
         final Account account = new Account("groups-quota-individual-account-1");
         account.getServiceLevel().setMaxGroups(3);
-        getAccountDao().add(singleton(account), ACCOUNT_IGNORED);
+        getAccountDao().add(singleton(account).iterator(), ACCOUNT_IGNORED);
 
         for (int i = 0; i <= account.getServiceLevel().getMaxGroups(); i++) {
             final Group group = new Group("group-number-" + i);
-            dao.add(account, singleton(group), IGNORED);
+            dao.add(account, singleton(group).iterator(), IGNORED);
         }
     }
 
@@ -434,13 +434,13 @@ public abstract class BaseGroupDaoTest {
 
         final Account account = new Account("groups-quota-batch-account-1");
         account.getServiceLevel().setMaxGroups(3);
-        getAccountDao().add(singleton(account), ACCOUNT_IGNORED);
+        getAccountDao().add(singleton(account).iterator(), ACCOUNT_IGNORED);
 
         final Collection<Group> groups = new ArrayList<>(account.getServiceLevel().getMaxGroups());
         for (int i = 0; i <= account.getServiceLevel().getMaxGroups(); i++) {
             groups.add(new Group("group-number-" + i));
         }
-        dao.add(account, groups, IGNORED);
+        dao.add(account, groups.iterator(), IGNORED);
     }
 
     @Test(expected = QuotaExceededException.class)
@@ -449,10 +449,10 @@ public abstract class BaseGroupDaoTest {
 
         final Account account = new Account("groups-quota-children-account-1");
         account.getServiceLevel().setMaxGroups(3);
-        getAccountDao().add(singleton(account), ACCOUNT_IGNORED);
+        getAccountDao().add(singleton(account).iterator(), ACCOUNT_IGNORED);
 
         final Group parent = new Group("group-number-1");
-        dao.add(account, singleton(parent), IGNORED);
+        dao.add(account, singleton(parent).iterator(), IGNORED);
         final Long parentId = parent.getId().orElse(null);
 
         final Collection<Group> groups = new ArrayList<>(account.getServiceLevel().getMaxGroups());
@@ -460,7 +460,7 @@ public abstract class BaseGroupDaoTest {
         for (int i = 1; i <= account.getServiceLevel().getMaxGroups(); i++) {
             groups.add(new Group("group-number-" + i));
         }
-        dao.add(account, parentId, groups, IGNORED);
+        dao.add(account, parentId, groups.iterator(), IGNORED);
     }
 
     @Test(expected = QuotaExceededException.class)
@@ -469,13 +469,13 @@ public abstract class BaseGroupDaoTest {
 
         final Account account = new Account("tags-quota-single-account-1");
         account.getServiceLevel().setMaxTags(3);
-        getAccountDao().add(singleton(account), ACCOUNT_IGNORED);
+        getAccountDao().add(singleton(account).iterator(), ACCOUNT_IGNORED);
 
         final Group group = new Group("group");
         for (int i = 0; i <= account.getServiceLevel().getMaxTags(); i++) {
             group.addTags(new Tag("tag-" + i, "value"));
         }
-        dao.add(account, singleton(group), IGNORED);
+        dao.add(account, singleton(group).iterator(), IGNORED);
     }
 
     @Test(expected = QuotaExceededException.class)
@@ -484,12 +484,12 @@ public abstract class BaseGroupDaoTest {
 
         final Account account = new Account("tags-quota-multiple-account-1");
         account.getServiceLevel().setMaxTags(3);
-        getAccountDao().add(singleton(account), ACCOUNT_IGNORED);
+        getAccountDao().add(singleton(account).iterator(), ACCOUNT_IGNORED);
 
         for (int i = 0; i <= account.getServiceLevel().getMaxTags(); i++) {
             final Group group = new Group("group-" + i);
             group.addTags(new Tag("tag-" + i, "value"));
-            dao.add(account, singleton(group), IGNORED);
+            dao.add(account, singleton(group).iterator(), IGNORED);
         }
     }
 
@@ -499,12 +499,12 @@ public abstract class BaseGroupDaoTest {
 
         final Account account = new Account("depth-quota-account-1");
         account.getServiceLevel().setMaxDepth(3);
-        getAccountDao().add(singleton(account), ACCOUNT_IGNORED);
+        getAccountDao().add(singleton(account).iterator(), ACCOUNT_IGNORED);
 
         Long parentId = null;
         for (int i = 0; i <= account.getServiceLevel().getMaxDepth(); i++) {
             final Group group = new Group("depth-" + i);
-            dao.add(account, parentId, singleton(group), IGNORED);
+            dao.add(account, parentId, singleton(group).iterator(), IGNORED);
             parentId = group.getId().orElse(null);
         }
     }
@@ -514,12 +514,12 @@ public abstract class BaseGroupDaoTest {
         final GroupDao dao = getGroupDao();
 
         final Account account = new Account("same-name");
-        getAccountDao().add(singleton(account), ACCOUNT_IGNORED);
+        getAccountDao().add(singleton(account).iterator(), ACCOUNT_IGNORED);
 
         final Group a = new Group("same-name");
         final Group b = new Group("same-name").addTags(new Tag("l", "v"));
 
-        dao.add(account, asList(a, b), IGNORED);
+        dao.add(account, asList(a, b).iterator(), IGNORED);
     }
 
     @Test(expected = BadRequestException.class)
@@ -527,15 +527,15 @@ public abstract class BaseGroupDaoTest {
         final GroupDao dao = getGroupDao();
 
         final Account account = new Account("same-name");
-        getAccountDao().add(singleton(account), ACCOUNT_IGNORED);
+        getAccountDao().add(singleton(account).iterator(), ACCOUNT_IGNORED);
 
         final Group parent = new Group("parent");
-        dao.add(account, singleton(parent), IGNORED);
+        dao.add(account, singleton(parent).iterator(), IGNORED);
 
         final Group a = new Group("same-name");
         final Group b = new Group("same-name").addTags(new Tag("l", "v"));
 
-        dao.add(account, parent.getId().orElse(null), asList(a, b), IGNORED);
+        dao.add(account, parent.getId().orElse(null), asList(a, b).iterator(), IGNORED);
     }
 
     @Test
@@ -544,13 +544,13 @@ public abstract class BaseGroupDaoTest {
 
         final Account account1 = new Account("name-test-account-1");
         final Account account2 = new Account("name-test-account-2");
-        getAccountDao().add(asList(account1, account2), ACCOUNT_IGNORED);
+        getAccountDao().add(asList(account1, account2).iterator(), ACCOUNT_IGNORED);
 
         final Group a = new Group("same-name");
         final Group b = new Group("same-name");
 
-        dao.add(account1, singleton(a), IGNORED);
-        dao.add(account2, singleton(b), IGNORED);
+        dao.add(account1, singleton(a).iterator(), IGNORED);
+        dao.add(account2, singleton(b).iterator(), IGNORED);
 
         final long aid = a.getId().orElse(null);
         final long bid = b.getId().orElse(null);
@@ -566,13 +566,13 @@ public abstract class BaseGroupDaoTest {
         final GroupDao dao = getGroupDao();
 
         final Account account = new Account("level-name-test-account-1");
-        getAccountDao().add(singleton(account), ACCOUNT_IGNORED);
+        getAccountDao().add(singleton(account).iterator(), ACCOUNT_IGNORED);
 
         final Group parent = new Group("same-name");
         final Group child = new Group("same-name");
 
-        dao.add(account, singleton(parent), IGNORED);
-        dao.add(account, parent.getId().orElse(null), singleton(child), IGNORED);
+        dao.add(account, singleton(parent).iterator(), IGNORED);
+        dao.add(account, parent.getId().orElse(null), singleton(child).iterator(), IGNORED);
 
         final long pid = parent.getId().orElse(null);
         final long cid = child.getId().orElse(null);
@@ -592,14 +592,14 @@ public abstract class BaseGroupDaoTest {
 
         final Account account1 = new Account("parent-test-account-1");
         final Account account2 = new Account("parent-test-account-2");
-        getAccountDao().add(asList(account1, account2), ACCOUNT_IGNORED);
+        getAccountDao().add(asList(account1, account2).iterator(), ACCOUNT_IGNORED);
 
         final Group parent = new Group("parent");
-        dao.add(account1, singleton(parent), IGNORED);
+        dao.add(account1, singleton(parent).iterator(), IGNORED);
 
         final Group child = new Group("child");
 
-        dao.add(account2, parent.getId().orElse(null), singleton(child), IGNORED);
+        dao.add(account2, parent.getId().orElse(null), singleton(child).iterator(), IGNORED);
     }
 
     @Test(expected = InternalServerErrorException.class)
@@ -641,13 +641,13 @@ public abstract class BaseGroupDaoTest {
     @Test(expected = InternalServerErrorException.class)
     public void testAddException() throws WebApplicationException {
         getGroupDaoWithDataSourceException()
-                .add(new Account("exception-account"), singleton(new Group("group")), IGNORED);
+                .add(new Account("exception-account"), singleton(new Group("group")).iterator(), IGNORED);
     }
 
     @Test(expected = InternalServerErrorException.class)
     public void testAddWithParentIdException() throws WebApplicationException {
         getGroupDaoWithDataSourceException()
-                .add(new Account("exception-account"), 1L, singleton(new Group("group")), IGNORED);
+                .add(new Account("exception-account"), 1L, singleton(new Group("group")).iterator(), IGNORED);
     }
 
     @Test(expected = InternalServerErrorException.class)
