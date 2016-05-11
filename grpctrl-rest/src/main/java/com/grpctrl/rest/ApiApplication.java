@@ -3,6 +3,7 @@ package com.grpctrl.rest;
 import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.common.supplier.HealthCheckRegistrySupplier;
 import com.grpctrl.common.supplier.MetricRegistrySupplier;
+import com.grpctrl.common.supplier.OAuth20ServiceSupplier;
 import com.grpctrl.common.supplier.ObjectMapperSupplier;
 import com.grpctrl.common.supplier.ScheduledExecutorServiceSupplier;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
@@ -17,6 +18,8 @@ import com.grpctrl.db.dao.supplier.TagDaoSupplier;
 import com.grpctrl.rest.providers.GenericExceptionMapper;
 import com.grpctrl.rest.providers.MemoryUsageLogger;
 import com.grpctrl.rest.providers.RequestLoggingFilter;
+import com.grpctrl.rest.resource.auth.Login;
+import com.grpctrl.rest.resource.auth.Logout;
 import com.grpctrl.rest.resource.v1.account.AccountAdd;
 import com.grpctrl.rest.resource.v1.account.AccountGet;
 import com.grpctrl.rest.resource.v1.account.AccountGetAll;
@@ -25,6 +28,7 @@ import com.grpctrl.rest.resource.v1.account.AccountRemove;
 import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.EncodingFilter;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
 import javax.ws.rs.ApplicationPath;
 
@@ -45,6 +49,7 @@ public class ApiApplication extends ResourceConfig {
         register(new SymmetricKeyEncryptionSupplier.Binder());
         register(new SslContextSupplier.Binder());
         register(new ObjectMapperSupplier.Binder());
+        register(new OAuth20ServiceSupplier.Binder());
         register(new MetricRegistrySupplier.Binder());
         register(new HealthCheckRegistrySupplier.Binder());
         register(new DataSourceSupplier.Binder());
@@ -61,6 +66,12 @@ public class ApiApplication extends ResourceConfig {
         register(AccountRemove.class);
         register(AccountGet.class);
         register(AccountGetAll.class);
+
+        register(Login.class);
+        register(Logout.class);
+
+        // Define who can access which resources using annotations.
+        register(RolesAllowedDynamicFeature.class);
 
         // Log requests as they come in.
         register(RequestLoggingFilter.class);

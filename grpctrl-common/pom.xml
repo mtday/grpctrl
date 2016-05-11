@@ -48,6 +48,12 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
 
+        <!-- Scribe used for OAuth2 security -->
+        <dependency>
+            <groupId>com.github.scribejava</groupId>
+            <artifactId>scribejava-apis</artifactId>
+        </dependency>
+
         <!-- Metrics and health checking utilities -->
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>

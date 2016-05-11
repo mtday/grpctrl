@@ -2,8 +2,10 @@ package com.grpctrl.db.dao;
 
 import com.grpctrl.common.model.Account;
 
+import java.sql.Connection;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
@@ -33,6 +35,31 @@ public interface AccountDao {
      * @throws javax.ws.rs.WebApplicationException if there is a problem interacting with the database
      */
     void get(@Nonnull Collection<Long> accountIds, @Nonnull Consumer<Account> consumer);
+
+    /**
+     * Consume all the accounts available for the specified user id.
+     *
+     * @param userId the unique identifier of the user for which accounts should be consumed
+     *
+     * @return the collection of accounts available for the specified user
+     *
+     * @throws NullPointerException if the parameter is {@code null}
+     * @throws javax.ws.rs.WebApplicationException if there is a problem interacting with the database
+     */
+    Collection<Account> getForUser(@Nonnull Long userId);
+
+    /**
+     * Retrieve all of the accounts available for the specified user ids.
+     *
+     * @param conn the {@link Connection} used to retrieve the accounts
+     * @param userIds the unique identifiers of the users for which accounts should be consumed
+     *
+     * @return the collection of accounts available for the specified user
+     *
+     * @throws NullPointerException if either of the parameters are {@code null}
+     * @throws javax.ws.rs.WebApplicationException if there is a problem interacting with the database
+     */
+    Map<Long, Collection<Account>> getForUsers(@Nonnull Connection conn, @Nonnull Collection<Long> userIds);
 
     /**
      * Consume all the accounts in the system.

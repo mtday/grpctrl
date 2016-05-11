@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly>
+    <id>dist</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <fileSets>
+        <fileSet>
+            <outputDirectory>/</outputDirectory>
+            <directory>src/main/webapp</directory>
+        </fileSet>
+    </fileSets>
+</assembly>

@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
@@ -23,6 +24,7 @@ import javax.ws.rs.core.StreamingOutput;
 @Singleton
 @Path("/v1/account/")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("ADMIN")
 public class AccountGetAll extends BaseAccountResource {
     private final Consumer<Consumer<Account>> consumer = consumer -> getAccountDao().getAll(consumer);
 
@@ -43,8 +45,6 @@ public class AccountGetAll extends BaseAccountResource {
     @GET
     @Nullable
     public Response getAll() {
-        // TODO: Only admins should be able to retrieve accounts.
-
         final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapper(), this.consumer);
 
         return Response.ok().entity(streamingOutput).type(MediaType.APPLICATION_JSON).build();

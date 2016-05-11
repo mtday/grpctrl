@@ -11,11 +11,40 @@ INSERT INTO accounts (account_id, name) VALUES
 (4, 'account-4');
 
 
+INSERT INTO api_logins (account_id, key, secret) VALUES
+(1, 'aaaaaaaaaaaaaaaaaaaa', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
+(2, 'bbbbbbbbbbbbbbbbbbbb', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
+(3, 'cccccccccccccccccccc', 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'),
+(4, 'dddddddddddddddddddd', 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd');
+
+
 INSERT INTO service_levels (account_id, max_groups, max_tags, max_depth) VALUES
 (1, 100, 1000, 3),
 (2, 100, 1000, 3),
 (3, 100, 1000, 3),
 (4, 100, 1000, 3);
+
+
+INSERT INTO users (user_id, login, source) VALUES
+(1, 'mtday', 'GITHUB'),
+(2, 'test', 'LOCAL');
+
+
+INSERT INTO user_emails (user_id, email, is_primary, is_verified) VALUES
+(1, 'fake@fake.com', true, true),
+(2, 'test@test.com', true, true);
+
+
+INSERT INTO  user_roles (user_id, role) VALUES
+(1, 'ADMIN'),
+(1, 'USER'),
+(2, 'USER');
+
+
+INSERT INTO user_accounts (user_id, account_id) VALUES
+(1, 1),
+(1, 2),
+(2, 3);
 
 
 -- Building this groups structure:

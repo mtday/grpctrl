@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.util.Iterator;
 
 import javax.annotation.Nonnull;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
@@ -23,12 +24,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
 /**
- * Add an account to the backing data store.
+ * Add accounts to the backing data store.
  */
 @Singleton
 @Path("/v1/account/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed("ADMIN")
 public class AccountAdd extends BaseAccountResource {
     /**
      * @param objectMapper the {@link ObjectMapper} used to generate JSON data
@@ -40,7 +42,7 @@ public class AccountAdd extends BaseAccountResource {
     }
 
     /**
-     * Save the provided account into the backing data store.
+     * Save the provided accounts into the backing data store.
      *
      * @param inputStream the {@link InputStream} from the client containing the list of accounts to add
      *
@@ -48,8 +50,6 @@ public class AccountAdd extends BaseAccountResource {
      */
     @POST
     public Response add(@Nonnull final InputStream inputStream) {
-        // TODO: Only admins should be able to add accounts.
-
         final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapper(), consumer -> {
             try {
                 final JsonParser jsonParser = getObjectMapper().getFactory().createParser(inputStream);

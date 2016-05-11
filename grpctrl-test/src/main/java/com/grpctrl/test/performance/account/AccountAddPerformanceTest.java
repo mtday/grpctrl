@@ -67,9 +67,8 @@ public class AccountAddPerformanceTest extends BasePerformanceTest {
 
         @Override
         public PerformanceWorker get() {
-            return new AccountAddWorker(
-                    this.client,
-                    new Account().setName("performance-testing-account-" + Math.abs(this.random.nextLong())));
+            final long rnd = this.random.nextLong();
+            return new AccountAddWorker(this.client, new Account().setName("perf-testing-account-" + rnd * rnd));
         }
     }
 

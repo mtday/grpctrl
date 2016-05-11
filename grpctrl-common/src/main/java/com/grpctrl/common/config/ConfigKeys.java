@@ -13,17 +13,36 @@ public enum ConfigKeys {
     /** The current running version of the system. */
     SYSTEM_VERSION,
 
-    /** The host on which the system API should run (and bind to on start-up). */
-    SYSTEM_API_HOST,
-    /** The port on which the system API should run. */
-    SYSTEM_API_PORT,
-    /** The host on which the system administration web app should run (and bind to on start-up). */
-    SYSTEM_WEB_HOST,
-    /** The port on which the system administration web app should run. */
-    SYSTEM_WEB_PORT,
+    /** The host on which the system should run (and bind to on start-up). */
+    SYSTEM_HOST,
+    /** The port on which the system should run. */
+    SYSTEM_PORT,
+
+    /** The base URL of this system, something like:  https://myhost/. */
+    SYSTEM_BASE_URL,
+
+    /** The API key to use when communicating with the OAuth2 authorization service. */
+    AUTH_API_KEY,
+    /** The API secret to use when communicating with the OAuth2 authorization service. */
+    AUTH_API_SECRET,
+    /** The scope(s) of the data from the auth API we want to be authorized to access. */
+    AUTH_API_SCOPE,
+    /** The callback URL to which the user will be forwarded after authentication. */
+    AUTH_API_CALLBACK,
+    /** The resources URL from which this service will retrieve user account information. */
+    AUTH_API_RESOURCE_USER,
+    /** The resources URL from which this service will retrieve user email information. */
+    AUTH_API_RESOURCE_EMAIL,
+    /** The accept header value to send to the resource URL. */
+    AUTH_API_ACCEPT,
+
+    /** The directory containing the web resource base (content files) */
+    WEB_CONTENT,
 
     /** The environment variable defining the shared secret value to use for password-based encryption. */
     CRYPTO_SHARED_SECRET_VARIABLE,
+    /** The default shared secret value used for password-based encryption. */
+    CRYPTO_SHARED_SECRET_DEFAULT,
     /** Whether the web server is running with SSL enabled. */
     CRYPTO_SSL_ENABLED,
     /** The key store file used in the SSL configuration. */

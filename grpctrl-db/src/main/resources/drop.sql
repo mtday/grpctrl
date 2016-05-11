@@ -1,7 +1,13 @@
 
 DROP TABLE IF EXISTS tags;
 DROP TABLE IF EXISTS groups;
+DROP TABLE IF EXISTS user_accounts;
+DROP TABLE IF EXISTS user_roles;
+DROP TABLE IF EXISTS user_auths;
+DROP TABLE IF EXISTS user_emails;
+DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS service_levels;
+DROP TABLE IF EXISTS api_logins;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS schema_version;
 

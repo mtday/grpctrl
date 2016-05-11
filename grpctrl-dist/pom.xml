@@ -21,6 +21,32 @@
 
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-web</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/web</outputDirectory>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>grpctrl-web</artifactId>
+                                    <classifier>dist</classifier>
+                                    <type>zip</type>
+                                    <overWrite>true</overWrite>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>rpm-maven-plugin</artifactId>
                 <configuration>
@@ -143,6 +169,28 @@
                             <groupname>${project.group}</groupname>
                             <!-- No sources, just defining the directory permissions and owner -->
                         </mapping>
+                        <mapping>
+                            <!-- Stores the web tier files. -->
+                            <directory>/opt/${project.groupId}/${project.version}/web</directory>
+                            <filemode>640</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <sources>
+                                <source>
+                                    <location>
+                                        ${project.build.directory}/web/${project.groupId}-web-${project.version}
+                                    </location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <!-- Stores the web tier files. -->
+                            <directory>/opt/${project.groupId}/${project.version}/web</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
                     </mappings>
                     <preinstallScriptlet>
                         <scriptFile>${project.build.directory}/classes/scripts/preinstall.sh</scriptFile>
@@ -174,6 +222,11 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>grpctrl-run</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>grpctrl-web</artifactId>
+            <type>pom</type>
         </dependency>
     </dependencies>
 </project>

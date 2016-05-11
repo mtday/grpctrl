@@ -6,6 +6,7 @@ import com.grpctrl.db.dao.AccountDao;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.DELETE;
@@ -20,6 +21,7 @@ import javax.ws.rs.core.MediaType;
 @Singleton
 @Path("/v1/account/{accountId}")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("ADMIN")
 public class AccountRemove extends BaseAccountResource {
     /**
      * @param objectMapper the {@link ObjectMapper} responsible for generating JSON data
@@ -40,8 +42,6 @@ public class AccountRemove extends BaseAccountResource {
     @DELETE
     @Nullable
     public RemoveResponse remove(@Nonnull @PathParam("accountId") final Long accountId) {
-        // TODO: Only admins should be able to retrieve accounts.
-
         return new RemoveResponse(getAccountDao().remove(accountId));
     }
 

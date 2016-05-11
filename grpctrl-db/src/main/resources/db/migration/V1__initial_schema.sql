@@ -19,6 +19,17 @@ CREATE TABLE accounts (
 ALTER SEQUENCE accounts_account_id_seq RESTART WITH 10000;
 
 
+CREATE TABLE api_logins (
+    account_id       BIGINT        NOT NULL,
+
+    key              VARCHAR(20)   NOT NULL,
+    secret           VARCHAR(80)   NOT NULL,
+
+    CONSTRAINT api_logins_uniq UNIQUE (key, secret),
+    CONSTRAINT api_logins_fk_accounts FOREIGN KEY (account_id) REFERENCES accounts (account_id) ON DELETE CASCADE
+);
+
+
 CREATE TABLE service_levels (
     account_id       BIGINT        NOT NULL,
 
@@ -28,6 +39,64 @@ CREATE TABLE service_levels (
 
     CONSTRAINT service_levels_pk PRIMARY KEY (account_id),
     CONSTRAINT service_levels_fk_accounts FOREIGN KEY (account_id) REFERENCES accounts (account_id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE users (
+    user_id          BIGSERIAL     NOT NULL,
+
+    login            VARCHAR(200)  NOT NULL,
+    source           VARCHAR(20)   NOT NULL,
+
+    CONSTRAINT users_pk PRIMARY KEY (user_id),
+    CONSTRAINT users_uniq_login UNIQUE (login, source)
+);
+
+ALTER SEQUENCE users_user_id_seq RESTART WITH 10000;
+
+
+CREATE TABLE user_emails (
+    user_id          BIGINT        NOT NULL,
+
+    email            VARCHAR(200)  NOT NULL,
+    is_primary       BOOLEAN       NOT NULL,
+    is_verified      BOOLEAN       NOT NULL,
+
+    CONSTRAINT user_emails_pk PRIMARY KEY (user_id),
+    CONSTRAINT user_emails_uniq_email UNIQUE (email),
+    CONSTRAINT user_emails_fk_users FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE user_auths (
+    user_id          BIGINT        NOT NULL,
+
+    hash_alg         VARCHAR(20)   NOT NULL,
+    salt             VARCHAR(20)   NOT NULL,
+    hashed_pass      VARCHAR(200)  NOT NULL,
+
+    CONSTRAINT user_auths_pk PRIMARY KEY (user_id),
+    CONSTRAINT user_auths_fk_users FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE user_roles (
+    user_id          BIGINT        NOT NULL,
+
+    role             VARCHAR(20)   NOT NULL,
+
+    CONSTRAINT user_roles_pk PRIMARY KEY (user_id, role),
+    CONSTRAINT user_roles_fk_users FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE user_accounts (
+    user_id          BIGINT        NOT NULL,
+    account_id       BIGINT        NOT NULL,
+
+    CONSTRAINT user_accounts_pk PRIMARY KEY (user_id, account_id),
+    CONSTRAINT user_accounts_fk_users FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    CONSTRAINT user_accounts_fk_accounts FOREIGN KEY (account_id) REFERENCES accounts (account_id) ON DELETE CASCADE
 );
 
 

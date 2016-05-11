@@ -1,5 +1,7 @@
 package com.grpctrl.common.model;
 
+import static java.util.Objects.requireNonNull;
+
 import com.grpctrl.common.util.OptionalComparator;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
@@ -7,6 +9,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -26,6 +31,9 @@ public class Account implements Comparable<Account> {
 
     @Nonnull
     private ServiceLevel serviceLevel = new ServiceLevel();
+
+    @Nonnull
+    private List<ApiLogin> apiLogins = new LinkedList<>();
 
     /**
      * Default constructor.
@@ -79,10 +87,11 @@ public class Account implements Comparable<Account> {
      * @param other the account to duplicate
      */
     public Account setValues(@Nonnull final Account other) {
-        Objects.requireNonNull(other);
+        requireNonNull(other);
         setId(other.getId().orElse(null));
         setName(other.getName());
         setServiceLevel(new ServiceLevel(other.getServiceLevel()));
+        setApiLogins(other.getApiLogins());
         return this;
     }
 
@@ -141,7 +150,30 @@ public class Account implements Comparable<Account> {
      * @throws NullPointerException if the provided service level is {@code null}
      */
     public Account setServiceLevel(@Nonnull final ServiceLevel serviceLevel) {
-        this.serviceLevel = Objects.requireNonNull(serviceLevel);
+        this.serviceLevel = requireNonNull(serviceLevel);
+        return this;
+    }
+
+    /**
+     * @return the API login values associated with this account
+     */
+    @Nonnull
+    public List<ApiLogin> getApiLogins() {
+        return this.apiLogins; // Not a copy.
+    }
+
+    /**
+     * @param apiLogins the new API logins for this account
+     *
+     * @return {@code this} for fluent-style usage
+     *
+     * @throws NullPointerException if the provided parameter is {@code null}
+     */
+    public Account setApiLogins(@Nonnull final Collection<ApiLogin> apiLogins) {
+        this.apiLogins = new LinkedList<>();
+        for (final ApiLogin apiLogin : Objects.requireNonNull(apiLogins)) {
+            this.apiLogins.add(new ApiLogin(apiLogin));
+        }
         return this;
     }
 
@@ -155,6 +187,7 @@ public class Account implements Comparable<Account> {
         cmp.append(getId(), other.getId(), new OptionalComparator<>());
         cmp.append(getName(), other.getName());
         cmp.append(getServiceLevel(), other.getServiceLevel());
+        cmp.append(getApiLogins(), other.getApiLogins());
         return cmp.toComparison();
     }
 
@@ -169,6 +202,7 @@ public class Account implements Comparable<Account> {
         hash.append(getId());
         hash.append(getName());
         hash.append(getServiceLevel());
+        hash.append(getApiLogins());
         return hash.toHashCode();
     }
 
@@ -179,6 +213,7 @@ public class Account implements Comparable<Account> {
         str.append("id", getId());
         str.append("name", getName());
         str.append("serviceLevel", getServiceLevel());
+        str.append("apiLogins", getApiLogins());
         return str.build();
     }
 
@@ -200,7 +235,7 @@ public class Account implements Comparable<Account> {
          * @throws IllegalArgumentException if the provided name is invalid
          */
         public static String validateName(@Nonnull final String name) {
-            Objects.requireNonNull(name);
+            requireNonNull(name);
 
             if (name.length() > MAX_NAME_LENGTH) {
                 throw new IllegalArgumentException("Invalid account name, it exceeds the max length: " + MAX_NAME_LENGTH);

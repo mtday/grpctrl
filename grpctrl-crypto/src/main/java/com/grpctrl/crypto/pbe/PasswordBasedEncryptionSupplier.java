@@ -15,7 +15,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
@@ -90,7 +89,7 @@ public class PasswordBasedEncryptionSupplier
         if (config.hasPath(sharedSecretVar)) {
             return config.getString(sharedSecretVar);
         }
-        throw new InternalServerErrorException("Failed to retrieve shared secret from variable " + sharedSecretVar);
+        return config.getString(ConfigKeys.CRYPTO_SHARED_SECRET_DEFAULT.getKey());
     }
 
     @Nonnull

@@ -5,6 +5,7 @@ import com.grpctrl.db.dao.AccountDao;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
@@ -21,6 +22,7 @@ import javax.ws.rs.core.StreamingOutput;
 @Singleton
 @Path("/v1/account/{accountId}")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("ADMIN")
 public class AccountGet extends BaseAccountResource {
     /**
      * @param objectMapper the {@link ObjectMapper} responsible for generating JSON data
@@ -41,8 +43,6 @@ public class AccountGet extends BaseAccountResource {
     @GET
     @Nullable
     public Response get(@Nonnull @PathParam("accountId") final Long accountId) {
-        // TODO: Only admins should be able to retrieve accounts.
-
         final StreamingOutput streamingOutput = new SingleAccountStreamer(getObjectMapper(),
                 consumer -> getAccountDao().get(accountId, consumer));
 

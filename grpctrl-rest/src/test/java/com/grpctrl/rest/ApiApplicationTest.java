@@ -25,6 +25,7 @@ public class ApiApplicationTest {
         assertEquals("com.grpctrl.common.supplier.ConfigSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.common.supplier.HealthCheckRegistrySupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.common.supplier.MetricRegistrySupplier$Binder", objIter.next());
+        assertEquals("com.grpctrl.common.supplier.OAuth20ServiceSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.common.supplier.ObjectMapperSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.common.supplier.ScheduledExecutorServiceSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier$Binder", objIter.next());
@@ -46,12 +47,15 @@ public class ApiApplicationTest {
         assertEquals("com.grpctrl.rest.providers.GenericExceptionMapper", nameIter.next());
         assertEquals("com.grpctrl.rest.providers.MemoryUsageLogger", nameIter.next());
         assertEquals("com.grpctrl.rest.providers.RequestLoggingFilter", nameIter.next());
+        assertEquals("com.grpctrl.rest.resource.auth.Login", nameIter.next());
+        assertEquals("com.grpctrl.rest.resource.auth.Logout", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountAdd", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountGet", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountGetAll", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountRemove", nameIter.next());
         assertEquals("org.glassfish.jersey.message.GZipEncoder", nameIter.next());
         assertEquals("org.glassfish.jersey.server.filter.EncodingFilter", nameIter.next());
+        assertEquals("org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature", nameIter.next());
         assertFalse(nameIter.hasNext());
     }
 }
