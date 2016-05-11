@@ -1,5 +1,6 @@
 package com.grpctrl.common.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.grpctrl.common.util.CollectionComparator;
 import com.grpctrl.common.util.OptionalComparator;
 
@@ -22,6 +23,7 @@ import javax.annotation.Nullable;
 /**
  * Provides information about user email addresses as provided by the security authorization service.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class User implements Comparable<User>, Principal {
     @Nullable
     private Long id;

@@ -16,25 +16,24 @@ import org.mockito.Mockito;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.InternalServerErrorException;
-
 /**
- * Perform testing on the {@link com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier}.
+ * Perform testing on the {@link PasswordBasedEncryptionSupplier}.
  */
 public class PasswordBasedEncryptionSupplierTest {
-    private static com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier supplier = null;
+    private static PasswordBasedEncryptionSupplier supplier = null;
 
     @BeforeClass
     public static void beforeClass() {
-        supplier = new com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier(new ConfigSupplier());
+        supplier = new PasswordBasedEncryptionSupplier(new ConfigSupplier());
     }
 
-    @Test(expected = InternalServerErrorException.class)
+    @Test
     public void testNoSharedSecret() {
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(ConfigKeys.CRYPTO_SHARED_SECRET_VARIABLE.getKey(), fromAnyRef("DOES_NOT_EXIST"));
+        map.put(ConfigKeys.CRYPTO_SHARED_SECRET_DEFAULT.getKey(), fromAnyRef("password"));
         final ConfigSupplier configSupplier = new ConfigSupplier(ConfigFactory.parseMap(map));
-        new com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier(configSupplier).get();
+        new PasswordBasedEncryptionSupplier(configSupplier).get();
     }
 
     @Test
@@ -61,6 +60,6 @@ public class PasswordBasedEncryptionSupplierTest {
     @Test
     public void testBinder() {
         // Nothing to really test here.
-        new com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier.Binder().bind(Mockito.mock(DynamicConfiguration.class));
+        new PasswordBasedEncryptionSupplier.Binder().bind(Mockito.mock(DynamicConfiguration.class));
     }
 }

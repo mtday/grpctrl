@@ -2,6 +2,7 @@ package com.grpctrl.common.model;
 
 import static java.util.Objects.requireNonNull;
 
+import com.grpctrl.common.util.CollectionComparator;
 import com.grpctrl.common.util.OptionalComparator;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
@@ -12,7 +13,6 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import javax.annotation.CheckForNull;
@@ -171,9 +171,7 @@ public class Account implements Comparable<Account> {
      */
     public Account setApiLogins(@Nonnull final Collection<ApiLogin> apiLogins) {
         this.apiLogins = new LinkedList<>();
-        for (final ApiLogin apiLogin : Objects.requireNonNull(apiLogins)) {
-            this.apiLogins.add(new ApiLogin(apiLogin));
-        }
+        requireNonNull(apiLogins).stream().map(ApiLogin::new).forEach(this.apiLogins::add);
         return this;
     }
 
@@ -187,7 +185,7 @@ public class Account implements Comparable<Account> {
         cmp.append(getId(), other.getId(), new OptionalComparator<>());
         cmp.append(getName(), other.getName());
         cmp.append(getServiceLevel(), other.getServiceLevel());
-        cmp.append(getApiLogins(), other.getApiLogins());
+        cmp.append(getApiLogins(), other.getApiLogins(), new CollectionComparator<>());
         return cmp.toComparison();
     }
 

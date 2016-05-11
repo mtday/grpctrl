@@ -54,9 +54,9 @@ public class AccountTest {
         final Account b = new Account("name1");
         final Account c = new Account(10L, "name2", new ServiceLevel());
 
-        assertEquals(-423599945, a.hashCode());
-        assertEquals(-423427449, b.hashCode());
-        assertEquals(-423413722, c.hashCode());
+        assertEquals(1506671220, a.hashCode());
+        assertEquals(1513053572, b.hashCode());
+        assertEquals(1513561471, c.hashCode());
     }
 
     @Test
@@ -64,10 +64,12 @@ public class AccountTest {
         final Account a = new Account("name", new ServiceLevel(1, 2, 3));
         final Account b = new Account(10L, "name", new ServiceLevel());
         assertEquals(
-                "Account[id=Optional.empty,name=name,serviceLevel=ServiceLevel[maxGroups=1,maxTags=2,maxDepth=3]]",
+                "Account[id=Optional.empty,name=name,serviceLevel=ServiceLevel[maxGroups=1,maxTags=2,maxDepth=3],"
+                        + "apiLogins=[]]",
                 a.toString());
         assertEquals(
-                "Account[id=Optional[10],name=name,serviceLevel=ServiceLevel[maxGroups=100,maxTags=1000,maxDepth=3]]",
+                "Account[id=Optional[10],name=name,serviceLevel=ServiceLevel[maxGroups=100,maxTags=1000,maxDepth=3],"
+                        + "apiLogins=[]]",
                 b.toString());
     }
 

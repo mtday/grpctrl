@@ -47,9 +47,10 @@ public class AccountDaoSupplierTest {
         Mockito.when(configSupplier.get()).thenReturn(config);
 
         final ServiceLevelDaoSupplier serviceLevelDaoSupplier = new ServiceLevelDaoSupplier();
+        final ApiLoginDaoSupplier apiLoginDaoSupplier = new ApiLoginDaoSupplier();
         supplier = new AccountDaoSupplier(
                 new DataSourceSupplier(configSupplier, new PasswordBasedEncryptionSupplier(configSupplier)),
-                serviceLevelDaoSupplier);
+                serviceLevelDaoSupplier, apiLoginDaoSupplier);
     }
 
     @Test

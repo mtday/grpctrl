@@ -12,9 +12,14 @@ import com.grpctrl.crypto.ssl.SslContextSupplier;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.supplier.AccountDaoSupplier;
+import com.grpctrl.db.dao.supplier.ApiLoginDaoSupplier;
 import com.grpctrl.db.dao.supplier.GroupDaoSupplier;
 import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
 import com.grpctrl.db.dao.supplier.TagDaoSupplier;
+import com.grpctrl.db.dao.supplier.UserAuthDaoSupplier;
+import com.grpctrl.db.dao.supplier.UserDaoSupplier;
+import com.grpctrl.db.dao.supplier.UserEmailDaoSupplier;
+import com.grpctrl.db.dao.supplier.UserRoleDaoSupplier;
 import com.grpctrl.rest.providers.GenericExceptionMapper;
 import com.grpctrl.rest.providers.MemoryUsageLogger;
 import com.grpctrl.rest.providers.RequestLoggingFilter;
@@ -54,9 +59,14 @@ public class ApiApplication extends ResourceConfig {
         register(new HealthCheckRegistrySupplier.Binder());
         register(new DataSourceSupplier.Binder());
         register(new AccountDaoSupplier.Binder());
+        register(new ApiLoginDaoSupplier.Binder());
         register(new GroupDaoSupplier.Binder());
         register(new ServiceLevelDaoSupplier.Binder());
         register(new TagDaoSupplier.Binder());
+        register(new UserAuthDaoSupplier.Binder());
+        register(new UserDaoSupplier.Binder());
+        register(new UserEmailDaoSupplier.Binder());
+        register(new UserRoleDaoSupplier.Binder());
 
         // So Jersey will use our ObjectMapper configuration.
         register(ObjectMapperSupplier.class);

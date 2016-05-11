@@ -3,9 +3,11 @@ package com.grpctrl.run;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.scribejava.core.model.OAuth2AccessToken;
 import com.github.scribejava.core.model.OAuthRequest;
+import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth20Service;
 import com.grpctrl.common.config.ConfigKeys;
+import com.grpctrl.common.model.User;
 import com.grpctrl.common.model.UserEmail;
 import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.common.supplier.OAuth20ServiceSupplier;
@@ -109,6 +111,7 @@ public class CustomCallbackHandler implements CallbackHandler {
                 final OAuth2AccessToken accessToken = oAuth20Service.getAccessToken(this.code);
 
                 final Config config = configSupplier.get();
+                final ObjectMapper objectMapper = objectMapperSupplier.get();
 
                 { // Fetch user information
                     final String userUrl = config.getString(ConfigKeys.AUTH_API_RESOURCE_USER.getKey());
@@ -116,11 +119,16 @@ public class CustomCallbackHandler implements CallbackHandler {
                     oAuthRequest.addHeader("Accept", config.getString(ConfigKeys.AUTH_API_ACCEPT.getKey()));
                     oAuth20Service.signRequest(accessToken, oAuthRequest);
 
-                    final com.github.scribejava.core.model.Response response = oAuthRequest.send();
+                    final Response response = oAuthRequest.send();
                     LOG.info("  User Response code: {}", response.getCode());
                     LOG.info("  User Response body: {}", response.getBody());
                     LOG.info("  User Response headers: {}", response.getHeaders());
                     LOG.info("  User Response message: {}", response.getMessage());
+
+                    final User user = objectMapper.readValue(response.getBody(), User.class);
+                    LOG.info("User: {}", user);
+
+                    this.user = user.getLogin();
                 }
 
                 { // Fetch user emails
@@ -129,13 +137,12 @@ public class CustomCallbackHandler implements CallbackHandler {
                     oAuthRequest.addHeader("Accept", config.getString(ConfigKeys.AUTH_API_ACCEPT.getKey()));
                     oAuth20Service.signRequest(accessToken, oAuthRequest);
 
-                    final com.github.scribejava.core.model.Response response = oAuthRequest.send();
+                    final Response response = oAuthRequest.send();
                     LOG.info("  Email Response code: {}", response.getCode());
                     LOG.info("  Email Response body: {}", response.getBody());
                     LOG.info("  Email Response headers: {}", response.getHeaders());
                     LOG.info("  Email Response message: {}", response.getMessage());
 
-                    final ObjectMapper objectMapper = objectMapperSupplier.get();
                     final List<UserEmail> userEmails = objectMapper.readValue(response.getBody(),
                             objectMapper.getTypeFactory().constructCollectionType(List.class, UserEmail.class));
 
@@ -151,9 +158,10 @@ public class CustomCallbackHandler implements CallbackHandler {
     }
 
     private static class OpenCredential extends Credential {
+        private static final long serialVersionUID = 1129878263L;
+
         @Override
         public boolean check(@Nonnull final Object credentials) {
-            LOG.info("Checking credentials: {}", credentials);
             return true;
         }
     }

@@ -2,6 +2,8 @@ package com.grpctrl.common.model;
 
 import static org.apache.commons.lang3.Validate.isTrue;
 
+import com.google.common.base.Charsets;
+
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -85,7 +87,7 @@ public class UserAuth implements Comparable<UserAuth> {
             final String hashAlgorithm = "SHA-512";
             final MessageDigest messageDigest = MessageDigest.getInstance(hashAlgorithm);
             final String salt = randomString(8);
-            final String hashedPass = toHexString(messageDigest.digest((salt + password).getBytes()));
+            final String hashedPass = toHexString(messageDigest.digest((salt + password).getBytes(Charsets.UTF_8)));
 
             return new UserAuth(hashAlgorithm, salt, hashedPass);
         } catch (final NoSuchAlgorithmException badHashAlgorithm) {
@@ -107,9 +109,10 @@ public class UserAuth implements Comparable<UserAuth> {
         final String chars = "aeuAEU23456789bdghjmnpqrstvzBDGHJLMNPQRSTVWXZ";
 
         final Random random = new Random();
-        final StringBuilder password = new StringBuilder();
-        for (int i = 0; i < length; i++)
+        final StringBuilder password = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
             password.append(chars.charAt(random.nextInt(chars.length())));
+        }
         return password.toString();
     }
 
@@ -128,8 +131,9 @@ public class UserAuth implements Comparable<UserAuth> {
         final char[] hex = "0123456789abcdef".toCharArray();
         final StringBuilder sb = new StringBuilder(bytes.length << 1);
 
-        for (final byte b : bytes)
-            sb.append(hex[(b & 0xf0) >> 4]).append(hex[(b & 0x0f)]);
+        for (final byte b : bytes) {
+            sb.append(hex[(b & 0xf0) >> 4]).append(hex[b & 0x0f]);
+        }
 
         return sb.toString();
     }
@@ -148,7 +152,7 @@ public class UserAuth implements Comparable<UserAuth> {
 
         try {
             final MessageDigest messageDigest = MessageDigest.getInstance(getHashAlgorithm());
-            final String expected = toHexString(messageDigest.digest((getSalt() + password).getBytes()));
+            final String expected = toHexString(messageDigest.digest((getSalt() + password).getBytes(Charsets.UTF_8)));
             return getHashedPass().equals(expected);
         } catch (final NoSuchAlgorithmException badHashAlgorithm) {
             // Not expecting this to happen.

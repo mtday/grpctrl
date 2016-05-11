@@ -5,6 +5,7 @@ import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.AccountDao;
+import com.grpctrl.db.dao.supplier.ApiLoginDaoSupplier;
 import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -55,7 +56,7 @@ public class PostgresAccountDaoIT extends BaseAccountDaoTest {
 
     @Override
     public AccountDao getAccountDao() {
-        return new PostgresAccountDao(dataSourceSupplier, new ServiceLevelDaoSupplier());
+        return new PostgresAccountDao(dataSourceSupplier, new ServiceLevelDaoSupplier(), new ApiLoginDaoSupplier());
     }
 
     @Override
@@ -67,7 +68,8 @@ public class PostgresAccountDaoIT extends BaseAccountDaoTest {
             final DataSourceSupplier mockDataSourceSupplier = Mockito.mock(DataSourceSupplier.class);
             Mockito.when(mockDataSourceSupplier.get()).thenReturn(mockDataSource);
 
-            return new PostgresAccountDao(mockDataSourceSupplier, new ServiceLevelDaoSupplier());
+            return new PostgresAccountDao(
+                    mockDataSourceSupplier, new ServiceLevelDaoSupplier(), new ApiLoginDaoSupplier());
         } catch (final SQLException fake) {
             throw new RuntimeException("Fake");
         }

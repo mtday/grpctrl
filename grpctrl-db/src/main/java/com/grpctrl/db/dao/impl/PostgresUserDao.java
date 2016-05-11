@@ -1,18 +1,13 @@
 package com.grpctrl.db.dao.impl;
 
 import com.grpctrl.common.model.Account;
-import com.grpctrl.common.model.ApiLogin;
-import com.grpctrl.common.model.ServiceLevel;
 import com.grpctrl.common.model.User;
 import com.grpctrl.common.model.UserAuth;
 import com.grpctrl.common.model.UserEmail;
 import com.grpctrl.common.model.UserRole;
 import com.grpctrl.common.model.UserSource;
-import com.grpctrl.common.util.CloseableBiConsumer;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.AccountDao;
-import com.grpctrl.db.dao.ApiLoginDao;
-import com.grpctrl.db.dao.ServiceLevelDao;
 import com.grpctrl.db.dao.UserAuthDao;
 import com.grpctrl.db.dao.UserDao;
 import com.grpctrl.db.dao.UserEmailDao;
@@ -37,7 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeSet;
-import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.sql.DataSource;
@@ -209,6 +203,11 @@ public class PostgresUserDao implements UserDao {
     }
 
     @Override
+    public void add(@Nonnull final User user) {
+        add(Collections.singleton(Objects.requireNonNull(user)));
+    }
+
+    @Override
     public void add(@Nonnull final Collection<User> users) {
         Objects.requireNonNull(users);
 
@@ -269,45 +268,24 @@ public class PostgresUserDao implements UserDao {
     }
 
     @Override
-    public int remove(@Nonnull final Long accountId) {
-        // NOTE: We don't call the other remove method here since it requires the creation of a new collection.
-        Objects.requireNonNull(accountId);
-
-        final String sql = "DELETE FROM accounts WHERE account_id = ?";
-
-        int removed = 0;
-
-        final DataSource dataSource = getDataSourceSupplier().get();
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, accountId);
-            removed += ps.executeUpdate();
-            conn.commit();
-        } catch (final SQLException sqlException) {
-            throw ErrorTransformer.get("Failed to remove accounts", sqlException);
-        }
-
-        return removed;
+    public void remove(@Nonnull final Long userId) {
+        remove(Collections.singleton(Objects.requireNonNull(userId)));
     }
 
     @Override
-    public int remove(@Nonnull final Collection<Long> accountIds) {
-        Objects.requireNonNull(accountIds);
+    public void remove(@Nonnull final Collection<Long> userIds) {
+        Objects.requireNonNull(userIds);
 
-        final String sql = "DELETE FROM accounts WHERE account_id = ANY (?)";
-
-        int removed = 0;
+        final String sql = "DELETE FROM users WHERE user_id = ANY (?)";
 
         final DataSource dataSource = getDataSourceSupplier().get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setArray(1, conn.createArrayOf("bigint", accountIds.toArray()));
-            removed += ps.executeUpdate();
+            ps.setArray(1, conn.createArrayOf("bigint", userIds.toArray()));
+            ps.executeUpdate();
             conn.commit();
         } catch (final SQLException sqlException) {
-            throw ErrorTransformer.get("Failed to remove accounts", sqlException);
+            throw ErrorTransformer.get("Failed to remove users", sqlException);
         }
-
-        return removed;
     }
 }

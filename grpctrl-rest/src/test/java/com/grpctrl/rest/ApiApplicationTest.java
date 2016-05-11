@@ -34,9 +34,14 @@ public class ApiApplicationTest {
         assertEquals("com.grpctrl.crypto.store.KeyStoreSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.db.DataSourceSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.db.dao.supplier.AccountDaoSupplier$Binder", objIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.ApiLoginDaoSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.db.dao.supplier.GroupDaoSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier$Binder", objIter.next());
         assertEquals("com.grpctrl.db.dao.supplier.TagDaoSupplier$Binder", objIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.UserAuthDaoSupplier$Binder", objIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.UserDaoSupplier$Binder", objIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.UserEmailDaoSupplier$Binder", objIter.next());
+        assertEquals("com.grpctrl.db.dao.supplier.UserRoleDaoSupplier$Binder", objIter.next());
         assertFalse(objIter.hasNext());
 
         final List<String> names =

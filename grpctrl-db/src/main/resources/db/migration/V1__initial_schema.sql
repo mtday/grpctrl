@@ -23,7 +23,7 @@ CREATE TABLE api_logins (
     account_id       BIGINT        NOT NULL,
 
     key              VARCHAR(20)   NOT NULL,
-    secret           VARCHAR(80)   NOT NULL,
+    secret           VARCHAR(40)   NOT NULL,
 
     CONSTRAINT api_logins_uniq UNIQUE (key, secret),
     CONSTRAINT api_logins_fk_accounts FOREIGN KEY (account_id) REFERENCES accounts (account_id) ON DELETE CASCADE

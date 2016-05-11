@@ -6,6 +6,7 @@ import com.grpctrl.crypto.pbe.PasswordBasedEncryptionSupplier;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.AccountDao;
 import com.grpctrl.db.dao.GroupDao;
+import com.grpctrl.db.dao.supplier.ApiLoginDaoSupplier;
 import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
 import com.grpctrl.db.dao.supplier.TagDaoSupplier;
 import com.typesafe.config.Config;
@@ -57,7 +58,7 @@ public class PostgresGroupDaoIT extends BaseGroupDaoTest {
 
     @Override
     public AccountDao getAccountDao() {
-        return new PostgresAccountDao(dataSourceSupplier, new ServiceLevelDaoSupplier());
+        return new PostgresAccountDao(dataSourceSupplier, new ServiceLevelDaoSupplier(), new ApiLoginDaoSupplier());
     }
 
     @Override
