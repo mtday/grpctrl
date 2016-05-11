@@ -1,4 +1,4 @@
-package com.grpctrl.run;
+package com.grpctrl.security;
 
 import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.common.supplier.OAuth20ServiceSupplier;
@@ -11,10 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
@@ -82,9 +81,7 @@ public class CustomLoginService extends JAASLoginService {
                 LOG.info("  principal: {} => {}", principal.getClass().getName(), principal.getName());
             }
 
-            final Collection<String> roles =
-                    subject.getPrincipals().stream().map(Principal::getName).filter(role -> role != null)
-                            .collect(Collectors.toCollection(TreeSet::new));
+            final Collection<String> roles = Arrays.asList("ADMIN", "USER");
 
             LOG.info("user principal: {}", userPrincipal);
             LOG.info("subject: {}", subject);

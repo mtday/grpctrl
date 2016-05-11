@@ -10,6 +10,7 @@ import com.grpctrl.crypto.ssl.SslContextSupplier;
 import com.grpctrl.crypto.store.KeyStoreSupplier;
 import com.grpctrl.rest.ApiApplication;
 import com.grpctrl.rest.ContextListener;
+import com.grpctrl.security.CustomLoginService;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
@@ -142,8 +143,6 @@ public class Runner {
         final ServletHolder webServlet = servletContextHandler.addServlet(DefaultServlet.class, "/*");
         jerseyServlet.setInitOrder(2);
         webServlet.setInitParameter("resourceBase", webContent);
-        webServlet.setInitParameter("dirAllowed", "true");
-        webServlet.setInitParameter("pathInfoOnly", "true");
 
         if (config.getBoolean(ConfigKeys.CRYPTO_SSL_ENABLED.getKey())) {
             final PasswordBasedEncryptionSupplier pbeSupplier =

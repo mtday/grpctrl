@@ -1,4 +1,4 @@
-package com.grpctrl.run;
+package com.grpctrl.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.scribejava.core.model.OAuth2AccessToken;
