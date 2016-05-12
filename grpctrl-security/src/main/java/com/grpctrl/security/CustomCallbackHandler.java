@@ -1,29 +1,23 @@
 package com.grpctrl.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.scribejava.core.model.OAuth2AccessToken;
-import com.github.scribejava.core.model.OAuthRequest;
-import com.github.scribejava.core.model.Response;
-import com.github.scribejava.core.model.Verb;
-import com.github.scribejava.core.oauth.OAuth20Service;
-import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.model.User;
-import com.grpctrl.common.model.UserEmail;
+import com.grpctrl.common.model.UserSource;
 import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.common.supplier.OAuth20ServiceSupplier;
 import com.grpctrl.common.supplier.ObjectMapperSupplier;
-import com.typesafe.config.Config;
+import com.grpctrl.db.dao.supplier.UserDaoSupplier;
+import com.grpctrl.security.tasks.EmailLookup;
+import com.grpctrl.security.tasks.LoginLookup;
 
-import org.eclipse.jetty.jaas.spi.UserInfo;
-import org.eclipse.jetty.util.security.Credential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.callback.Callback;
@@ -35,134 +29,57 @@ public class CustomCallbackHandler implements CallbackHandler {
     private static final Logger LOG = LoggerFactory.getLogger(CustomCallbackHandler.class);
 
     @Nonnull
-    private final ConfigSupplier configSupplier;
+    private final ExecutorService executorService;
+
+    /*
     @Nonnull
-    private final ObjectMapperSupplier objectMapperSupplier;
+    private final UserDaoSupplier userDaoSupplier;
+    */
+
     @Nonnull
-    private final OAuth20ServiceSupplier oAuth20ServiceSupplier;
+    private final Collection<Callable<Void>> callables;
+
     @Nonnull
-    private final ServletRequest servletRequest;
+    private final User user = new User();
 
     public CustomCallbackHandler(
-            @Nonnull final ConfigSupplier configSupplier, @Nonnull final ObjectMapperSupplier objectMapperSupplier,
-            @Nonnull final OAuth20ServiceSupplier oAuth20ServiceSupplier,
-            @Nonnull final ServletRequest servletRequest) {
-        this.configSupplier = Objects.requireNonNull(configSupplier);
-        this.objectMapperSupplier = Objects.requireNonNull(objectMapperSupplier);
-        this.oAuth20ServiceSupplier = Objects.requireNonNull(oAuth20ServiceSupplier);
-        this.servletRequest = Objects.requireNonNull(servletRequest);
-    }
+            @Nonnull final ExecutorService executorService, @Nonnull final ConfigSupplier config,
+            @Nonnull final ObjectMapperSupplier objectMapper, @Nonnull final OAuth20ServiceSupplier oauth,
+            @Nonnull final UserDaoSupplier userDaoSupplier, @Nonnull final ServletRequest servletRequest) {
+        LOG.info("constructor");
+        this.executorService = Objects.requireNonNull(executorService);
+        //this.userDaoSupplier = Objects.requireNonNull(userDaoSupplier);
+        final String code = servletRequest.getParameter("code");
+        LOG.info("  code is: {}", code);
 
-    @Nonnull
-    public ConfigSupplier getConfigSupplier() {
-        return this.configSupplier;
-    }
-
-    @Nonnull
-    public ObjectMapperSupplier getObjectMapperSupplier() {
-        return this.objectMapperSupplier;
-    }
-
-    @Nonnull
-    public OAuth20ServiceSupplier getOAuth20ServiceSupplier() {
-        return this.oAuth20ServiceSupplier;
-    }
-
-    @Nonnull
-    public ServletRequest getServletRequest() {
-        return this.servletRequest;
+        this.callables = new LinkedList<>();
+        if (code != null) {
+            LOG.info("  performing github auth");
+            this.user.setUserSource(UserSource.GITHUB);
+            this.callables.add(new LoginLookup(config, objectMapper, oauth, code, this.user));
+            this.callables.add(new EmailLookup(config, objectMapper, oauth, code, this.user));
+        } else {
+            LOG.info("  performing local auth");
+            this.user.setUserSource(UserSource.LOCAL);
+            // TODO: Is this an API login?
+        }
     }
 
     @Override
     public void handle(@Nonnull final Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+        LOG.info("handle");
         for (final Callback callback : callbacks) {
-            LOG.info("Handling callback: {}", callback);
             if (callback instanceof CustomCallback) {
-                ((CustomCallback) callback)
-                        .populate(getConfigSupplier(), getObjectMapperSupplier(), getOAuth20ServiceSupplier(),
-                                getServletRequest());
+                // The callables will update the user object as appropriate.
+                ((CustomCallback) callback).run(this.executorService, null, this.user, this.callables);
             } else {
                 throw new UnsupportedCallbackException(callback);
             }
         }
     }
 
-    public Optional<String> getUserName() {
-        return Optional.ofNullable(getServletRequest().getParameter("code"));
-    }
-
-    public static class CustomCallback implements Callback {
-        private String code;
-        private String user;
-        private List<String> roles = new ArrayList<>();
-
-        public CustomCallback() {
-        }
-
-        public void populate(
-                @Nonnull final ConfigSupplier configSupplier, @Nonnull final ObjectMapperSupplier objectMapperSupplier,
-                @Nonnull final OAuth20ServiceSupplier oAuth20ServiceSupplier,
-                @Nonnull final ServletRequest servletRequest) throws IOException {
-            LOG.info("Populating callback");
-            this.code = servletRequest.getParameter("code");
-
-            if (this.code != null) {
-                final OAuth20Service oAuth20Service = oAuth20ServiceSupplier.get();
-                final OAuth2AccessToken accessToken = oAuth20Service.getAccessToken(this.code);
-
-                final Config config = configSupplier.get();
-                final ObjectMapper objectMapper = objectMapperSupplier.get();
-
-                { // Fetch user information
-                    final String userUrl = config.getString(ConfigKeys.AUTH_API_RESOURCE_USER.getKey());
-                    final OAuthRequest oAuthRequest = new OAuthRequest(Verb.GET, userUrl, oAuth20Service);
-                    oAuthRequest.addHeader("Accept", config.getString(ConfigKeys.AUTH_API_ACCEPT.getKey()));
-                    oAuth20Service.signRequest(accessToken, oAuthRequest);
-
-                    final Response response = oAuthRequest.send();
-                    LOG.info("  User Response code: {}", response.getCode());
-                    LOG.info("  User Response body: {}", response.getBody());
-                    LOG.info("  User Response headers: {}", response.getHeaders());
-                    LOG.info("  User Response message: {}", response.getMessage());
-
-                    final User user = objectMapper.readValue(response.getBody(), User.class);
-                    LOG.info("User: {}", user);
-
-                    this.user = user.getLogin();
-                }
-
-                { // Fetch user emails
-                    final String emailUrl = config.getString(ConfigKeys.AUTH_API_RESOURCE_EMAIL.getKey());
-                    final OAuthRequest oAuthRequest = new OAuthRequest(Verb.GET, emailUrl, oAuth20Service);
-                    oAuthRequest.addHeader("Accept", config.getString(ConfigKeys.AUTH_API_ACCEPT.getKey()));
-                    oAuth20Service.signRequest(accessToken, oAuthRequest);
-
-                    final Response response = oAuthRequest.send();
-                    LOG.info("  Email Response code: {}", response.getCode());
-                    LOG.info("  Email Response body: {}", response.getBody());
-                    LOG.info("  Email Response headers: {}", response.getHeaders());
-                    LOG.info("  Email Response message: {}", response.getMessage());
-
-                    final List<UserEmail> userEmails = objectMapper.readValue(response.getBody(),
-                            objectMapper.getTypeFactory().constructCollectionType(List.class, UserEmail.class));
-
-                    LOG.info("User Emails: {}", userEmails);
-                }
-            }
-        }
-
-        @Nonnull
-        public UserInfo getUserInfo() {
-            return new UserInfo(this.user, new OpenCredential(), this.roles);
-        }
-    }
-
-    private static class OpenCredential extends Credential {
-        private static final long serialVersionUID = 1129878263L;
-
-        @Override
-        public boolean check(@Nonnull final Object credentials) {
-            return true;
-        }
+    @Nonnull
+    public User getUser() {
+        return this.user;
     }
 }

@@ -79,7 +79,10 @@ public enum ConfigKeys {
     /** The timeout to wait for the remote server to respond to a write. */
     CLIENT_TIMEOUT_WRITE,
     /** Whether the client should attempt to retry on failure. */
-    CLIENT_FAILURE_RETRY;
+    CLIENT_FAILURE_RETRY,
+
+    /** The number of threads in the thread pool used to perform security lookup operations */
+    SECURITY_THREADS;
 
     /**
      * @return the key to use when retrieving the common configuration value from the system configuration file

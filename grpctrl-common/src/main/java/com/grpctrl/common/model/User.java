@@ -19,6 +19,7 @@ import java.util.TreeSet;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.security.auth.login.LoginContext;
 
 /**
  * Provides information about user email addresses as provided by the security authorization service.
@@ -45,6 +46,9 @@ public class User implements Comparable<User>, Principal {
 
     @Nonnull
     private Set<Account> accounts = new TreeSet<>();
+
+    @Nullable
+    private LoginContext loginContext;
 
     /**
      * Default constructor.
@@ -233,6 +237,20 @@ public class User implements Comparable<User>, Principal {
     public User setAccounts(@Nonnull final Collection<Account> accounts) {
         this.accounts = new TreeSet<>();
         Objects.requireNonNull(accounts).stream().map(Account::new).forEach(this.accounts::add);
+        return this;
+    }
+
+    @Nonnull
+    public Optional<LoginContext> getLoginContext() {
+        return Optional.ofNullable(this.loginContext);
+    }
+
+    /**
+     * @param loginContext the new {@link LoginContext} for this user
+     * @return {@code this} for fluent-style usage
+     */
+    public User setLoginContext(@Nullable final LoginContext loginContext) {
+        this.loginContext = loginContext;
         return this;
     }
 

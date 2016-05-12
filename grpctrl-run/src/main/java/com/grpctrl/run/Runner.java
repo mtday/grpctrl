@@ -17,7 +17,6 @@ import com.typesafe.config.ConfigFactory;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
-import org.eclipse.jetty.security.DefaultIdentityService;
 import org.eclipse.jetty.security.authentication.FormAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -42,6 +41,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.annotation.Nonnull;
 import javax.net.ssl.SSLContext;
@@ -53,11 +54,17 @@ public class Runner {
     private static final Logger LOG = LoggerFactory.getLogger(Runner.class);
 
     @Nonnull
+    private final ExecutorService executorService;
+    @Nonnull
     private final ConfigSupplier configSupplier;
     @Nonnull
     private final ObjectMapperSupplier objectMapperSupplier;
     @Nonnull
     private final OAuth20ServiceSupplier oAuth20ServiceSupplier;
+    /*
+    @Nonnull
+    private final UserDaoSupplier userDaoSupplier;
+    */
 
     /**
      * @param configSupplier the supplier of system configuration properties
@@ -66,28 +73,31 @@ public class Runner {
         this.configSupplier = Objects.requireNonNull(configSupplier);
         this.objectMapperSupplier = new ObjectMapperSupplier();
         this.oAuth20ServiceSupplier = new OAuth20ServiceSupplier(this.configSupplier);
-    }
 
-    @Nonnull
-    private ConfigSupplier getConfigSupplier() {
-        return this.configSupplier;
-    }
+        this.executorService =
+                Executors.newFixedThreadPool(configSupplier.get().getInt(ConfigKeys.SECURITY_THREADS.getKey()));
 
-    @Nonnull
-    private ObjectMapperSupplier getObjectMapperSupplier() {
-        return this.objectMapperSupplier;
-    }
-
-    @Nonnull
-    private OAuth20ServiceSupplier getOAuth20ServiceSupplier() {
-        return this.oAuth20ServiceSupplier;
+        /*
+        final PasswordBasedEncryptionSupplier pbeSupplier = new PasswordBasedEncryptionSupplier(this.configSupplier);
+        final DataSourceSupplier dataSourceSupplier = new DataSourceSupplier(this.configSupplier, pbeSupplier);
+        final UserAuthDaoSupplier userAuthDaoSupplier = new UserAuthDaoSupplier();
+        final UserEmailDaoSupplier userEmailDaoSupplier = new UserEmailDaoSupplier();
+        final UserRoleDaoSupplier userRoleDaoSupplier = new UserRoleDaoSupplier();
+        final ServiceLevelDaoSupplier serviceLevelDaoSupplier = new ServiceLevelDaoSupplier();
+        final ApiLoginDaoSupplier apiLoginDaoSupplier = new ApiLoginDaoSupplier();
+        final AccountDaoSupplier accountDaoSupplier =
+                new AccountDaoSupplier(dataSourceSupplier, serviceLevelDaoSupplier, apiLoginDaoSupplier);
+        this.userDaoSupplier =
+                new UserDaoSupplier(dataSourceSupplier, userAuthDaoSupplier, userEmailDaoSupplier, userRoleDaoSupplier,
+                        accountDaoSupplier);
+                        */
     }
 
     /**
      * Run the application server.
      */
     public void run() {
-        final Config config = getConfigSupplier().get();
+        final Config config = this.configSupplier.get();
         final String host = config.getString(ConfigKeys.SYSTEM_HOST.getKey());
         final int port = config.getInt(ConfigKeys.SYSTEM_PORT.getKey());
         final String webContent = config.getString(ConfigKeys.WEB_CONTENT.getKey());
@@ -123,9 +133,9 @@ public class Runner {
         final ConstraintSecurityHandler constraintSecurityHandler = new ConstraintSecurityHandler();
         constraintSecurityHandler.setConstraintMappings(constraintMappings, Sets.newHashSet("ADMIN", "USER"));
         constraintSecurityHandler.setLoginService(
-                new CustomLoginService(getConfigSupplier(), getObjectMapperSupplier(), getOAuth20ServiceSupplier()));
+                new CustomLoginService(this.executorService, this.configSupplier, this.objectMapperSupplier,
+                        this.oAuth20ServiceSupplier, null));
         constraintSecurityHandler.setAuthenticator(new FormAuthenticator("/api/auth/login", "/", false));
-        constraintSecurityHandler.setIdentityService(new DefaultIdentityService());
 
         final ServletContextHandler servletContextHandler =
                 new ServletContextHandler(ServletContextHandler.SESSIONS | ServletContextHandler.SECURITY);
@@ -146,10 +156,10 @@ public class Runner {
 
         if (config.getBoolean(ConfigKeys.CRYPTO_SSL_ENABLED.getKey())) {
             final PasswordBasedEncryptionSupplier pbeSupplier =
-                    new PasswordBasedEncryptionSupplier(getConfigSupplier());
-            final KeyStoreSupplier keyStoreSupplier = new KeyStoreSupplier(getConfigSupplier(), pbeSupplier);
+                    new PasswordBasedEncryptionSupplier(this.configSupplier);
+            final KeyStoreSupplier keyStoreSupplier = new KeyStoreSupplier(this.configSupplier, pbeSupplier);
             final SSLContext sslContext =
-                    new SslContextSupplier(getConfigSupplier(), keyStoreSupplier, pbeSupplier).get();
+                    new SslContextSupplier(this.configSupplier, keyStoreSupplier, pbeSupplier).get();
 
             final SslContextFactory sslContextFactory = new SslContextFactory();
             sslContextFactory.setSslContext(sslContext);
