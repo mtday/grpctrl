@@ -7,7 +7,6 @@ import com.grpctrl.rest.resource.v1.account.MultipleAccountStreamer;
 import java.io.InputStream;
 
 import javax.annotation.Nonnull;
-import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
@@ -27,12 +26,7 @@ import javax.ws.rs.core.StreamingOutput;
 @Path("/v1/group/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed("USER")
 public class GroupAdd extends BaseGroupResource {
-    /**
-     * @param objectMapperSupplier the {@link ObjectMapperSupplier} used to generate JSON data
-     * @param groupDaoSupplier the {@link GroupDaoSupplier} used to perform the group operation
-     */
     @Inject
     public GroupAdd(
             @Nonnull final ObjectMapperSupplier objectMapperSupplier,
@@ -40,14 +34,6 @@ public class GroupAdd extends BaseGroupResource {
         super(objectMapperSupplier, groupDaoSupplier);
     }
 
-    /**
-     * Save the provided groups into the backing data store.
-     *
-     * @param securityContext the {@link SecurityContext} used to retrieve account information about the caller
-     * @param inputStream the {@link InputStream} from the client containing the list of accounts to add
-     *
-     * @return the response containing the updated account, including new unique identifiers
-     */
     @POST
     public Response add(
             @Context @Nonnull final SecurityContext securityContext, @Nonnull final InputStream inputStream) {

@@ -23,18 +23,21 @@ public class ApiApplicationTest {
         final Iterator<String> nameIter = new TreeSet<>(names).iterator();
 
         assertEquals("com.grpctrl.common.supplier.ObjectMapperSupplier", nameIter.next());
+        assertEquals("com.grpctrl.rest.providers.AccountLookupFilter", nameIter.next());
         assertEquals("com.grpctrl.rest.providers.GenericExceptionMapper", nameIter.next());
         assertEquals("com.grpctrl.rest.providers.MemoryUsageLogger", nameIter.next());
         assertEquals("com.grpctrl.rest.providers.RequestLoggingFilter", nameIter.next());
+        assertEquals("com.grpctrl.rest.providers.UserLookupFilter", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.auth.Login", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.auth.Logout", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountAdd", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountGet", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountGetAll", nameIter.next());
         assertEquals("com.grpctrl.rest.resource.v1.account.AccountRemove", nameIter.next());
+        assertEquals("com.grpctrl.rest.resource.v1.group.GroupAdd", nameIter.next());
+        assertEquals("com.grpctrl.rest.resource.v1.status.AccountStatus", nameIter.next());
         assertEquals("org.glassfish.jersey.message.GZipEncoder", nameIter.next());
         assertEquals("org.glassfish.jersey.server.filter.EncodingFilter", nameIter.next());
-        assertEquals("org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature", nameIter.next());
         assertFalse(nameIter.hasNext());
     }
 }

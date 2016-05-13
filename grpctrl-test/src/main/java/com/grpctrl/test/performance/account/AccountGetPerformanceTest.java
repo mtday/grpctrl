@@ -26,16 +26,12 @@ public class AccountGetPerformanceTest extends BasePerformanceTest {
     private static final Logger LOG = LoggerFactory.getLogger(AccountGetPerformanceTest.class);
 
     private static final EndPoint END_POINT = new EndPoint();
+    private static final String USERNAME = "admin";
+    private static final String PASSWORD = "password";
+
     private static final int TOTAL_REQUESTS = 10000;
     private static final int CONCURRENT = 100;
 
-    /**
-     * Run the performance tests.
-     *
-     * @param args ignored
-     *
-     * @throws InterruptedException if there is a problem performing the tests
-     */
     public static void main(final String... args) throws InterruptedException {
         new AccountGetPerformanceTest().runTests();
     }
@@ -44,7 +40,7 @@ public class AccountGetPerformanceTest extends BasePerformanceTest {
     private final AccountClient client;
 
     public AccountGetPerformanceTest() {
-        this.client = new AccountClient(getObjectMapper(), getHttpClient(), END_POINT);
+        this.client = new AccountClient(getObjectMapper(), getHttpClient(), END_POINT, USERNAME, PASSWORD);
     }
 
     public void runTests() throws InterruptedException {
@@ -60,9 +56,6 @@ public class AccountGetPerformanceTest extends BasePerformanceTest {
         @Nonnull
         private final Random random = new Random();
 
-        /**
-         * @param client the account client
-         */
         public AccountGetWorkerSupplier(@Nonnull final AccountClient client) {
             this.client = Objects.requireNonNull(client);
             this.accountIds = new ArrayList<>();

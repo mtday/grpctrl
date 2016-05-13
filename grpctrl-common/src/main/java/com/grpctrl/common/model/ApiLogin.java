@@ -15,6 +15,8 @@ import javax.annotation.Nullable;
  * Defines the security login information required to perform REST operations against the API.
  */
 public class ApiLogin implements Comparable<ApiLogin> {
+    public static final String HEADER_KEY = "api-key";
+
     @Nonnull
     private String key = "";
     @Nonnull
@@ -93,6 +95,22 @@ public class ApiLogin implements Comparable<ApiLogin> {
     public ApiLogin setSecret(@Nonnull final String secret) {
         this.secret = Objects.requireNonNull(secret);
         return this;
+    }
+
+    /**
+     * @return the header key to use when adding this object as a request header
+     */
+    @Nonnull
+    public String getHeaderKey() {
+        return HEADER_KEY;
+    }
+
+    /**
+     * @return the header value to use when adding this object as a request header
+     */
+    @Nonnull
+    public String getHeaderValue() {
+        return getKey() + ":" + getSecret();
     }
 
     @Override

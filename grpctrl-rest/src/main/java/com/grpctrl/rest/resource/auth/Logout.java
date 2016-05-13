@@ -10,10 +10,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+/**
+ * Logout a user.
+ */
 @Path("/auth/logout")
 public class Logout {
     @GET
-    public Response logout(@Context @Nonnull final UriInfo uriInfo, @Context @Nonnull HttpServletRequest request)
+    public Response logout(@Nonnull @Context final UriInfo uriInfo, @Nonnull @Context HttpServletRequest request)
             throws ServletException {
         request.logout();
         return Response.seeOther(UriBuilder.fromUri(uriInfo.getBaseUri()).build()).build();

@@ -10,6 +10,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
@@ -20,12 +21,13 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.login.LoginContext;
+import javax.ws.rs.core.SecurityContext;
 
 /**
  * Provides information about user email addresses as provided by the security authorization service.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class User implements Comparable<User>, Principal {
+public class User implements Comparable<User>, Principal, SecurityContext {
     @Nullable
     private Long id;
 
@@ -34,6 +36,12 @@ public class User implements Comparable<User>, Principal {
 
     @Nonnull
     private UserSource userSource = UserSource.GITHUB;
+
+    @Nullable
+    private LocalDateTime created;
+
+    @Nullable
+    private LocalDateTime lastLogin;
 
     @Nullable
     private UserAuth userAuth;
@@ -95,6 +103,8 @@ public class User implements Comparable<User>, Principal {
         setId(other.getId().orElse(null));
         setLogin(other.getLogin());
         setUserSource(other.getUserSource());
+        setCreated(other.getCreated().orElse(null));
+        setLastLogin(other.getLastLogin().orElse(null));
         setUserAuth(other.getUserAuth().orElse(null));
         setEmails(other.getEmails());
         setRoles(other.getRoles());
@@ -161,6 +171,42 @@ public class User implements Comparable<User>, Principal {
     @Nonnull
     public User setUserSource(@Nonnull final UserSource userSource) {
         this.userSource = Objects.requireNonNull(userSource);
+        return this;
+    }
+
+    /**
+     * @return the timestamp when this user was created, if available
+     */
+    @Nonnull
+    public Optional<LocalDateTime> getCreated() {
+        return Optional.ofNullable(this.created);
+    }
+
+    /**
+     * @param created the new timestamp when this user was created, possibly {@code null}
+     *
+     * @return {@code this} for fluent-style usage
+     */
+    public User setCreated(@Nullable final LocalDateTime created) {
+        this.created = created;
+        return this;
+    }
+
+    /**
+     * @return the timestamp when this user last logged in, if available
+     */
+    @Nonnull
+    public Optional<LocalDateTime> getLastLogin() {
+        return Optional.ofNullable(this.lastLogin);
+    }
+
+    /**
+     * @param lastLogin the new timestamp when this user last logged in, possibly {@code null}
+     *
+     * @return {@code this} for fluent-style usage
+     */
+    public User setLastLogin(@Nullable final LocalDateTime lastLogin) {
+        this.lastLogin = lastLogin;
         return this;
     }
 
@@ -255,6 +301,27 @@ public class User implements Comparable<User>, Principal {
     }
 
     @Override
+    @Nonnull
+    public Principal getUserPrincipal() {
+        return this;
+    }
+
+    @Override
+    public boolean isUserInRole(@Nonnull final String role) {
+        return getRoles().stream().map(UserRole::name).anyMatch(r -> r.equals(role));
+    }
+
+    @Override
+    public boolean isSecure() {
+        return true;
+    }
+
+    @Override
+    public String getAuthenticationScheme() {
+        return SecurityContext.BASIC_AUTH;
+    }
+
+    @Override
     public int compareTo(@Nullable final User other) {
         if (other == null) {
             return 1;
@@ -264,6 +331,8 @@ public class User implements Comparable<User>, Principal {
         cmp.append(getId(), other.getId(), new OptionalComparator<>());
         cmp.append(getLogin(), other.getLogin());
         cmp.append(getUserSource(), other.getUserSource());
+        cmp.append(getCreated(), other.getCreated(), new OptionalComparator<>());
+        cmp.append(getLastLogin(), other.getLastLogin(), new OptionalComparator<>());
         cmp.append(getUserAuth(), other.getUserAuth(), new OptionalComparator<>());
         cmp.append(getEmails(), other.getEmails(), new CollectionComparator<>());
         cmp.append(getRoles(), other.getRoles(), new CollectionComparator<>());
@@ -282,6 +351,8 @@ public class User implements Comparable<User>, Principal {
         hash.append(getId());
         hash.append(getLogin());
         hash.append(getUserSource());
+        hash.append(getCreated());
+        hash.append(getLastLogin());
         hash.append(getUserAuth());
         hash.append(getEmails());
         hash.append(getRoles());
@@ -296,6 +367,8 @@ public class User implements Comparable<User>, Principal {
         str.append("id", getId());
         str.append("login", getLogin());
         str.append("userSource", getUserSource());
+        str.append("created", getCreated());
+        str.append("lastLogin", getLastLogin());
         str.append("userAuth", getUserAuth());
         str.append("emails", getEmails());
         str.append("roles", getRoles());

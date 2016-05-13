@@ -3,6 +3,7 @@ package com.grpctrl.rest.resource.v1.group;
 import com.grpctrl.common.supplier.ObjectMapperSupplier;
 import com.grpctrl.db.dao.GroupDao;
 import com.grpctrl.db.dao.supplier.GroupDaoSupplier;
+import com.grpctrl.rest.resource.v1.BaseResource;
 
 import java.util.Objects;
 
@@ -12,7 +13,7 @@ import javax.inject.Inject;
 /**
  * The base class for group resources.
  */
-public class BaseGroupResource {
+public class BaseGroupResource extends BaseResource {
     @Nonnull
     private final ObjectMapperSupplier objectMapperSupplier;
     @Nonnull

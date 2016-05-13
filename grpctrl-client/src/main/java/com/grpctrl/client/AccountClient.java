@@ -3,6 +3,7 @@ package com.grpctrl.client;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.grpctrl.client.error.ClientException;
 import com.grpctrl.common.model.Account;
@@ -15,6 +16,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
@@ -39,17 +41,20 @@ public class AccountClient {
     @Nonnull
     private final EndPoint endPoint;
 
-    /**
-     * @param objectMapper the {@link ObjectMapper} responsible for performing JSON serialization and deserialization
-     * @param httpClient the {@link OkHttpClient} responsible for performing HTTP communication with the remote service
-     * @param endPoint the {@link EndPoint} representing the remote service to communicate with
-     */
+    @Nonnull
+    private final String authorization;
+
     public AccountClient(
             @Nonnull final ObjectMapper objectMapper, @Nonnull final OkHttpClient httpClient,
-            @Nonnull final EndPoint endPoint) {
+            @Nonnull final EndPoint endPoint, @Nonnull final String username, @Nonnull final String password) {
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.httpClient = Objects.requireNonNull(httpClient);
         this.endPoint = Objects.requireNonNull(endPoint);
+
+        Objects.requireNonNull(username);
+        Objects.requireNonNull(password);
+        final byte[] bytes = (username + ":" + password).getBytes(Charsets.UTF_8);
+        this.authorization = "basic " + Base64.getEncoder().encodeToString(bytes);
     }
 
     @Nonnull
@@ -123,7 +128,8 @@ public class AccountClient {
 
     public void get(final long accountId, @Nonnull final Consumer<Account> consumer) throws ClientException {
         try {
-            final Request request = new Request.Builder().url(getEndPointUrl() + "/" + accountId).get().build();
+            final Request request = new Request.Builder().url(getEndPointUrl() + "/" + accountId)
+                    .header("Authorization", this.authorization).get().build();
             consumeAccounts(this.httpClient.newCall(request).execute(), consumer);
         } catch (final IOException ioException) {
             throw new ClientException("Failed to communicate with back-end server", ioException);
@@ -132,7 +138,9 @@ public class AccountClient {
 
     public void getAll(@Nonnull final Consumer<Account> consumer) throws ClientException {
         try {
-            final Request request = new Request.Builder().url(getEndPointUrl()).get().build();
+            final Request request =
+                    new Request.Builder().url(getEndPointUrl()).header("Authorization", this.authorization).get()
+                            .build();
             consumeAccounts(this.httpClient.newCall(request).execute(), consumer);
         } catch (final IOException ioException) {
             throw new ClientException("Failed to communicate with back-end server", ioException);
@@ -144,7 +152,9 @@ public class AccountClient {
         try {
             final RequestBody body =
                     RequestBody.create(POST_MEDIA_TYPE, this.objectMapper.writeValueAsString(accounts));
-            final Request request = new Request.Builder().url(getEndPointUrl()).post(body).build();
+            final Request request =
+                    new Request.Builder().url(getEndPointUrl()).header("Authorization", this.authorization).post(body)
+                            .build();
             consumeAccounts(this.httpClient.newCall(request).execute(), consumer);
         } catch (final IOException ioException) {
             throw new ClientException("Failed to communicate with back-end server", ioException);
@@ -153,7 +163,8 @@ public class AccountClient {
 
     public void remove(final long accountId) throws ClientException {
         try {
-            final Request request = new Request.Builder().url(getEndPointUrl() + "/" + accountId).delete().build();
+            final Request request = new Request.Builder().url(getEndPointUrl() + "/" + accountId)
+                    .header("Authorization", this.authorization).delete().build();
             final Response response = this.httpClient.newCall(request).execute();
             switch (response.code()) {
                 case HttpServletResponse.SC_OK:

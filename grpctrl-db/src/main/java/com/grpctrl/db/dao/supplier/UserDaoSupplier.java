@@ -63,31 +63,6 @@ public class UserDaoSupplier implements Supplier<UserDao>, Factory<UserDao>, Con
         this.accountDaoSupplier = Objects.requireNonNull(accountDaoSupplier);
     }
 
-    @Nonnull
-    private DataSourceSupplier getDataSourceSupplier() {
-        return this.dataSourceSupplier;
-    }
-
-    @Nonnull
-    private UserAuthDaoSupplier getUserAuthDaoSupplier() {
-        return this.userAuthDaoSupplier;
-    }
-
-    @Nonnull
-    private UserEmailDaoSupplier getUserEmailDaoSupplier() {
-        return this.userEmailDaoSupplier;
-    }
-
-    @Nonnull
-    private UserRoleDaoSupplier getUserRoleDaoSupplier() {
-        return this.userRoleDaoSupplier;
-    }
-
-    @Nonnull
-    private AccountDaoSupplier getAccountDaoSupplier() {
-        return this.accountDaoSupplier;
-    }
-
     @Override
     @Nonnull
     @SuppressWarnings("all")
@@ -122,9 +97,8 @@ public class UserDaoSupplier implements Supplier<UserDao>, Factory<UserDao>, Con
 
     @Nonnull
     private UserDao create() {
-        return new PostgresUserDao(
-                getDataSourceSupplier(), getUserAuthDaoSupplier(), getUserEmailDaoSupplier(), getUserRoleDaoSupplier(),
-                getAccountDaoSupplier());
+        return new PostgresUserDao(this.dataSourceSupplier, this.userAuthDaoSupplier, this.userEmailDaoSupplier,
+                this.userRoleDaoSupplier, this.accountDaoSupplier);
     }
 
     /**

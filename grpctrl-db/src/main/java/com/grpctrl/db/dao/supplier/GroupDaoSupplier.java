@@ -46,16 +46,6 @@ public class GroupDaoSupplier
         this.tagDaoSupplier = Objects.requireNonNull(tagDaoSupplier);
     }
 
-    @Nonnull
-    private DataSourceSupplier getDataSourceSupplier() {
-        return this.dataSourceSupplier;
-    }
-
-    @Nonnull
-    private TagDaoSupplier getTagDaoSupplier() {
-        return this.tagDaoSupplier;
-    }
-
     @Override
     @Nonnull
     @SuppressWarnings("all")
@@ -90,7 +80,7 @@ public class GroupDaoSupplier
 
     @Nonnull
     private GroupDao create() {
-        return new PostgresGroupDao(getDataSourceSupplier(), getTagDaoSupplier());
+        return new PostgresGroupDao(this.dataSourceSupplier, this.tagDaoSupplier);
     }
 
     /**

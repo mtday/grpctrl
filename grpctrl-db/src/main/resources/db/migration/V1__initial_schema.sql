@@ -47,8 +47,8 @@ CREATE TABLE users (
 
     login            VARCHAR(200)  NOT NULL,
     source           VARCHAR(20)   NOT NULL,
-    created          DATETIME      NOT NULL,
-    is_active        BOOLEAN       NOT NULL,
+    created          TIMESTAMP     WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    last_login       TIMESTAMP     WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
 
     CONSTRAINT users_pk PRIMARY KEY (user_id),
     CONSTRAINT users_uniq_login UNIQUE (login, source)

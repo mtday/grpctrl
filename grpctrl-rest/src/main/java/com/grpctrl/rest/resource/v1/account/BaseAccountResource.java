@@ -2,6 +2,7 @@ package com.grpctrl.rest.resource.v1.account;
 
 import com.grpctrl.common.supplier.ObjectMapperSupplier;
 import com.grpctrl.db.dao.supplier.AccountDaoSupplier;
+import com.grpctrl.rest.resource.v1.BaseResource;
 
 import java.util.Objects;
 
@@ -11,7 +12,7 @@ import javax.inject.Inject;
 /**
  * The base class for account resources.
  */
-public class BaseAccountResource {
+public class BaseAccountResource extends BaseResource {
     @Nonnull
     private final ObjectMapperSupplier objectMapperSupplier;
     @Nonnull

@@ -21,6 +21,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>grpctrl-crypto</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>grpctrl-rest</artifactId>
+        </dependency>
 
         <!-- OkHttp used as a REST client library -->
         <dependency>

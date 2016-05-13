@@ -1,11 +1,13 @@
 package com.grpctrl.db.dao;
 
 import com.grpctrl.common.model.Account;
+import com.grpctrl.common.model.ApiLogin;
 
 import java.sql.Connection;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
@@ -37,9 +39,21 @@ public interface AccountDao {
     void get(@Nonnull Collection<Long> accountIds, @Nonnull Consumer<Account> consumer);
 
     /**
-     * Consume all the accounts available for the specified user id.
+     * Retrieve the account associated with the specified API login.
      *
-     * @param userId the unique identifier of the user for which accounts should be consumed
+     * @param apiLogin the unique API login used to lookup an account
+     *
+     * @return the account associated with the specified API login, if available
+     *
+     * @throws NullPointerException if the parameter is {@code null}
+     * @throws javax.ws.rs.WebApplicationException if there is a problem interacting with the database
+     */
+    Optional<Account> get(@Nonnull ApiLogin apiLogin);
+
+    /**
+     * Retrieve all the accounts available for the specified user id.
+     *
+     * @param userId the unique identifier of the user for which accounts should be retrieved
      *
      * @return the collection of accounts available for the specified user
      *

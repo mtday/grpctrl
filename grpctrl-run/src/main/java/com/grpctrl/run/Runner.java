@@ -1,7 +1,7 @@
 package com.grpctrl.run;
 
-import com.google.common.collect.Sets;
 import com.grpctrl.common.config.ConfigKeys;
+import com.grpctrl.common.model.UserRole;
 import com.grpctrl.common.supplier.ConfigSupplier;
 import com.grpctrl.crypto.ssl.SslContextSupplier;
 import com.grpctrl.rest.ApiApplication;
@@ -10,7 +10,6 @@ import com.grpctrl.security.CustomLoginServiceSupplier;
 import com.typesafe.config.Config;
 
 import org.eclipse.jetty.http.HttpVersion;
-import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.authentication.FormAuthenticator;
 import org.eclipse.jetty.server.Connector;
@@ -26,7 +25,6 @@ import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.ServletProperties;
@@ -35,11 +33,13 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -113,26 +113,6 @@ public class Runner {
     }
 
     private ConstraintSecurityHandler getSecurityHandler() {
-        final Constraint accountConstraint = new Constraint();
-        accountConstraint.setName("AccountsConstraint");
-        accountConstraint.setRoles(new String[] {"ADMIN"});
-        accountConstraint.setAuthenticate(true);
-        final ConstraintMapping accountConstraintMapping = new ConstraintMapping();
-        accountConstraintMapping.setPathSpec("/api/account*");
-        accountConstraintMapping.setConstraint(accountConstraint);
-
-        final Constraint groupConstraint = new Constraint();
-        groupConstraint.setName("GroupsConstraint");
-        groupConstraint.setRoles(new String[] {"USER"});
-        groupConstraint.setAuthenticate(true);
-        final ConstraintMapping groupConstraintMapping = new ConstraintMapping();
-        groupConstraintMapping.setPathSpec("/api/group*");
-        groupConstraintMapping.setConstraint(groupConstraint);
-
-        final List<ConstraintMapping> constraintMappings = new ArrayList<>(2);
-        constraintMappings.add(accountConstraintMapping);
-        constraintMappings.add(groupConstraintMapping);
-
         final Optional<URL> loginModule = Optional.ofNullable(Runner.class.getClassLoader().getResource("login.conf"));
         if (loginModule.isPresent()) {
             // TODO: Are these necessary?
@@ -140,8 +120,11 @@ public class Runner {
             System.setProperty("java.security.auth.login.config", loginModule.get().getFile());
         }
 
+        final Set<String> roles = new TreeSet<>(
+                Arrays.asList(UserRole.values()).stream().map(UserRole::name).collect(Collectors.toList()));
+
         final ConstraintSecurityHandler constraintSecurityHandler = new ConstraintSecurityHandler();
-        constraintSecurityHandler.setConstraintMappings(constraintMappings, Sets.newHashSet("ADMIN", "USER"));
+        constraintSecurityHandler.setRoles(roles);
         constraintSecurityHandler.setLoginService(this.injectionManager.get(CustomLoginServiceSupplier.class).get());
         constraintSecurityHandler.setAuthenticator(new FormAuthenticator("/api/auth/login", "/", false));
         return constraintSecurityHandler;

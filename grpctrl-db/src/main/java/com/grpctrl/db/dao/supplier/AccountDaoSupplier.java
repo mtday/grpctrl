@@ -27,8 +27,6 @@ public class AccountDaoSupplier implements Supplier<AccountDao>, Factory<Account
     private final DataSourceSupplier dataSourceSupplier;
     @Nonnull
     private final ServiceLevelDaoSupplier serviceLevelDaoSupplier;
-    @Nonnull
-    private final ApiLoginDaoSupplier apiLoginDaoSupplier;
 
     @Nullable
     private volatile AccountDao singleton;
@@ -39,33 +37,15 @@ public class AccountDaoSupplier implements Supplier<AccountDao>, Factory<Account
      * @param dataSourceSupplier the {@link DataSourceSupplier} responsible for providing access to a configured
      *     data source used to communicate with the JDBC database
      * @param serviceLevelDaoSupplier the {@link ServiceLevelDaoSupplier} used to manage the service level objects
-     * @param apiLoginDaoSupplier the {@link ApiLoginDaoSupplier} used to manage the API login objects
      *
      * @throws NullPointerException if the provided parameter is {@code null}
      */
     @Inject
     public AccountDaoSupplier(
             @Nonnull final DataSourceSupplier dataSourceSupplier,
-            @Nonnull final ServiceLevelDaoSupplier serviceLevelDaoSupplier,
-            @Nonnull final ApiLoginDaoSupplier apiLoginDaoSupplier) {
+            @Nonnull final ServiceLevelDaoSupplier serviceLevelDaoSupplier) {
         this.dataSourceSupplier = Objects.requireNonNull(dataSourceSupplier);
         this.serviceLevelDaoSupplier = Objects.requireNonNull(serviceLevelDaoSupplier);
-        this.apiLoginDaoSupplier = Objects.requireNonNull(apiLoginDaoSupplier);
-    }
-
-    @Nonnull
-    private DataSourceSupplier getDataSourceSupplier() {
-        return this.dataSourceSupplier;
-    }
-
-    @Nonnull
-    private ServiceLevelDaoSupplier getServiceLevelDaoSupplier() {
-        return this.serviceLevelDaoSupplier;
-    }
-
-    @Nonnull
-    private ApiLoginDaoSupplier getApiLoginDaoSupplier() {
-        return this.apiLoginDaoSupplier;
     }
 
     @Override
@@ -102,7 +82,7 @@ public class AccountDaoSupplier implements Supplier<AccountDao>, Factory<Account
 
     @Nonnull
     private AccountDao create() {
-        return new PostgresAccountDao(getDataSourceSupplier(), getServiceLevelDaoSupplier(), getApiLoginDaoSupplier());
+        return new PostgresAccountDao(this.dataSourceSupplier, this.serviceLevelDaoSupplier);
     }
 
     /**

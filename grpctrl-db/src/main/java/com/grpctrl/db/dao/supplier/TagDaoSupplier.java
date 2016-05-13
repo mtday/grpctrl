@@ -43,11 +43,6 @@ public class TagDaoSupplier implements Supplier<TagDao>, Factory<TagDao>, Contex
         this.dataSourceSupplier = Objects.requireNonNull(dataSourceSupplier);
     }
 
-    @Nonnull
-    private DataSourceSupplier getDataSourceSupplier() {
-        return this.dataSourceSupplier;
-    }
-
     @Override
     @Nonnull
     @SuppressWarnings("all")
@@ -82,7 +77,7 @@ public class TagDaoSupplier implements Supplier<TagDao>, Factory<TagDao>, Contex
 
     @Nonnull
     private TagDao create() {
-        return new PostgresTagDao(getDataSourceSupplier());
+        return new PostgresTagDao(this.dataSourceSupplier);
     }
 
     /**

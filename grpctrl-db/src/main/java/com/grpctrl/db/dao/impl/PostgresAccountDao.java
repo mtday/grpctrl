@@ -6,9 +6,7 @@ import com.grpctrl.common.model.ServiceLevel;
 import com.grpctrl.common.util.CloseableBiConsumer;
 import com.grpctrl.db.DataSourceSupplier;
 import com.grpctrl.db.dao.AccountDao;
-import com.grpctrl.db.dao.ApiLoginDao;
 import com.grpctrl.db.dao.ServiceLevelDao;
-import com.grpctrl.db.dao.supplier.ApiLoginDaoSupplier;
 import com.grpctrl.db.dao.supplier.ServiceLevelDaoSupplier;
 import com.grpctrl.db.error.ErrorTransformer;
 
@@ -24,6 +22,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
@@ -38,22 +37,17 @@ public class PostgresAccountDao implements AccountDao {
     private final DataSourceSupplier dataSourceSupplier;
     @Nonnull
     private final ServiceLevelDaoSupplier serviceLevelDaoSupplier;
-    @Nonnull
-    private final ApiLoginDaoSupplier apiLoginDaoSupplier;
 
     /**
      * @param dataSourceSupplier the supplier of the JDBC {@link DataSource} to use when communicating with the
      *     back-end database
      * @param serviceLevelDaoSupplier the {@link ServiceLevelDaoSupplier} used to manage service level objects
-     * @param apiLoginDaoSupplier the {@link ApiLoginDaoSupplier} used to manage API login objects
      */
     public PostgresAccountDao(
             @Nonnull final DataSourceSupplier dataSourceSupplier,
-            @Nonnull final ServiceLevelDaoSupplier serviceLevelDaoSupplier,
-            @Nonnull final ApiLoginDaoSupplier apiLoginDaoSupplier) {
+            @Nonnull final ServiceLevelDaoSupplier serviceLevelDaoSupplier) {
         this.dataSourceSupplier = Objects.requireNonNull(dataSourceSupplier);
         this.serviceLevelDaoSupplier = Objects.requireNonNull(serviceLevelDaoSupplier);
-        this.apiLoginDaoSupplier = Objects.requireNonNull(apiLoginDaoSupplier);
     }
 
     @Override
@@ -92,6 +86,42 @@ public class PostgresAccountDao implements AccountDao {
         } catch (final SQLException sqlException) {
             throw ErrorTransformer.get("Failed to get accounts by id", sqlException);
         }
+    }
+
+    @Override
+    public Optional<Account> get(@Nonnull final ApiLogin apiLogin) {
+        Objects.requireNonNull(apiLogin);
+
+        final String sql =
+                "SELECT a.account_id, a.name, s.max_groups, s.max_tags, s.max_depth FROM accounts a LEFT JOIN "
+                        + "service_levels s ON (a.account_id = s.account_id) LEFT JOIN api_logins l ON "
+                        + "(a.account_id = l.account_id) WHERE l.key = ? AND l.secret = ?";
+
+        final DataSource dataSource = this.dataSourceSupplier.get();
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, apiLogin.getKey());
+            ps.setString(2, apiLogin.getSecret());
+
+            try (final ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    final Account account = new Account();
+
+                    account.setId(rs.getLong("account_id"));
+                    account.setName(rs.getString("name"));
+
+                    account.getServiceLevel().setMaxGroups(rs.getInt("max_groups"));
+                    account.getServiceLevel().setMaxTags(rs.getInt("max_tags"));
+                    account.getServiceLevel().setMaxDepth(rs.getInt("max_depth"));
+
+                    return Optional.of(account);
+                }
+            }
+        } catch (final SQLException sqlException) {
+            throw ErrorTransformer.get("Failed to get account by API login", sqlException);
+        }
+
+        return Optional.empty();
     }
 
     @Override
@@ -213,13 +243,11 @@ public class PostgresAccountDao implements AccountDao {
 
         final DataSource dataSource = this.dataSourceSupplier.get();
         final ServiceLevelDao serviceLevelDao = this.serviceLevelDaoSupplier.get();
-        final ApiLoginDao apiLoginDao = this.apiLoginDaoSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             // Need to close the service-level adder before committing.
-            try (final CloseableBiConsumer<Long, ServiceLevel> serviceLevelAdder = serviceLevelDao.getAddConsumer(conn);
-                 final CloseableBiConsumer<Long, ApiLogin> apiLoginAdder = apiLoginDao.getAddConsumer(conn)) {
+            try (final CloseableBiConsumer<Long, ServiceLevel> serviceLevelAdder = serviceLevelDao.getAddConsumer(conn)) {
 
                 final Collection<Account> batch = new LinkedList<>();
 
@@ -231,12 +259,12 @@ public class PostgresAccountDao implements AccountDao {
 
                     if (batch.size() >= batchSize) {
                         ps.executeBatch();
-                        processBatch(ps, batch, serviceLevelAdder, apiLoginAdder, consumer);
+                        processBatch(ps, batch, serviceLevelAdder, consumer);
                     }
                 }
                 if (!batch.isEmpty()) {
                     ps.executeBatch();
-                    processBatch(ps, batch, serviceLevelAdder, apiLoginAdder, consumer);
+                    processBatch(ps, batch, serviceLevelAdder, consumer);
                 }
             }
 
@@ -249,7 +277,7 @@ public class PostgresAccountDao implements AccountDao {
     private void processBatch(
             @Nonnull final PreparedStatement ps, @Nonnull final Collection<Account> batch,
             @Nonnull final CloseableBiConsumer<Long, ServiceLevel> serviceLevelAdder,
-            @Nonnull final CloseableBiConsumer<Long, ApiLogin> apiLoginAdder, @Nonnull final Consumer<Account> consumer)
+            @Nonnull final Consumer<Account> consumer)
             throws SQLException {
         try (final ResultSet rs = ps.getGeneratedKeys()) {
             final Iterator<Account> batchIter = batch.iterator();
@@ -261,10 +289,6 @@ public class PostgresAccountDao implements AccountDao {
 
                 consumer.accept(account);
                 serviceLevelAdder.accept(accountId, account.getServiceLevel());
-
-                for (final ApiLogin apiLogin : account.getApiLogins()) {
-                    apiLoginAdder.accept(accountId, apiLogin);
-                }
             }
             batch.clear();
         }

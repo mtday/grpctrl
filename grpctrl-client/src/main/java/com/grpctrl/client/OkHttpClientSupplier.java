@@ -112,7 +112,6 @@ public class OkHttpClientSupplier
         @Override
         protected void configure() {
             bind(OkHttpClientSupplier.class).to(OkHttpClientSupplier.class).in(Singleton.class);
-            bindFactory(OkHttpClientSupplier.class).to(OkHttpClient.class).in(Singleton.class);
         }
     }
 }
