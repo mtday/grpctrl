@@ -1,8 +1,7 @@
 package com.grpctrl.common.model;
 
-import static org.apache.commons.lang3.Validate.isTrue;
-
 import com.google.common.base.Charsets;
+import com.grpctrl.common.util.RandomString;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -12,7 +11,6 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
-import java.util.Random;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -81,12 +79,26 @@ public class UserAuth implements Comparable<UserAuth> {
      * @throws NullPointerException if the provided parameter is {@code null}
      */
     public static UserAuth fromPassword(@Nonnull final String password) {
+        return fromPassword("SHA-512", password);
+    }
+
+    /**
+     * Create a new {@link UserAuth} based on the provided password.
+     *
+     * @param hashAlgorithm the algorithm to use when generating the hash
+     * @param password the plain-text password for which a new {@link UserAuth} should be created
+     *
+     * @return the requested {@link UserAuth}
+     *
+     * @throws NullPointerException if the provided parameter is {@code null}
+     */
+    public static UserAuth fromPassword(@Nonnull final String hashAlgorithm, @Nonnull final String password) {
+        Objects.requireNonNull(hashAlgorithm);
         Objects.requireNonNull(password);
 
         try {
-            final String hashAlgorithm = "SHA-512";
             final MessageDigest messageDigest = MessageDigest.getInstance(hashAlgorithm);
-            final String salt = randomString(8);
+            final String salt = RandomString.get(20);
             final String hashedPass = toHexString(messageDigest.digest((salt + password).getBytes(Charsets.UTF_8)));
 
             return new UserAuth(hashAlgorithm, salt, hashedPass);
@@ -94,26 +106,6 @@ public class UserAuth implements Comparable<UserAuth> {
             // Not expecting this to happen.
             throw new RuntimeException("Unexpected bad algorithm", badHashAlgorithm);
         }
-    }
-
-    /**
-     * @param length the length of the password to generate
-     *
-     * @return a randomly generated password of the specified length
-     *
-     * @throws IllegalArgumentException if the provided length is not valid
-     */
-    public static String randomString(final int length) {
-        isTrue(length >= 0 && length <= 255, "Invalid length: " + length);
-
-        final String chars = "aeuAEU23456789bdghjmnpqrstvzBDGHJLMNPQRSTVWXZ";
-
-        final Random random = new Random();
-        final StringBuilder password = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            password.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return password.toString();
     }
 
     /**

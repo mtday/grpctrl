@@ -1,8 +1,8 @@
 package com.grpctrl.rest.resource.v1.account;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grpctrl.common.model.Account;
+import com.grpctrl.common.supplier.ObjectMapperSupplier;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -19,17 +19,18 @@ import javax.ws.rs.core.StreamingOutput;
  */
 public class MultipleAccountStreamer implements StreamingOutput {
     @Nonnull
-    private final ObjectMapper objectMapper;
+    private final ObjectMapperSupplier objectMapperSupplier;
     @Nonnull
     private final Consumer<Consumer<Account>> consumer;
 
     /**
-     * @param objectMapper responsible for generating JSON data
+     * @param objectMapperSupplier responsible for generating JSON data
      * @param consumer the consumer responsible for pushing account objects through this class
      */
     public MultipleAccountStreamer(
-            @Nonnull final ObjectMapper objectMapper, @Nonnull final Consumer<Consumer<Account>> consumer) {
-        this.objectMapper = Objects.requireNonNull(objectMapper);
+            @Nonnull final ObjectMapperSupplier objectMapperSupplier,
+            @Nonnull final Consumer<Consumer<Account>> consumer) {
+        this.objectMapperSupplier = Objects.requireNonNull(objectMapperSupplier);
         this.consumer = Objects.requireNonNull(consumer);
     }
 
@@ -37,8 +38,8 @@ public class MultipleAccountStreamer implements StreamingOutput {
      * @return the object mapper responsible for generating JSON data
      */
     @Nonnull
-    public ObjectMapper getObjectMapper() {
-        return this.objectMapper;
+    public ObjectMapperSupplier getObjectMapperSupplier() {
+        return this.objectMapperSupplier;
     }
 
     /**
@@ -51,7 +52,7 @@ public class MultipleAccountStreamer implements StreamingOutput {
 
     @Override
     public void write(@Nonnull final OutputStream output) throws IOException, WebApplicationException {
-        try (final JsonGenerator generator = getObjectMapper().getFactory().createGenerator(output)) {
+        try (final JsonGenerator generator = getObjectMapperSupplier().get().getFactory().createGenerator(output)) {
             generator.writeStartObject();
             generator.writeFieldName("success");
             generator.writeBoolean(true);

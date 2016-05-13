@@ -58,7 +58,6 @@ public class KeyStoreSupplier extends StoreSupplier {
         @Override
         protected void configure() {
             bind(KeyStoreSupplier.class).to(KeyStoreSupplier.class).in(Singleton.class);
-            bindFactory(KeyStoreSupplier.class).to(KeyStore.class).named("key-store").in(Singleton.class);
         }
     }
 }

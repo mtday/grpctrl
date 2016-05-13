@@ -56,21 +56,6 @@ public class PostgresAccountDao implements AccountDao {
         this.apiLoginDaoSupplier = Objects.requireNonNull(apiLoginDaoSupplier);
     }
 
-    @Nonnull
-    private DataSourceSupplier getDataSourceSupplier() {
-        return this.dataSourceSupplier;
-    }
-
-    @Nonnull
-    private ServiceLevelDaoSupplier getServiceLevelDaoSupplier() {
-        return this.serviceLevelDaoSupplier;
-    }
-
-    @Nonnull
-    private ApiLoginDaoSupplier getApiLoginDaoSupplier() {
-        return this.apiLoginDaoSupplier;
-    }
-
     @Override
     public void get(@Nonnull final Long accountId, @Nonnull final Consumer<Account> consumer) {
         get(Collections.singleton(Objects.requireNonNull(accountId)), consumer);
@@ -85,7 +70,7 @@ public class PostgresAccountDao implements AccountDao {
                 "SELECT a.account_id, a.name, s.max_groups, s.max_tags, s.max_depth FROM accounts a LEFT JOIN "
                         + "service_levels s ON (a.account_id = s.account_id) WHERE a.account_id = ANY (?)";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setArray(1, conn.createArrayOf("bigint", accountIds.toArray()));
@@ -120,7 +105,7 @@ public class PostgresAccountDao implements AccountDao {
                 + "service_levels s ON (a.account_id = s.account_id) JOIN user_accounts u ON "
                 + "(u.account_id = a.account_id) WHERE u.user_id = ?";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, userId);
@@ -195,7 +180,7 @@ public class PostgresAccountDao implements AccountDao {
         final String sql = "SELECT a.account_id, a.name, s.max_groups, s.max_tags, s.max_depth FROM accounts a JOIN "
                 + "service_levels s ON (a.account_id = s.account_id)";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql);
              final ResultSet rs = ps.executeQuery()) {
@@ -226,9 +211,9 @@ public class PostgresAccountDao implements AccountDao {
 
         final String sql = "INSERT INTO accounts (name) VALUES (?)";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
-        final ServiceLevelDao serviceLevelDao = getServiceLevelDaoSupplier().get();
-        final ApiLoginDao apiLoginDao = getApiLoginDaoSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
+        final ServiceLevelDao serviceLevelDao = this.serviceLevelDaoSupplier.get();
+        final ApiLoginDao apiLoginDao = this.apiLoginDaoSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -298,7 +283,7 @@ public class PostgresAccountDao implements AccountDao {
 
         int removed = 0;
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setArray(1, conn.createArrayOf("bigint", accountIds.toArray()));

@@ -44,7 +44,7 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
     private final KeyStoreSupplier keyStoreSupplier;
 
     @Nonnull
-    private final PasswordBasedEncryptionSupplier passwordBasedEncryptionSupplier;
+    private final PasswordBasedEncryptionSupplier pbeSupplier;
 
     @Nullable
     private volatile SSLContext singleton = null;
@@ -52,39 +52,15 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
     /**
      * @param configSupplier provides access to the static system configuration properties
      * @param keyStoreSupplier provides access to the system key store
-     * @param passwordBasedEncryptionSupplier provides support for password-based encryption and decryption
+     * @param pbeSupplier provides support for password-based encryption and decryption
      */
     @Inject
     public SslContextSupplier(
             @Nonnull final ConfigSupplier configSupplier, @Nonnull final KeyStoreSupplier keyStoreSupplier,
-            @Nonnull final PasswordBasedEncryptionSupplier passwordBasedEncryptionSupplier) {
+            @Nonnull final PasswordBasedEncryptionSupplier pbeSupplier) {
         this.configSupplier = Objects.requireNonNull(configSupplier);
         this.keyStoreSupplier = Objects.requireNonNull(keyStoreSupplier);
-        this.passwordBasedEncryptionSupplier = Objects.requireNonNull(passwordBasedEncryptionSupplier);
-    }
-
-    /**
-     * @return the provider of the static system configuration properties
-     */
-    @Nonnull
-    protected ConfigSupplier getConfigSupplier() {
-        return this.configSupplier;
-    }
-
-    /**
-     * @return provides access to the system key store
-     */
-    @Nonnull
-    protected KeyStoreSupplier getKeyStoreSupplier() {
-        return this.keyStoreSupplier;
-    }
-
-    /**
-     * @return provides support for password-based encryption and decryption
-     */
-    @Nonnull
-    protected PasswordBasedEncryptionSupplier getPasswordBasedEncryptionSupplier() {
-        return this.passwordBasedEncryptionSupplier;
+        this.pbeSupplier = Objects.requireNonNull(pbeSupplier);
     }
 
     @Override
@@ -122,17 +98,16 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
     @Nonnull
     private SSLContext create() {
         try {
-            if (!getConfigSupplier().get().getBoolean(ConfigKeys.CRYPTO_SSL_ENABLED.getKey())) {
+            if (!this.configSupplier.get().getBoolean(ConfigKeys.CRYPTO_SSL_ENABLED.getKey())) {
                 return SSLContext.getDefault();
             }
 
-            final KeyStore keyStore = getKeyStoreSupplier().get();
+            final KeyStore keyStore = this.keyStoreSupplier.get();
 
             final String encryptedPassword =
-                    getConfigSupplier().get().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_PASSWORD.getKey());
+                    this.configSupplier.get().getString(ConfigKeys.CRYPTO_SSL_KEYSTORE_PASSWORD.getKey());
             final char[] decryptedPassword =
-                    getPasswordBasedEncryptionSupplier().get().decryptProperty(encryptedPassword, Charsets.UTF_8)
-                            .toCharArray();
+                    this.pbeSupplier.get().decryptProperty(encryptedPassword, Charsets.UTF_8).toCharArray();
 
             final KeyManagerFactory keyManagerFactory =
                     KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -157,7 +132,6 @@ public class SslContextSupplier implements Supplier<SSLContext>, Factory<SSLCont
         @Override
         protected void configure() {
             bind(SslContextSupplier.class).to(SslContextSupplier.class).in(Singleton.class);
-            bindFactory(SslContextSupplier.class).to(SSLContext.class).in(Singleton.class);
         }
     }
 

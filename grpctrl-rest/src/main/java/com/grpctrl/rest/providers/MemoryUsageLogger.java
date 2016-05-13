@@ -1,5 +1,7 @@
 package com.grpctrl.rest.providers;
 
+import com.grpctrl.common.supplier.ScheduledExecutorServiceSupplier;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,7 +9,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.Objects;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
@@ -24,8 +25,8 @@ public class MemoryUsageLogger implements ContainerRequestFilter, Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(MemoryUsageLogger.class);
 
     @Inject
-    public MemoryUsageLogger(@Nonnull final ScheduledExecutorService executorService) {
-        Objects.requireNonNull(executorService).scheduleWithFixedDelay(this, 30, 120, TimeUnit.SECONDS);
+    public MemoryUsageLogger(@Nonnull final ScheduledExecutorServiceSupplier executorServiceSupplier) {
+        Objects.requireNonNull(executorServiceSupplier).get().scheduleWithFixedDelay(this, 30, 120, TimeUnit.SECONDS);
     }
 
     @Override

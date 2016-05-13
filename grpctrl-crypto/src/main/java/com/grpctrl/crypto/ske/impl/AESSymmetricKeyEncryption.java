@@ -43,14 +43,6 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
     }
 
     /**
-     * @return the {@link KeyPair} containing the public and private symmetric keys
-     */
-    @Nonnull
-    protected KeyPair getKeyPair() {
-        return this.keyPair;
-    }
-
-    /**
      * @param keyLength the length of the key to generate
      * @return the {@link SecretKey} used to do the encryption and decryption of system data
      */
@@ -71,7 +63,7 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
     @Nonnull
     protected byte[] getEncryptedSecretKey(@Nonnull final SecretKey secretKey) throws Exception {
         Objects.requireNonNull(secretKey);
-        final PrivateKey privateKey = getKeyPair().getPrivate();
+        final PrivateKey privateKey = this.keyPair.getPrivate();
         final Cipher symmetricCipher = Cipher.getInstance(privateKey.getAlgorithm());
         symmetricCipher.init(Cipher.ENCRYPT_MODE, privateKey);
         return symmetricCipher.doFinal(secretKey.getEncoded());
@@ -84,7 +76,7 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
     @Nonnull
     protected SecretKeySpec getDecryptedSecretKey(@Nonnull final byte[] encrypted) throws Exception {
         Objects.requireNonNull(encrypted);
-        final PublicKey publicKey = getKeyPair().getPublic();
+        final PublicKey publicKey = this.keyPair.getPublic();
         final Cipher symmetricCipher = Cipher.getInstance(publicKey.getAlgorithm());
         symmetricCipher.init(Cipher.DECRYPT_MODE, publicKey);
         return new SecretKeySpec(symmetricCipher.doFinal(encrypted), ALGORITHM);
@@ -142,7 +134,7 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
     public byte[] sign(@Nonnull final byte[] data) {
         Objects.requireNonNull(data);
         try {
-            final PrivateKey privateKey = getKeyPair().getPrivate();
+            final PrivateKey privateKey = this.keyPair.getPrivate();
             final Signature signature = Signature.getInstance("SHA1with" + privateKey.getAlgorithm());
             signature.initSign(privateKey);
             signature.update(data);
@@ -162,7 +154,7 @@ public class AESSymmetricKeyEncryption extends CommonEncryptionImpl implements S
     public boolean verify(@Nonnull final byte[] data, @Nonnull final byte[] signatureData) {
         Objects.requireNonNull(data);
         try {
-            final PublicKey publicKey = getKeyPair().getPublic();
+            final PublicKey publicKey = this.keyPair.getPublic();
             final Signature signature = Signature.getInstance("SHA1with" + publicKey.getAlgorithm());
             signature.initVerify(publicKey);
             signature.update(data);

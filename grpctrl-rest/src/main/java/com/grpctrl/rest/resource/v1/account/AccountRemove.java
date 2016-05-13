@@ -1,8 +1,8 @@
 package com.grpctrl.rest.resource.v1.account;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grpctrl.db.dao.AccountDao;
+import com.grpctrl.common.supplier.ObjectMapperSupplier;
+import com.grpctrl.db.dao.supplier.AccountDaoSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -24,12 +24,14 @@ import javax.ws.rs.core.MediaType;
 @RolesAllowed("ADMIN")
 public class AccountRemove extends BaseAccountResource {
     /**
-     * @param objectMapper the {@link ObjectMapper} responsible for generating JSON data
-     * @param accountDao the {@link AccountDao} used to perform the account operation
+     * @param objectMapperSupplier the {@link ObjectMapperSupplier} responsible for generating JSON data
+     * @param accountDaoSupplier the {@link AccountDaoSupplier} used to perform the account operation
      */
     @Inject
-    public AccountRemove(@Nonnull final ObjectMapper objectMapper, @Nonnull final AccountDao accountDao) {
-        super(objectMapper, accountDao);
+    public AccountRemove(
+            @Nonnull final ObjectMapperSupplier objectMapperSupplier,
+            @Nonnull final AccountDaoSupplier accountDaoSupplier) {
+        super(objectMapperSupplier, accountDaoSupplier);
     }
 
     /**
@@ -42,7 +44,7 @@ public class AccountRemove extends BaseAccountResource {
     @DELETE
     @Nullable
     public RemoveResponse remove(@Nonnull @PathParam("accountId") final Long accountId) {
-        return new RemoveResponse(getAccountDao().remove(accountId));
+        return new RemoveResponse(getAccountDaoSupplier().get().remove(accountId));
     }
 
     @JsonPropertyOrder({"success", "removed"})

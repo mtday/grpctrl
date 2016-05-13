@@ -38,11 +38,6 @@ public class OAuth20ServiceSupplier
         this.configSupplier = Objects.requireNonNull(configSupplier);
     }
 
-    @Nonnull
-    public ConfigSupplier getConfigSupplier() {
-        return this.configSupplier;
-    }
-
     @Override
     @Nonnull
     @SuppressWarnings("all")
@@ -77,7 +72,7 @@ public class OAuth20ServiceSupplier
 
     @Nonnull
     private OAuth20Service create() {
-        final Config config = getConfigSupplier().get();
+        final Config config = this.configSupplier.get();
         final String apiKey = config.getString(ConfigKeys.AUTH_API_KEY.getKey());
         final String apiSecret = config.getString(ConfigKeys.AUTH_API_SECRET.getKey());
         final String apiScope = config.getString(ConfigKeys.AUTH_API_SCOPE.getKey());
@@ -96,7 +91,6 @@ public class OAuth20ServiceSupplier
         @Override
         protected void configure() {
             bind(OAuth20ServiceSupplier.class).to(OAuth20ServiceSupplier.class).in(Singleton.class);
-            bindFactory(OAuth20ServiceSupplier.class).to(OAuth20Service.class).in(Singleton.class);
         }
     }
 }

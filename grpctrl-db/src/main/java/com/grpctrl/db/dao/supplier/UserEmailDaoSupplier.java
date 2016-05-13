@@ -68,7 +68,6 @@ public class UserEmailDaoSupplier
         @Override
         protected void configure() {
             bind(UserEmailDaoSupplier.class).to(UserEmailDaoSupplier.class).in(Singleton.class);
-            bindFactory(UserEmailDaoSupplier.class).to(UserEmailDao.class).in(Singleton.class);
         }
     }
 }

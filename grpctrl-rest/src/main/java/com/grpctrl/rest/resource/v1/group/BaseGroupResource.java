@@ -1,7 +1,8 @@
 package com.grpctrl.rest.resource.v1.group;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.grpctrl.common.supplier.ObjectMapperSupplier;
 import com.grpctrl.db.dao.GroupDao;
+import com.grpctrl.db.dao.supplier.GroupDaoSupplier;
 
 import java.util.Objects;
 
@@ -13,33 +14,35 @@ import javax.inject.Inject;
  */
 public class BaseGroupResource {
     @Nonnull
-    private final ObjectMapper objectMapper;
+    private final ObjectMapperSupplier objectMapperSupplier;
     @Nonnull
-    private final GroupDao groupDao;
+    private final GroupDaoSupplier groupDaoSupplier;
 
     /**
-     * @param objectMapper the {@link ObjectMapper} responsible for generating JSON data
-     * @param groupDao the {@link GroupDao} used to perform the group operation
+     * @param objectMapperSupplier the {@link ObjectMapperSupplier} responsible for generating JSON data
+     * @param groupDaoSupplier the {@link GroupDaoSupplier} used to perform the group operation
      */
     @Inject
-    public BaseGroupResource(@Nonnull final ObjectMapper objectMapper, @Nonnull final GroupDao groupDao) {
-        this.objectMapper = Objects.requireNonNull(objectMapper);
-        this.groupDao = Objects.requireNonNull(groupDao);
+    public BaseGroupResource(
+            @Nonnull final ObjectMapperSupplier objectMapperSupplier,
+            @Nonnull final GroupDaoSupplier groupDaoSupplier) {
+        this.objectMapperSupplier = Objects.requireNonNull(objectMapperSupplier);
+        this.groupDaoSupplier = Objects.requireNonNull(groupDaoSupplier);
     }
 
     /**
      * @return the object mapper responsible for generating JSON data
      */
     @Nonnull
-    public ObjectMapper getObjectMapper() {
-        return this.objectMapper;
+    public ObjectMapperSupplier getObjectMapperSupplier() {
+        return this.objectMapperSupplier;
     }
 
     /**
      * @return the {@link GroupDao} used to perform the group operation
      */
     @Nonnull
-    public GroupDao getGroupDao() {
-        return this.groupDao;
+    public GroupDaoSupplier getGroupDaoSupplier() {
+        return this.groupDaoSupplier;
     }
 }

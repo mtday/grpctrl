@@ -39,14 +39,6 @@ public class PasswordBasedEncryptionSupplier
         this.configSupplier = Objects.requireNonNull(configSupplier);
     }
 
-    /**
-     * @return the static system configuration properties
-     */
-    @Nonnull
-    protected ConfigSupplier getConfigSupplier() {
-        return this.configSupplier;
-    }
-
     @Override
     @Nonnull
     @SuppressWarnings("all")
@@ -84,7 +76,7 @@ public class PasswordBasedEncryptionSupplier
      */
     @Nonnull
     private String getSharedSecret() {
-        final Config config = getConfigSupplier().get();
+        final Config config = this.configSupplier.get();
         final String sharedSecretVar = config.getString(ConfigKeys.CRYPTO_SHARED_SECRET_VARIABLE.getKey());
         if (config.hasPath(sharedSecretVar)) {
             return config.getString(sharedSecretVar);
@@ -104,7 +96,6 @@ public class PasswordBasedEncryptionSupplier
         @Override
         protected void configure() {
             bind(PasswordBasedEncryptionSupplier.class).to(PasswordBasedEncryptionSupplier.class).in(Singleton.class);
-            bindFactory(PasswordBasedEncryptionSupplier.class).to(PasswordBasedEncryption.class).in(Singleton.class);
         }
     }
 }

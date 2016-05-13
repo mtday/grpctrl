@@ -68,7 +68,6 @@ public class UserAuthDaoSupplier
         @Override
         protected void configure() {
             bind(UserAuthDaoSupplier.class).to(UserAuthDaoSupplier.class).in(Singleton.class);
-            bindFactory(UserAuthDaoSupplier.class).to(UserAuthDao.class).in(Singleton.class);
         }
     }
 }

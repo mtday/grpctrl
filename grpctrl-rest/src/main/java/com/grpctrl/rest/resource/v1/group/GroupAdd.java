@@ -1,7 +1,7 @@
 package com.grpctrl.rest.resource.v1.group;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grpctrl.db.dao.GroupDao;
+import com.grpctrl.common.supplier.ObjectMapperSupplier;
+import com.grpctrl.db.dao.supplier.GroupDaoSupplier;
 import com.grpctrl.rest.resource.v1.account.MultipleAccountStreamer;
 
 import java.io.InputStream;
@@ -30,12 +30,14 @@ import javax.ws.rs.core.StreamingOutput;
 @RolesAllowed("USER")
 public class GroupAdd extends BaseGroupResource {
     /**
-     * @param objectMapper the {@link ObjectMapper} used to generate JSON data
-     * @param groupDao the {@link GroupDao} used to perform the group operation
+     * @param objectMapperSupplier the {@link ObjectMapperSupplier} used to generate JSON data
+     * @param groupDaoSupplier the {@link GroupDaoSupplier} used to perform the group operation
      */
     @Inject
-    public GroupAdd(@Nonnull final ObjectMapper objectMapper, @Nonnull final GroupDao groupDao) {
-        super(objectMapper, groupDao);
+    public GroupAdd(
+            @Nonnull final ObjectMapperSupplier objectMapperSupplier,
+            @Nonnull final GroupDaoSupplier groupDaoSupplier) {
+        super(objectMapperSupplier, groupDaoSupplier);
     }
 
     /**
@@ -52,7 +54,7 @@ public class GroupAdd extends BaseGroupResource {
         // TODO: Determine the account based on the user/apikey security
         //final Account account = new Account().setId(10001L).setName("parent");
 
-        final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapper(), consumer -> {
+        final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapperSupplier(), consumer -> {
         });
 
         return Response.ok().entity(streamingOutput).type(MediaType.APPLICATION_JSON).build();

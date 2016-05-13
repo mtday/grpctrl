@@ -112,7 +112,6 @@ public class AccountDaoSupplier implements Supplier<AccountDao>, Factory<Account
         @Override
         protected void configure() {
             bind(AccountDaoSupplier.class).to(AccountDaoSupplier.class).in(Singleton.class);
-            bindFactory(AccountDaoSupplier.class).to(AccountDao.class).in(Singleton.class);
         }
     }
 }

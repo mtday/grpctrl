@@ -73,31 +73,6 @@ public class PostgresUserDao implements UserDao {
         this.accountDaoSupplier = Objects.requireNonNull(accountDaoSupplier);
     }
 
-    @Nonnull
-    private DataSourceSupplier getDataSourceSupplier() {
-        return this.dataSourceSupplier;
-    }
-
-    @Nonnull
-    private UserAuthDaoSupplier getUserAuthDaoSupplier() {
-        return this.userAuthDaoSupplier;
-    }
-
-    @Nonnull
-    private UserEmailDaoSupplier getUserEmailDaoSupplier() {
-        return this.userEmailDaoSupplier;
-    }
-
-    @Nonnull
-    private UserRoleDaoSupplier getUserRoleDaoSupplier() {
-        return this.userRoleDaoSupplier;
-    }
-
-    @Nonnull
-    private AccountDaoSupplier getAccountDaoSupplier() {
-        return this.accountDaoSupplier;
-    }
-
     @Override
     public Optional<User> get(@Nonnull final Long userId) {
         final Collection<User> users = get(Collections.singleton(Objects.requireNonNull(userId)));
@@ -111,7 +86,7 @@ public class PostgresUserDao implements UserDao {
         final String sql = "SELECT user_id, login, source FROM users WHERE user_id = ANY (?)";
 
         final Map<Long, User> map = new HashMap<>();
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setArray(1, conn.createArrayOf("bigint", userIds.toArray()));
@@ -150,7 +125,7 @@ public class PostgresUserDao implements UserDao {
         final String sql = "SELECT user_id, login FROM users WHERE source = ? AND login = ANY (?)";
 
         final Map<Long, User> map = new HashMap<>();
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, source.name());
@@ -177,10 +152,10 @@ public class PostgresUserDao implements UserDao {
     }
 
     private void enrich(@Nonnull final Connection conn, @Nonnull final Map<Long, User> users) {
-        final UserAuthDao userAuthDao = getUserAuthDaoSupplier().get();
-        final UserEmailDao userEmailDao = getUserEmailDaoSupplier().get();
-        final UserRoleDao userRoleDao = getUserRoleDaoSupplier().get();
-        final AccountDao accountDao = getAccountDaoSupplier().get();
+        final UserAuthDao userAuthDao = this.userAuthDaoSupplier.get();
+        final UserEmailDao userEmailDao = this.userEmailDaoSupplier.get();
+        final UserRoleDao userRoleDao = this.userRoleDaoSupplier.get();
+        final AccountDao accountDao = this.accountDaoSupplier.get();
 
         final Collection<Long> userIds = users.keySet();
         final Map<Long, UserAuth> userAuths = userAuthDao.get(conn, userIds);
@@ -215,7 +190,7 @@ public class PostgresUserDao implements UserDao {
 
         final String sql = "INSERT INTO users (login, source) VALUES (?, ?)";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -246,9 +221,9 @@ public class PostgresUserDao implements UserDao {
     private void processBatch(
             @Nonnull final Connection conn, @Nonnull final PreparedStatement ps, @Nonnull final Collection<User> batch)
             throws SQLException {
-        final UserAuthDao userAuthDao = getUserAuthDaoSupplier().get();
-        final UserEmailDao userEmailDao = getUserEmailDaoSupplier().get();
-        final UserRoleDao userRoleDao = getUserRoleDaoSupplier().get();
+        final UserAuthDao userAuthDao = this.userAuthDaoSupplier.get();
+        final UserEmailDao userEmailDao = this.userEmailDaoSupplier.get();
+        final UserRoleDao userRoleDao = this.userRoleDaoSupplier.get();
 
         try (final ResultSet rs = ps.getGeneratedKeys()) {
             final Iterator<User> batchIter = batch.iterator();
@@ -278,7 +253,7 @@ public class PostgresUserDao implements UserDao {
 
         final String sql = "DELETE FROM users WHERE user_id = ANY (?)";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setArray(1, conn.createArrayOf("bigint", userIds.toArray()));

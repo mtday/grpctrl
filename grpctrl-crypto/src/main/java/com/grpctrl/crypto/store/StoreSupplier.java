@@ -29,21 +29,21 @@ abstract class StoreSupplier implements Supplier<KeyStore>, Factory<KeyStore>, C
     private final ConfigSupplier configSupplier;
 
     @Nonnull
-    private final PasswordBasedEncryptionSupplier passwordBasedEncryptionSupplier;
+    private final PasswordBasedEncryptionSupplier pbeSupplier;
 
     @Nullable
     private volatile KeyStore singleton;
 
     /**
      * @param configSupplier provides access to the static system configuration properties
-     * @param passwordBasedEncryptionSupplier provides support for password-based encryption and decryption
+     * @param pbeSupplier provides support for password-based encryption and decryption
      */
     @Inject
     public StoreSupplier(
             @Nonnull final ConfigSupplier configSupplier,
-            @Nonnull final PasswordBasedEncryptionSupplier passwordBasedEncryptionSupplier) {
+            @Nonnull final PasswordBasedEncryptionSupplier pbeSupplier) {
         this.configSupplier = Objects.requireNonNull(configSupplier);
-        this.passwordBasedEncryptionSupplier = Objects.requireNonNull(passwordBasedEncryptionSupplier);
+        this.pbeSupplier = Objects.requireNonNull(pbeSupplier);
     }
 
     /**
@@ -59,7 +59,7 @@ abstract class StoreSupplier implements Supplier<KeyStore>, Factory<KeyStore>, C
      */
     @Nonnull
     protected PasswordBasedEncryptionSupplier getPasswordBasedEncryptionSupplier() {
-        return this.passwordBasedEncryptionSupplier;
+        return this.pbeSupplier;
     }
 
     /**

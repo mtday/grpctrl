@@ -100,7 +100,6 @@ public class GroupDaoSupplier
         @Override
         protected void configure() {
             bind(GroupDaoSupplier.class).to(GroupDaoSupplier.class).in(Singleton.class);
-            bindFactory(GroupDaoSupplier.class).to(GroupDao.class).in(Singleton.class);
         }
     }
 }

@@ -267,10 +267,7 @@ public class AESSymmetricKeyEncryptionTest {
         Mockito.when(privateKey.getAlgorithm()).thenReturn("notvalid");
         final KeyPair keyPair = new KeyPair(publicKey, privateKey);
 
-        final AESSymmetricKeyEncryption ske = Mockito.mock(AESSymmetricKeyEncryption.class);
-        Mockito.when(ske.getKeyPair()).thenReturn(keyPair);
-        Mockito.when(ske.sign(Mockito.any())).thenCallRealMethod();
-
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(keyPair);
         ske.sign(new byte[0]);
     }
 
@@ -281,10 +278,7 @@ public class AESSymmetricKeyEncryptionTest {
         final PrivateKey privateKey = Mockito.mock(PrivateKey.class);
         final KeyPair keyPair = new KeyPair(publicKey, privateKey);
 
-        final AESSymmetricKeyEncryption ske = Mockito.mock(AESSymmetricKeyEncryption.class);
-        Mockito.when(ske.getKeyPair()).thenReturn(keyPair);
-        Mockito.when(ske.verify(Mockito.any(), Mockito.any())).thenCallRealMethod();
-
+        final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(keyPair);
         ske.verify(new byte[0], new byte[0]);
     }
 

@@ -1,14 +1,18 @@
 package com.grpctrl.common.supplier;
 
+import com.grpctrl.common.config.ConfigKeys;
+
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
@@ -17,18 +21,29 @@ import javax.ws.rs.ext.Provider;
  * Provides singleton access to a executor service that can schedule and run background tasks.
  */
 @Provider
-public class ScheduledExecutorServiceSupplier
-        implements Supplier<ScheduledExecutorService>, Factory<ScheduledExecutorService>, ContextResolver<ScheduledExecutorService> {
+public class ExecutorServiceSupplier
+        implements Supplier<ExecutorService>, Factory<ExecutorService>, ContextResolver<ExecutorService> {
+    @Nonnull
+    private final ConfigSupplier configSupplier;
+
     @Nullable
-    private volatile ScheduledExecutorService singleton = null;
+    private volatile ExecutorService singleton = null;
+
+    /**
+     * @param configSupplier provides access to the static system configuration properties
+     */
+    @Inject
+    public ExecutorServiceSupplier(@Nonnull final ConfigSupplier configSupplier) {
+        this.configSupplier = Objects.requireNonNull(configSupplier);
+    }
 
     @Override
     @Nonnull
     @SuppressWarnings("all")
-    public ScheduledExecutorService get() {
+    public ExecutorService get() {
         // Use double-check locking (with volatile singleton).
         if (this.singleton == null) {
-            synchronized (ScheduledExecutorServiceSupplier.class) {
+            synchronized (ExecutorServiceSupplier.class) {
                 if (this.singleton == null) {
                     this.singleton = create();
                 }
@@ -39,24 +54,24 @@ public class ScheduledExecutorServiceSupplier
 
     @Override
     @Nonnull
-    public ScheduledExecutorService getContext(@Nonnull final Class<?> type) {
+    public ExecutorService getContext(@Nonnull final Class<?> type) {
         return get();
     }
 
     @Override
     @Nonnull
-    public ScheduledExecutorService provide() {
+    public ExecutorService provide() {
         return get();
     }
 
     @Override
-    public void dispose(@Nonnull final ScheduledExecutorService scheduledExecutorService) {
+    public void dispose(@Nonnull final ExecutorService executorService) {
         // Nothing to do.
     }
 
     @Nonnull
-    private ScheduledExecutorService create() {
-        return Executors.newScheduledThreadPool(3);
+    private ExecutorService create() {
+        return Executors.newFixedThreadPool(this.configSupplier.get().getInt(ConfigKeys.SECURITY_THREADS.getKey()));
     }
 
     /**
@@ -65,7 +80,7 @@ public class ScheduledExecutorServiceSupplier
     public static class Binder extends AbstractBinder {
         @Override
         protected void configure() {
-            bind(ScheduledExecutorServiceSupplier.class).to(ScheduledExecutorServiceSupplier.class).in(Singleton.class);
+            bind(ExecutorServiceSupplier.class).to(ExecutorServiceSupplier.class).in(Singleton.class);
         }
     }
 }

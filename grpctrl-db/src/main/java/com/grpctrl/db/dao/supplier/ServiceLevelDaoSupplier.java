@@ -68,7 +68,6 @@ public class ServiceLevelDaoSupplier
         @Override
         protected void configure() {
             bind(ServiceLevelDaoSupplier.class).to(ServiceLevelDaoSupplier.class).in(Singleton.class);
-            bindFactory(ServiceLevelDaoSupplier.class).to(ServiceLevelDao.class).in(Singleton.class);
         }
     }
 }

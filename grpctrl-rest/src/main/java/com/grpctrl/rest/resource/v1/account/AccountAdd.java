@@ -2,9 +2,9 @@ package com.grpctrl.rest.resource.v1.account;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grpctrl.common.model.Account;
-import com.grpctrl.db.dao.AccountDao;
+import com.grpctrl.common.supplier.ObjectMapperSupplier;
+import com.grpctrl.db.dao.supplier.AccountDaoSupplier;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,12 +33,14 @@ import javax.ws.rs.core.StreamingOutput;
 @RolesAllowed("ADMIN")
 public class AccountAdd extends BaseAccountResource {
     /**
-     * @param objectMapper the {@link ObjectMapper} used to generate JSON data
-     * @param accountDao the {@link AccountDao} used to perform the account operation
+     * @param objectMapperSupplier the {@link ObjectMapperSupplier} used to generate JSON data
+     * @param accountDaoSupplier the {@link AccountDaoSupplier} used to perform the account operation
      */
     @Inject
-    public AccountAdd(@Nonnull final ObjectMapper objectMapper, @Nonnull final AccountDao accountDao) {
-        super(objectMapper, accountDao);
+    public AccountAdd(
+            @Nonnull final ObjectMapperSupplier objectMapperSupplier,
+            @Nonnull final AccountDaoSupplier accountDaoSupplier) {
+        super(objectMapperSupplier, accountDaoSupplier);
     }
 
     /**
@@ -50,9 +52,9 @@ public class AccountAdd extends BaseAccountResource {
      */
     @POST
     public Response add(@Nonnull final InputStream inputStream) {
-        final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapper(), consumer -> {
+        final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapperSupplier(), consumer -> {
             try {
-                final JsonParser jsonParser = getObjectMapper().getFactory().createParser(inputStream);
+                final JsonParser jsonParser = getObjectMapperSupplier().get().getFactory().createParser(inputStream);
 
                 final JsonToken startObj = jsonParser.nextToken();
                 if (startObj == JsonToken.START_OBJECT) {
@@ -64,7 +66,7 @@ public class AccountAdd extends BaseAccountResource {
                     final JsonToken firstAccount = jsonParser.nextToken();
                     if (firstAccount == JsonToken.START_OBJECT) {
                         final Iterator<Account> iter = jsonParser.readValuesAs(Account.class);
-                        getAccountDao().add(iter, consumer);
+                        getAccountDaoSupplier().get().add(iter, consumer);
                     }
                 }
             } catch (final IOException ioException) {

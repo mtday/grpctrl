@@ -54,16 +54,6 @@ public class PostgresGroupDao implements GroupDao {
         this.tagDaoSupplier = Objects.requireNonNull(tagDaoSupplier);
     }
 
-    @Nonnull
-    private DataSourceSupplier getDataSourceSupplier() {
-        return this.dataSourceSupplier;
-    }
-
-    @Nonnull
-    private TagDaoSupplier getTagDaoSupplier() {
-        return this.tagDaoSupplier;
-    }
-
     @Override
     public int count(@Nonnull final Connection conn, @Nonnull final Account account) {
         Objects.requireNonNull(conn);
@@ -123,7 +113,7 @@ public class PostgresGroupDao implements GroupDao {
 
         final String sql = "SELECT COUNT(*) FROM groups WHERE account_id = ? AND group_id = ?";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
@@ -148,7 +138,7 @@ public class PostgresGroupDao implements GroupDao {
 
         final String sql = "SELECT COUNT(*) FROM groups WHERE account_id = ? AND group_name = ?";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
@@ -200,7 +190,7 @@ public class PostgresGroupDao implements GroupDao {
                         + "ON (g.group_id = t.group_id AND g.account_id = t.account_id) WHERE g.account_id = ? AND "
                         + "parent_id IS NULL";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
@@ -223,7 +213,7 @@ public class PostgresGroupDao implements GroupDao {
                         + "ON (g.group_id = t.group_id AND g.account_id = t.account_id) WHERE g.account_id = ? AND "
                         + "g.group_id = ANY (?)";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
@@ -247,7 +237,7 @@ public class PostgresGroupDao implements GroupDao {
                         + "ON (g.group_id = t.group_id AND g.account_id = t.account_id) WHERE g.account_id = ? AND "
                         + "group_name = ANY (?)";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
@@ -271,7 +261,7 @@ public class PostgresGroupDao implements GroupDao {
                         + "ON (g.group_id = t.group_id AND g.account_id = t.account_id) WHERE g.account_id = ? AND "
                         + "group_name %s ANY (?)", caseSensitive ? "~" : "~*");
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
@@ -295,7 +285,7 @@ public class PostgresGroupDao implements GroupDao {
                         + "ON (g.group_id = t.group_id AND g.account_id = t.account_id) WHERE g.account_id = ? AND "
                         + "parent_id = ANY (?)";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
@@ -319,7 +309,7 @@ public class PostgresGroupDao implements GroupDao {
                         + "ON (g.group_id = t.group_id AND g.account_id = t.account_id) WHERE g.account_id = ? AND "
                         + "parent_id IN (SELECT group_id FROM groups where account_id = ? AND group_name = ANY (?))";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
@@ -345,7 +335,7 @@ public class PostgresGroupDao implements GroupDao {
                         + "parent_id IN (SELECT group_id FROM groups where account_id = ? AND group_name %s ANY (?))",
                 caseSensitive ? "~" : "~*");
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));
@@ -372,7 +362,7 @@ public class PostgresGroupDao implements GroupDao {
         Objects.requireNonNull(groups);
         Objects.requireNonNull(consumer);
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection()) {
             add(conn, account, parentId, groups, consumer);
             conn.commit();
@@ -399,7 +389,7 @@ public class PostgresGroupDao implements GroupDao {
         final int available = account.getServiceLevel().getMaxGroups() - count(conn, account);
         int added = 0;
 
-        final TagDao tagDao = getTagDaoSupplier().get();
+        final TagDao tagDao = this.tagDaoSupplier.get();
         try (final PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
              final CloseableBiConsumer<Long, Tag> tagAddConsumer = tagDao.getAddConsumer(conn, account)) {
             final Collection<Group> batch = new LinkedList<>();
@@ -471,7 +461,7 @@ public class PostgresGroupDao implements GroupDao {
 
         int removed = 0;
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, account.getId().orElse(null));

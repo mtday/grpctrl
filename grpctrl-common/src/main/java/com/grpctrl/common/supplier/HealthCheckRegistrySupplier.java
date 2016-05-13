@@ -71,7 +71,6 @@ public class HealthCheckRegistrySupplier
         @Override
         protected void configure() {
             bind(HealthCheckRegistrySupplier.class).to(HealthCheckRegistrySupplier.class).in(Singleton.class);
-            bindFactory(HealthCheckRegistrySupplier.class).to(HealthCheckRegistry.class).in(Singleton.class);
         }
     }
 }

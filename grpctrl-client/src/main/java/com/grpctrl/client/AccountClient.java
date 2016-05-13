@@ -53,23 +53,8 @@ public class AccountClient {
     }
 
     @Nonnull
-    private ObjectMapper getObjectMapper() {
-        return this.objectMapper;
-    }
-
-    @Nonnull
-    private OkHttpClient getHttpClient() {
-        return this.httpClient;
-    }
-
-    @Nonnull
-    private EndPoint getEndPoint() {
-        return this.endPoint;
-    }
-
-    @Nonnull
     private String getEndPointUrl() {
-        return getEndPoint().asUrl() + API;
+        return this.endPoint.asUrl() + API;
     }
 
     private boolean validateSuccess(@Nonnull final JsonParser jsonParser) throws IOException {
@@ -105,7 +90,7 @@ public class AccountClient {
             throws ClientException, IOException {
         switch (response.code()) {
             case HttpServletResponse.SC_OK:
-                final JsonParser jsonParser = getObjectMapper().getFactory().createParser(response.body().byteStream());
+                final JsonParser jsonParser = this.objectMapper.getFactory().createParser(response.body().byteStream());
                 final boolean success = validateSuccess(jsonParser);
                 if (success) {
                     final JsonToken accountField = jsonParser.nextToken();
@@ -139,7 +124,7 @@ public class AccountClient {
     public void get(final long accountId, @Nonnull final Consumer<Account> consumer) throws ClientException {
         try {
             final Request request = new Request.Builder().url(getEndPointUrl() + "/" + accountId).get().build();
-            consumeAccounts(getHttpClient().newCall(request).execute(), consumer);
+            consumeAccounts(this.httpClient.newCall(request).execute(), consumer);
         } catch (final IOException ioException) {
             throw new ClientException("Failed to communicate with back-end server", ioException);
         }
@@ -148,7 +133,7 @@ public class AccountClient {
     public void getAll(@Nonnull final Consumer<Account> consumer) throws ClientException {
         try {
             final Request request = new Request.Builder().url(getEndPointUrl()).get().build();
-            consumeAccounts(getHttpClient().newCall(request).execute(), consumer);
+            consumeAccounts(this.httpClient.newCall(request).execute(), consumer);
         } catch (final IOException ioException) {
             throw new ClientException("Failed to communicate with back-end server", ioException);
         }
@@ -158,9 +143,9 @@ public class AccountClient {
             throws ClientException {
         try {
             final RequestBody body =
-                    RequestBody.create(POST_MEDIA_TYPE, getObjectMapper().writeValueAsString(accounts));
+                    RequestBody.create(POST_MEDIA_TYPE, this.objectMapper.writeValueAsString(accounts));
             final Request request = new Request.Builder().url(getEndPointUrl()).post(body).build();
-            consumeAccounts(getHttpClient().newCall(request).execute(), consumer);
+            consumeAccounts(this.httpClient.newCall(request).execute(), consumer);
         } catch (final IOException ioException) {
             throw new ClientException("Failed to communicate with back-end server", ioException);
         }
@@ -169,11 +154,11 @@ public class AccountClient {
     public void remove(final long accountId) throws ClientException {
         try {
             final Request request = new Request.Builder().url(getEndPointUrl() + "/" + accountId).delete().build();
-            final Response response = getHttpClient().newCall(request).execute();
+            final Response response = this.httpClient.newCall(request).execute();
             switch (response.code()) {
                 case HttpServletResponse.SC_OK:
                     final JsonParser jsonParser =
-                            getObjectMapper().getFactory().createParser(response.body().byteStream());
+                            this.objectMapper.getFactory().createParser(response.body().byteStream());
                     final boolean success = validateSuccess(jsonParser);
                     if (!success) {
                         processError(jsonParser);

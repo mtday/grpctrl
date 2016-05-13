@@ -134,7 +134,6 @@ public class UserDaoSupplier implements Supplier<UserDao>, Factory<UserDao>, Con
         @Override
         protected void configure() {
             bind(UserDaoSupplier.class).to(UserDaoSupplier.class).in(Singleton.class);
-            bindFactory(UserDaoSupplier.class).to(UserDao.class).in(Singleton.class);
         }
     }
 }

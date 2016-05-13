@@ -25,28 +25,21 @@ public class CustomLoginModule implements LoginModule {
     private Subject subject;
     private CallbackHandler callbackHandler;
 
-    public CustomLoginModule() {
-        LOG.info("constructor");
-    }
-
     @Override
     public void initialize(@Nonnull final Subject subject, @Nonnull final CallbackHandler callbackHandler,
             @Nonnull final Map<String, ?> sharedState, @Nonnull final Map<String, ?> options) {
-        LOG.info("initialize");
         this.subject = Objects.requireNonNull(subject);
         this.callbackHandler = Objects.requireNonNull(callbackHandler);
     }
 
     @Override
     public boolean abort() throws LoginException {
-        LOG.info("abort");
         this.currentUser = null;
         return this.authenticated && this.committed;
     }
 
     @Override
     public boolean commit() throws LoginException {
-        LOG.info("commit");
         if (!this.authenticated) {
             this.currentUser = null;
             this.committed = false;
@@ -58,14 +51,12 @@ public class CustomLoginModule implements LoginModule {
     }
 
     public boolean login() throws LoginException {
-        LOG.info("login");
         try {
             final CustomCallback customCallback = new CustomCallback();
             final Callback[] callbacks = {customCallback};
             this.callbackHandler.handle(callbacks);
 
             this.currentUser = customCallback.getUser();
-            LOG.info("  user: {}", this.currentUser);
 
             if (this.currentUser == null) {
                 this.authenticated = false;
@@ -84,7 +75,6 @@ public class CustomLoginModule implements LoginModule {
     }
 
     public boolean logout() throws LoginException {
-        LOG.info("logout: {}", this.currentUser);
         this.subject.getPrincipals().remove(this.currentUser);
         this.subject.getPrincipals().removeAll(this.currentUser.getRoles());
         return true;

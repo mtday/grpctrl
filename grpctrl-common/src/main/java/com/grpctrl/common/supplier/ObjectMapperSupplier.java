@@ -73,7 +73,6 @@ public class ObjectMapperSupplier
         @Override
         protected void configure() {
             bind(ObjectMapperSupplier.class).to(ObjectMapperSupplier.class).in(Singleton.class);
-            bindFactory(ObjectMapperSupplier.class).to(ObjectMapper.class).in(Singleton.class);
         }
     }
 }

@@ -92,7 +92,6 @@ public class TagDaoSupplier implements Supplier<TagDao>, Factory<TagDao>, Contex
         @Override
         protected void configure() {
             bind(TagDaoSupplier.class).to(TagDaoSupplier.class).in(Singleton.class);
-            bindFactory(TagDaoSupplier.class).to(TagDao.class).in(Singleton.class);
         }
     }
 }

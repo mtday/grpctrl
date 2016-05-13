@@ -70,7 +70,6 @@ public class MetricRegistrySupplier implements Supplier<MetricRegistry>, Factory
         @Override
         protected void configure() {
             bind(MetricRegistrySupplier.class).to(MetricRegistrySupplier.class).in(Singleton.class);
-            bindFactory(MetricRegistrySupplier.class).to(MetricRegistry.class).in(Singleton.class);
         }
     }
 }

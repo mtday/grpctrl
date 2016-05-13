@@ -75,7 +75,6 @@ public class AESPasswordBasedEncryption extends CommonEncryptionImpl implements 
     }
 
     @Override
-    @Nonnull
     public void encrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output) {
         Objects.requireNonNull(input);
         Objects.requireNonNull(output);
@@ -105,7 +104,6 @@ public class AESPasswordBasedEncryption extends CommonEncryptionImpl implements 
     }
 
     @Override
-    @Nonnull
     public void decrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output) {
         Objects.requireNonNull(input);
         Objects.requireNonNull(output);

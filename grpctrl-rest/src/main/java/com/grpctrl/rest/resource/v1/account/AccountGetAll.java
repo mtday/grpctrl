@@ -1,8 +1,8 @@
 package com.grpctrl.rest.resource.v1.account;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grpctrl.common.model.Account;
-import com.grpctrl.db.dao.AccountDao;
+import com.grpctrl.common.supplier.ObjectMapperSupplier;
+import com.grpctrl.db.dao.supplier.AccountDaoSupplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,15 +34,17 @@ import javax.ws.rs.core.StreamingOutput;
 public class AccountGetAll extends BaseAccountResource {
     private static final Logger LOG = LoggerFactory.getLogger(AccountGetAll.class);
 
-    private final Consumer<Consumer<Account>> consumer = consumer -> getAccountDao().getAll(consumer);
+    private final Consumer<Consumer<Account>> consumer = consumer -> getAccountDaoSupplier().get().getAll(consumer);
 
     /**
-     * @param objectMapper the {@link ObjectMapper} responsible for generating JSON data
-     * @param accountDao the {@link AccountDao} used to perform the account operation
+     * @param objectMapperSupplier the {@link ObjectMapperSupplier} responsible for generating JSON data
+     * @param accountDaoSupplier the {@link AccountDaoSupplier} used to perform the account operation
      */
     @Inject
-    public AccountGetAll(@Nonnull final ObjectMapper objectMapper, @Nonnull final AccountDao accountDao) {
-        super(objectMapper, accountDao);
+    public AccountGetAll(
+            @Nonnull final ObjectMapperSupplier objectMapperSupplier,
+            @Nonnull final AccountDaoSupplier accountDaoSupplier) {
+        super(objectMapperSupplier, accountDaoSupplier);
     }
 
     /**
@@ -59,7 +61,7 @@ public class AccountGetAll extends BaseAccountResource {
         LOG.info("Authentication Scheme: {}", securityContext.getAuthenticationScheme());
         LOG.info("Is Secure? {}", securityContext.isSecure());
 
-        final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapper(), this.consumer);
+        final StreamingOutput streamingOutput = new MultipleAccountStreamer(getObjectMapperSupplier(), this.consumer);
 
         return Response.ok().entity(streamingOutput).type(MediaType.APPLICATION_JSON).build();
     }

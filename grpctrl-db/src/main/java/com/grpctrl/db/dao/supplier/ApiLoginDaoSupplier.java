@@ -68,7 +68,6 @@ public class ApiLoginDaoSupplier
         @Override
         protected void configure() {
             bind(ApiLoginDaoSupplier.class).to(ApiLoginDaoSupplier.class).in(Singleton.class);
-            bindFactory(ApiLoginDaoSupplier.class).to(ApiLoginDao.class).in(Singleton.class);
         }
     }
 }

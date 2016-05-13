@@ -19,6 +19,7 @@ import javax.ws.rs.ext.Provider;
  * Provides singleton access to the static system configuration properties.
  */
 @Provider
+@Singleton
 public class ConfigSupplier implements Supplier<Config>, Factory<Config>, ContextResolver<Config> {
     @Nullable
     private volatile Config singleton;
@@ -80,7 +81,6 @@ public class ConfigSupplier implements Supplier<Config>, Factory<Config>, Contex
         @Override
         protected void configure() {
             bind(ConfigSupplier.class).to(ConfigSupplier.class).in(Singleton.class);
-            bindFactory(ConfigSupplier.class).to(Config.class).in(Singleton.class);
         }
     }
 }

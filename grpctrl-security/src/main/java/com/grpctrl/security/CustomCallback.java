@@ -1,6 +1,9 @@
 package com.grpctrl.security;
 
+import com.google.common.collect.Sets;
 import com.grpctrl.common.model.User;
+import com.grpctrl.common.model.UserRole;
+import com.grpctrl.common.supplier.ExecutorServiceSupplier;
 import com.grpctrl.db.dao.supplier.UserDaoSupplier;
 
 import org.slf4j.Logger;
@@ -8,12 +11,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -28,11 +32,11 @@ public class CustomCallback implements Callback {
     private User user;
 
     public void run(
-            @Nonnull final ExecutorService executorService, @Nonnull final UserDaoSupplier userDaoSupplier,
-            @Nonnull final User user, @Nonnull final Collection<Callable<Void>> callables) throws IOException {
-        LOG.info("Running custom callback");
+            @Nonnull final ExecutorServiceSupplier executorServiceSupplier,
+            @Nonnull final UserDaoSupplier userDaoSupplier, @Nonnull final User user,
+            @Nonnull final Collection<Callable<Void>> callables) throws IOException {
         final CompletionService<Void> completionService =
-                new ExecutorCompletionService<>(Objects.requireNonNull(executorService));
+                new ExecutorCompletionService<>(Objects.requireNonNull(executorServiceSupplier).get());
         this.user = Objects.requireNonNull(user);
 
         final Collection<Future<Void>> futures =
@@ -45,14 +49,13 @@ public class CustomCallback implements Callback {
                 futures.remove(completedFuture);
                 completedFuture.get();
             } catch (final ExecutionException | InterruptedException problem) {
-                for (final Future stillRunning : futures) {
+                for (final Future<Void> stillRunning : futures) {
                     stillRunning.cancel(true);
                 }
                 throw new IOException("Failed to authenticate user", problem);
             }
         }
 
-        /*
         // Now that we have a populated user, see if we have a matching user in the database.
         final Optional<User> fromDb = userDaoSupplier.get().get(user.getUserSource(), user.getLogin());
         if (fromDb.isPresent()) {
@@ -71,7 +74,6 @@ public class CustomCallback implements Callback {
             user.setRoles(Collections.singleton(UserRole.USER));
             userDaoSupplier.get().add(user);
         }
-        */
     }
 
     @Nullable

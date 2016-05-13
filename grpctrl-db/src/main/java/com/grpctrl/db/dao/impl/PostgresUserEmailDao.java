@@ -27,7 +27,7 @@ public class PostgresUserEmailDao implements UserEmailDao {
         Objects.requireNonNull(conn);
         Objects.requireNonNull(userIds);
 
-        final String sql = "SELECT user_id, email, primary, verified FROM user_emails WHERE user_id = ANY (?)";
+        final String sql = "SELECT user_id, email, is_primary, is_verified FROM user_emails WHERE user_id = ANY (?)";
 
         final Map<Long, Collection<UserEmail>> map = new HashMap<>();
         try (final PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -36,8 +36,8 @@ public class PostgresUserEmailDao implements UserEmailDao {
                 while (rs.next()) {
                     final long userId = rs.getLong("user_id");
                     final String email = rs.getString("email");
-                    final boolean primary = rs.getBoolean("primary");
-                    final boolean verified = rs.getBoolean("verified");
+                    final boolean primary = rs.getBoolean("is_primary");
+                    final boolean verified = rs.getBoolean("is_verified");
 
                     final UserEmail userEmail = new UserEmail(email, primary, verified);
 
@@ -62,7 +62,7 @@ public class PostgresUserEmailDao implements UserEmailDao {
         Objects.requireNonNull(users);
 
         final int batchSize = 1000;
-        final String sql = "INSERT INTO user_emails (user_id, email, primary, verified) VALUES (?, ?, ?, ?)";
+        final String sql = "INSERT INTO user_emails (user_id, email, is_primary, is_verified) VALUES (?, ?, ?, ?)";
 
         int batches = 0;
 

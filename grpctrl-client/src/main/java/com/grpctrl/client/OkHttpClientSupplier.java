@@ -47,22 +47,6 @@ public class OkHttpClientSupplier
         this.sslContextSupplier = Objects.requireNonNull(sslContextSupplier);
     }
 
-    /**
-     * @return the static system configuration properties
-     */
-    @Nonnull
-    protected ConfigSupplier getConfigSupplier() {
-        return this.configSupplier;
-    }
-
-    /**
-     * @return the {@link SslContextSupplier} responsible for providing {@link javax.net.ssl.SSLContext} instances
-     */
-    @Nonnull
-    protected SslContextSupplier getSslContextSupplier() {
-        return this.sslContextSupplier;
-    }
-
     @Override
     @Nonnull
     @SuppressWarnings("all")
@@ -95,8 +79,8 @@ public class OkHttpClientSupplier
         // Nothing to do.
     }
 
-    protected long getTimeoutMillis(@Nonnull final ConfigKeys key) {
-        return getConfigSupplier().get().getDuration(key.getKey(), TimeUnit.MILLISECONDS);
+    private long getTimeoutMillis(@Nonnull final ConfigKeys key) {
+        return this.configSupplier.get().getDuration(key.getKey(), TimeUnit.MILLISECONDS);
     }
 
     @Nonnull
@@ -110,11 +94,11 @@ public class OkHttpClientSupplier
 
         // Retry
         builder.retryOnConnectionFailure(
-                getConfigSupplier().get().getBoolean(ConfigKeys.CLIENT_FAILURE_RETRY.getKey()));
+                this.configSupplier.get().getBoolean(ConfigKeys.CLIENT_FAILURE_RETRY.getKey()));
 
-        if (getConfigSupplier().get().getBoolean(ConfigKeys.CRYPTO_SSL_ENABLED.getKey())) {
+        if (this.configSupplier.get().getBoolean(ConfigKeys.CRYPTO_SSL_ENABLED.getKey())) {
             // SSL using our crypto configuration
-            builder.sslSocketFactory(getSslContextSupplier().get().getSocketFactory());
+            builder.sslSocketFactory(this.sslContextSupplier.get().getSocketFactory());
             builder.hostnameVerifier((hostName, sslSession) -> true);
         }
 

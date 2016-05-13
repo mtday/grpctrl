@@ -37,11 +37,6 @@ public class PostgresTagDao implements TagDao {
         this.dataSourceSupplier = Objects.requireNonNull(dataSourceSupplier);
     }
 
-    @Nonnull
-    private DataSourceSupplier getDataSourceSupplier() {
-        return this.dataSourceSupplier;
-    }
-
     @Override
     public int count(@Nonnull final Connection conn, @Nonnull final Account account) {
         Objects.requireNonNull(conn);
@@ -101,7 +96,7 @@ public class PostgresTagDao implements TagDao {
 
         int modified = 0;
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             int batches = 0;
@@ -138,7 +133,7 @@ public class PostgresTagDao implements TagDao {
         final int batchSize = 1000;
         final String sql = "DELETE FROM tags WHERE account_id = ? AND group_id = ? AND tag_label = ?";
 
-        final DataSource dataSource = getDataSourceSupplier().get();
+        final DataSource dataSource = this.dataSourceSupplier.get();
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement ps = conn.prepareStatement(sql)) {
             int batches = 0;

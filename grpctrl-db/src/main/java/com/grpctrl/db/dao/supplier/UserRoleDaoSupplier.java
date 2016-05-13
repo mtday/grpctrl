@@ -68,7 +68,6 @@ public class UserRoleDaoSupplier
         @Override
         protected void configure() {
             bind(UserRoleDaoSupplier.class).to(UserRoleDaoSupplier.class).in(Singleton.class);
-            bindFactory(UserRoleDaoSupplier.class).to(UserRoleDao.class).in(Singleton.class);
         }
     }
 }

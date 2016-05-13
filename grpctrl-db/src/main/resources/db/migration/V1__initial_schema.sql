@@ -47,12 +47,17 @@ CREATE TABLE users (
 
     login            VARCHAR(200)  NOT NULL,
     source           VARCHAR(20)   NOT NULL,
+    created          DATETIME      NOT NULL,
+    is_active        BOOLEAN       NOT NULL,
 
     CONSTRAINT users_pk PRIMARY KEY (user_id),
     CONSTRAINT users_uniq_login UNIQUE (login, source)
 );
 
 ALTER SEQUENCE users_user_id_seq RESTART WITH 10000;
+
+-- The initial admin account.
+INSERT INTO users (user_id, login, source) VALUES (1, 'admin', 'LOCAL');
 
 
 CREATE TABLE user_emails (
@@ -67,17 +72,22 @@ CREATE TABLE user_emails (
     CONSTRAINT user_emails_fk_users FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
 );
 
+INSERT INTO user_emails (user_id, email, is_primary, is_verified) VALUES (1, 'admin@grpctrl.com', true, true);
+
 
 CREATE TABLE user_auths (
     user_id          BIGINT        NOT NULL,
 
     hash_alg         VARCHAR(20)   NOT NULL,
     salt             VARCHAR(20)   NOT NULL,
-    hashed_pass      VARCHAR(200)  NOT NULL,
+    hashed_pass      VARCHAR(128)  NOT NULL, -- the size of SHA-512 is 128
 
     CONSTRAINT user_auths_pk PRIMARY KEY (user_id),
     CONSTRAINT user_auths_fk_users FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
 );
+
+INSERT INTO user_auths (user_id, hash_alg, salt, hashed_pass) VALUES (1, 'SHA-256', '46Hr5XhP',
+    'c5a9e98748609144ce345d98424dbc3009502f57a9243686fe8eca17ff716ef4');
 
 
 CREATE TABLE user_roles (
@@ -88,6 +98,8 @@ CREATE TABLE user_roles (
     CONSTRAINT user_roles_pk PRIMARY KEY (user_id, role),
     CONSTRAINT user_roles_fk_users FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
 );
+
+INSERT INTO user_roles (user_id, role) VALUES (1, 'ADMIN');
 
 
 CREATE TABLE user_accounts (

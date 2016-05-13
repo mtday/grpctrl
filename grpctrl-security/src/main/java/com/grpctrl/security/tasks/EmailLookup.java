@@ -64,7 +64,7 @@ public class EmailLookup implements Callable<Void> {
                 final List<UserEmail> emails = objectMapper.readValue(
                         response.getBody(),
                         objectMapper.getTypeFactory().constructCollectionType(List.class, UserEmail.class));
-                this.user.setEmails(emails.stream().filter(ue -> ue.getEmail().contains("@users.noreply.github.com"))
+                this.user.setEmails(emails.stream().filter(ue -> !ue.getEmail().contains("@users.noreply.github.com"))
                         .collect(Collectors.toList()));
             } else {
                 throw new IOException("Failed to fetch user emails from github, response was: " +

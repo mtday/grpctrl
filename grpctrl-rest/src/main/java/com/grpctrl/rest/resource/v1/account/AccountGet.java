@@ -1,7 +1,7 @@
 package com.grpctrl.rest.resource.v1.account;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grpctrl.db.dao.AccountDao;
+import com.grpctrl.common.supplier.ObjectMapperSupplier;
+import com.grpctrl.db.dao.supplier.AccountDaoSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -25,12 +25,14 @@ import javax.ws.rs.core.StreamingOutput;
 @RolesAllowed("ADMIN")
 public class AccountGet extends BaseAccountResource {
     /**
-     * @param objectMapper the {@link ObjectMapper} responsible for generating JSON data
-     * @param accountDao the {@link AccountDao} used to perform the account operation
+     * @param objectMapperSupplier the {@link ObjectMapperSupplier} responsible for generating JSON data
+     * @param accountDaoSupplier the {@link AccountDaoSupplier} used to perform the account operation
      */
     @Inject
-    public AccountGet(@Nonnull final ObjectMapper objectMapper, @Nonnull final AccountDao accountDao) {
-        super(objectMapper, accountDao);
+    public AccountGet(
+            @Nonnull final ObjectMapperSupplier objectMapperSupplier,
+            @Nonnull final AccountDaoSupplier accountDaoSupplier) {
+        super(objectMapperSupplier, accountDaoSupplier);
     }
 
     /**
@@ -43,8 +45,8 @@ public class AccountGet extends BaseAccountResource {
     @GET
     @Nullable
     public Response get(@Nonnull @PathParam("accountId") final Long accountId) {
-        final StreamingOutput streamingOutput = new SingleAccountStreamer(getObjectMapper(),
-                consumer -> getAccountDao().get(accountId, consumer));
+        final StreamingOutput streamingOutput = new SingleAccountStreamer(getObjectMapperSupplier(),
+                consumer -> getAccountDaoSupplier().get().get(accountId, consumer));
 
         return Response.ok().entity(streamingOutput).type(MediaType.APPLICATION_JSON).build();
     }

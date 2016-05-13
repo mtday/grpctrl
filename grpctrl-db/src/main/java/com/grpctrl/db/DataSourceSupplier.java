@@ -53,16 +53,6 @@ public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSou
         this.pbeSupplier = Objects.requireNonNull(pbeSupplier);
     }
 
-    @Nonnull
-    private ConfigSupplier getConfigSupplier() {
-        return this.configSupplier;
-    }
-
-    @Nonnull
-    private PasswordBasedEncryptionSupplier getPasswordBasedEncryptionSupplier() {
-        return this.pbeSupplier;
-    }
-
     @Override
     @Nonnull
     @SuppressWarnings("all")
@@ -97,12 +87,12 @@ public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSou
 
     @Nonnull
     private DataSource create() {
-        final Config config = getConfigSupplier().get();
+        final Config config = this.configSupplier.get();
 
         final HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setJdbcUrl(config.getString(ConfigKeys.DB_URL.getKey()));
         hikariConfig.setUsername(config.getString(ConfigKeys.DB_USERNAME.getKey()));
-        hikariConfig.setPassword(getPasswordBasedEncryptionSupplier().get()
+        hikariConfig.setPassword(this.pbeSupplier.get()
                 .decryptProperty(config.getString(ConfigKeys.DB_PASSWORD.getKey()), Charsets.UTF_8));
         hikariConfig.setMinimumIdle(config.getInt(ConfigKeys.DB_MINIMUM_IDLE.getKey()));
         hikariConfig.setMaximumPoolSize(config.getInt(ConfigKeys.DB_MAXIMUM_POOL_SIZE.getKey()));
@@ -132,7 +122,6 @@ public class DataSourceSupplier implements Supplier<DataSource>, Factory<DataSou
         @Override
         protected void configure() {
             bind(DataSourceSupplier.class).to(DataSourceSupplier.class).in(Singleton.class);
-            bindFactory(DataSourceSupplier.class).to(DataSource.class).in(Singleton.class);
         }
     }
 }

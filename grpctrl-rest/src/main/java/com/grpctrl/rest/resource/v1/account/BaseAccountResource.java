@@ -1,7 +1,7 @@
 package com.grpctrl.rest.resource.v1.account;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grpctrl.db.dao.AccountDao;
+import com.grpctrl.common.supplier.ObjectMapperSupplier;
+import com.grpctrl.db.dao.supplier.AccountDaoSupplier;
 
 import java.util.Objects;
 
@@ -13,33 +13,33 @@ import javax.inject.Inject;
  */
 public class BaseAccountResource {
     @Nonnull
-    private final ObjectMapper objectMapper;
+    private final ObjectMapperSupplier objectMapperSupplier;
     @Nonnull
-    private final AccountDao accountDao;
+    private final AccountDaoSupplier accountDaoSupplier;
 
     /**
-     * @param objectMapper the {@link ObjectMapper} responsible for generating JSON data
-     * @param accountDao the {@link AccountDao} used to perform the account operation
+     * @param objectMapperSupplier the {@link ObjectMapperSupplier} responsible for generating JSON data
+     * @param accountDaoSupplier the {@link AccountDaoSupplier} used to perform the account operation
      */
     @Inject
-    public BaseAccountResource(@Nonnull final ObjectMapper objectMapper, @Nonnull final AccountDao accountDao) {
-        this.objectMapper = Objects.requireNonNull(objectMapper);
-        this.accountDao = Objects.requireNonNull(accountDao);
+    public BaseAccountResource(@Nonnull final ObjectMapperSupplier objectMapperSupplier, @Nonnull final AccountDaoSupplier accountDaoSupplier) {
+        this.objectMapperSupplier = Objects.requireNonNull(objectMapperSupplier);
+        this.accountDaoSupplier = Objects.requireNonNull(accountDaoSupplier);
     }
 
     /**
-     * @return the object mapper responsible for generating JSON data
+     * @return the {@link ObjectMapperSupplier} responsible for generating JSON data
      */
     @Nonnull
-    public ObjectMapper getObjectMapper() {
-        return this.objectMapper;
+    public ObjectMapperSupplier getObjectMapperSupplier() {
+        return this.objectMapperSupplier;
     }
 
     /**
-     * @return the {@link AccountDao} used to perform the account operation
+     * @return the {@link AccountDaoSupplier} used to perform the account operation
      */
     @Nonnull
-    public AccountDao getAccountDao() {
-        return this.accountDao;
+    public AccountDaoSupplier getAccountDaoSupplier() {
+        return this.accountDaoSupplier;
     }
 }

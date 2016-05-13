@@ -4,6 +4,7 @@ import static com.typesafe.config.ConfigValueFactory.fromAnyRef;
 
 import com.grpctrl.common.config.ConfigKeys;
 import com.grpctrl.common.supplier.ConfigSupplier;
+import com.grpctrl.run.InjectionManager;
 import com.grpctrl.run.Runner;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -48,7 +49,7 @@ public class LocalRunner {
     }
 
     private void run() throws ServletException {
-        new Runner(new ConfigSupplier(getConfig())).run();
+        new Runner(new InjectionManager(new ConfigSupplier(getConfig()))).run();
     }
 
     /**

@@ -3,6 +3,7 @@ package com.grpctrl.security;
 import com.grpctrl.common.model.User;
 import com.grpctrl.common.model.UserRole;
 import com.grpctrl.common.supplier.ConfigSupplier;
+import com.grpctrl.common.supplier.ExecutorServiceSupplier;
 import com.grpctrl.common.supplier.OAuth20ServiceSupplier;
 import com.grpctrl.common.supplier.ObjectMapperSupplier;
 import com.grpctrl.db.dao.supplier.UserDaoSupplier;
@@ -18,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
@@ -34,32 +34,28 @@ public class CustomLoginService extends AbstractLifeCycle implements LoginServic
     private static final String LOGIN_MODULE_NAME = "custom";
 
     @Nonnull
-    private final ExecutorService executorService;
+    private final ExecutorServiceSupplier executorServiceSupplier;
     @Nonnull
     private final ConfigSupplier configSupplier;
     @Nonnull
     private final ObjectMapperSupplier objectMapperSupplier;
     @Nonnull
     private final OAuth20ServiceSupplier oAuth20ServiceSupplier;
-    /*
     @Nonnull
     private final UserDaoSupplier userDaoSupplier;
-    */
 
     private IdentityService identityService = new DefaultIdentityService();
 
     public CustomLoginService(
-            @Nonnull final ExecutorService executorService, @Nonnull final ConfigSupplier configSupplier,
-            @Nonnull final ObjectMapperSupplier objectMapperSupplier,
+            @Nonnull final ExecutorServiceSupplier executorServiceSupplier,
+            @Nonnull final ConfigSupplier configSupplier, @Nonnull final ObjectMapperSupplier objectMapperSupplier,
             @Nonnull final OAuth20ServiceSupplier oAuth20ServiceSupplier,
             @Nonnull final UserDaoSupplier userDaoSupplier) {
-        this.executorService = Objects.requireNonNull(executorService);
+        this.executorServiceSupplier = Objects.requireNonNull(executorServiceSupplier);
         this.configSupplier = Objects.requireNonNull(configSupplier);
         this.objectMapperSupplier = Objects.requireNonNull(objectMapperSupplier);
         this.oAuth20ServiceSupplier = Objects.requireNonNull(oAuth20ServiceSupplier);
-        /*
         this.userDaoSupplier = Objects.requireNonNull(userDaoSupplier);
-        */
     }
 
     @Override
@@ -81,11 +77,10 @@ public class CustomLoginService extends AbstractLifeCycle implements LoginServic
     public UserIdentity login(
             @Nullable final String username, @Nullable final Object credentials,
             @Nonnull final ServletRequest request) {
-        LOG.info("login");
         try {
             final CustomCallbackHandler callbackHandler =
-                    new CustomCallbackHandler(this.executorService, this.configSupplier, this.objectMapperSupplier,
-                            this.oAuth20ServiceSupplier, null, request);
+                    new CustomCallbackHandler(this.executorServiceSupplier, this.configSupplier,
+                            this.objectMapperSupplier, this.oAuth20ServiceSupplier, this.userDaoSupplier, request);
 
             final Subject subject = new Subject();
             final LoginContext loginContext = new LoginContext(getName(), subject, callbackHandler);
@@ -94,11 +89,9 @@ public class CustomLoginService extends AbstractLifeCycle implements LoginServic
 
             final User user = callbackHandler.getUser();
             user.setLoginContext(loginContext);
-            LOG.info("  user: {}", user);
 
             subject.getPrincipals().add(user);
             subject.getPrincipals().addAll(user.getRoles());
-            LOG.info("  subject: {}", subject);
 
             final Collection<String> roles = user.getRoles().stream().map(UserRole::name).collect(Collectors.toList());
             return getIdentityService().newUserIdentity(subject, user, roles.toArray(new String[roles.size()]));
@@ -111,7 +104,6 @@ public class CustomLoginService extends AbstractLifeCycle implements LoginServic
     @Override
     public void logout(@Nonnull final UserIdentity userIdentity) {
         Objects.requireNonNull(userIdentity);
-        LOG.info("logout: {}", userIdentity);
 
         userIdentity.getSubject().getPrincipals(User.class).forEach(user -> {
             final Optional<LoginContext> loginContext = user.getLoginContext();
@@ -127,7 +119,6 @@ public class CustomLoginService extends AbstractLifeCycle implements LoginServic
 
     @Override
     public boolean validate(@Nonnull final UserIdentity userIdentity) {
-        LOG.info("validating: {}", userIdentity);
         return true;
     }
 }
